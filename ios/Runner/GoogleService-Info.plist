@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>721419790842-2mpub5daku26nmmim2h73u5m7nmc62tv.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.721419790842-2mpub5daku26nmmim2h73u5m7nmc62tv</string>
+	<key>API_KEY</key>
+	<string>AIzaSyB-eA54QwRnKyp6rVka_dLXPR1BlTUb0Wo</string>
+	<key>GCM_SENDER_ID</key>
+	<string>721419790842</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.ookiisoftware.protips</string>
+	<key>PROJECT_ID</key>
+	<string>protips-oki</string>
+	<key>STORAGE_BUCKET</key>
+	<string>protips-oki.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:721419790842:ios:ac0829d013db5cad509c43</string>
+	<key>DATABASE_URL</key>
+	<string>https://protips-oki.firebaseio.com</string>
+</dict>
+</plist>

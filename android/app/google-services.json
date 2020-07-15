@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "721419790842",
+    "firebase_url": "https://protips-oki.firebaseio.com",
+    "project_id": "protips-oki",
+    "storage_bucket": "protips-oki.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:721419790842:android:84815debd1879d3d509c43",
+        "android_client_info": {
+          "package_name": "com.ookiisoftware.protips"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "721419790842-90pegkhjgghhf5p1thk3ph5j6v3isc9o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7fbG6N9mqz_2R0crqlXKlgTRZRVrmL6M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "721419790842-90pegkhjgghhf5p1thk3ph5j6v3isc9o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "721419790842-2mpub5daku26nmmim2h73u5m7nmc62tv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ookiisoftware.protips"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
