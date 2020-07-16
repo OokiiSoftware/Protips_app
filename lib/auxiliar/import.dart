@@ -101,9 +101,10 @@ class Import {
 
   static void openWhatsApp(BuildContext context, String numero) async {
     try {
+      numero = numero.replaceAll(' ', '').replaceAll('(', '').replaceAll(')', '').replaceAll('-', '');
       var whatsappUrl ="whatsapp://send?phone=$numero";
       if (await canLaunch(whatsappUrl))
-        await launch(whatsappUrl);
+        await launch(Uri.encodeFull(whatsappUrl));
       else
         throw Exception(MyErros.ABRIR_WHATSAPP);
     } catch(e) {

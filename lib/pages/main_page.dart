@@ -178,7 +178,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
         child: TabBar(
             controller: _tabController,
             indicatorColor: MyTheme.primary(),
-            indicatorWeight: 0.1,
+//            indicatorWeight: 0.1,
             tabs: [
               Container(
                 height: navHeight,

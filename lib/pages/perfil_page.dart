@@ -144,8 +144,9 @@ class MyWidgetState extends State<PerfilPage> {
               Row(children: [
                 //Seguir Desseguir
                 Expanded(child: FlatButton(
-                    child: Text(isTipster ? isPendente ? 'Pendente' : isSeguindo ? 'Remover' : 'Seguir' : '', style: itemTextStyle),
-                    onPressed: isTipster ? isPendente ? (/*Remover Pendente*/) async {
+                    child: Text(isMyPerfil ? '' : (isTipster ? (isPendente ? 'Pendente' : (isSeguindo ? 'Remover' : 'Seguir')) : ''), style: itemTextStyle),
+                    onPressed: isMyPerfil ? null :
+                    isTipster ? isPendente ? (/*Remover Pendente*/) async {
                       _setProgressBarVisible(true);
                       if (await user.removeSolicitacao(eu.dados.id))
                         setState(() {
@@ -212,7 +213,7 @@ class MyWidgetState extends State<PerfilPage> {
                 itemBuilder: (BuildContext context) {
                   var list = List<String>();
                   list.addAll(MyMenus.perfilPage);
-                  if (!isMyPerfil) {
+                  if (isMyPerfil) {
                     list.remove(MyMenus.ABRIR_WHATSAPP);
                     list.remove(MyMenus.DENUNCIAR);
                   } else if (user.dados.isPrivado)
