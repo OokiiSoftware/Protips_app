@@ -38,15 +38,14 @@ class MyWidgetState extends State<CadastroPage> {
       borderRadius: BorderRadius.circular(60)
     );
 
-    var textfiedPadding = EdgeInsets.only(left: 10, right: 10);
+    var textfiedPadding = EdgeInsets.symmetric(horizontal: 10);
     var textfiedLabelStyle = TextStyle(color: MyTheme.primaryLight());
     var textfiedTextStyle = TextStyle(color: MyTheme.textColor());
 
     var separator = Padding(padding: EdgeInsets.only(top: 50));
 
     return Scaffold(
-      body: Container(
-        alignment: Alignment.center,
+      body: Center(
         child: ListView(
           padding: EdgeInsets.all(50),
           children: [
@@ -79,7 +78,7 @@ class MyWidgetState extends State<CadastroPage> {
             //Corpo
             Column(
               children: <Widget>[
-                //TextField Nome
+                // Nome
                 Container(
                   height: itemHeight,
                   padding: textfiedPadding,
@@ -100,7 +99,7 @@ class MyWidgetState extends State<CadastroPage> {
                     },
                   ),
                 ),
-                //TextField Email
+                // Email
                 Container(
                   height: itemHeight,
                   margin: EdgeInsets.only(top: 20),
@@ -124,7 +123,7 @@ class MyWidgetState extends State<CadastroPage> {
                     },
                   ),
                 ),
-                //TextField Senha
+                // Senha
                 Container(
                   height: itemHeight,
                   margin: EdgeInsets.only(top: 20),
@@ -148,7 +147,7 @@ class MyWidgetState extends State<CadastroPage> {
                     },
                   ),
                 ),
-                //TextField Confirmar Senha
+                // Confirmar Senha
                 Container(
                   height: itemHeight,
                   margin: EdgeInsets.only(top: 20),

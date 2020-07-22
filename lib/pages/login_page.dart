@@ -36,57 +36,61 @@ class MyWidgetState extends State<LoginPage> {
   @override
   void initState() {
 //    SystemChrome.setEnabledSystemUIOverlays([]);// Deixa o app em FuulScreen
-//    _animationController = AnimationController(vsync: null);
-//    _animationController.stop();
     super.initState();
+    _checkGoogleServices();
+    _loadUltimoEmail();
   }
 
   @override
   Widget build(BuildContext context) {
     //region Variaveis
-    double widthScreen = MediaQuery.of(context).size.width/1.3;//Tamanho da tela
+    var backgorundColor = MyTheme.primaryLight();
+    var iconColor = MyTheme.primaryDark();
+    var iconColorError = MyTheme.textColorError();
+    double widthScreen = MediaQuery.of(context).size.width / 1.3; //Tamanho da tela
     double itemHeight = 50;
 
-    var textfiedlBorder = OutlineInputBorder(
-        borderSide: BorderSide(color: MyTheme.primaryLight())
-    );
+    var itemBorder = OutlineInputBorder(borderSide: BorderSide(style: BorderStyle.none));
 
-    var textfiedDecorationError = BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(60)),
-        color: MyTheme.primaryLight(),
+    var itemDecorationError = BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(25)),
+        color: backgorundColor,
         boxShadow: [
-          BoxShadow(color: Colors.red, blurRadius: 3)
+          BoxShadow(color: Colors.red, blurRadius: 1),
+          BoxShadow(color: Colors.red, blurRadius: 1),
         ]
     );
-    var textfiedDecoration = BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(60)),
-        color: MyTheme.primaryLight(),
+    var itemDecoration = BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(25)),
+        color: backgorundColor,
         boxShadow: [
-          BoxShadow(color: Colors.white, blurRadius: 3)
+          BoxShadow(color: Colors.white, blurRadius: 1),
+          BoxShadow(color: Colors.white, blurRadius: 1),
         ]
     );
 
-    var textfiedPadding = EdgeInsets.only(left: 10, right: 10);
-    var textfiedHintStyle = TextStyle(color: MyTheme.primary());
-    var textfiedLabeErrorlStyle = TextStyle(color: Colors.red);
-    var textfiedTextStyle = TextStyle(color: MyTheme.textColor());
+    var itemPadding = EdgeInsets.symmetric(horizontal: 15);
+    var itemHintStyle = TextStyle(color: MyTheme.primary());
+    var itemLabeErrorlStyle = TextStyle(color: Colors.red);
+    var itemTextStyle = TextStyle(color: MyTheme.textColor());
 
-    var separator = Padding(padding: EdgeInsets.only(top: 20));
+    var divider = Divider(height: 20, color: backgorundColor);
 
-    progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: MyTheme.primaryLight());
+    progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: backgorundColor);
+
     //endregion
 
     return Scaffold(
+      backgroundColor: backgorundColor,
       body: Container(
-        alignment: Alignment.center,
-        child: ListView(
+        child: SingleChildScrollView(
           padding: EdgeInsets.all(50),
-          children: <Widget>[
-            separator,
-            //Top
+          child: Column(children: [
+            divider,
+            //Top (Logo)
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
+              children: [
                 //Icone
                 Align(
                   child: Image.asset(MyIcons.ic_launcher,
@@ -99,7 +103,7 @@ class MyWidgetState extends State<LoginPage> {
                   child: Padding(
                     child: Text('BEM VINDO AO PROTIPS',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: MyTheme.textColor(),
                         fontSize: 18,
                       ),
                     ),
@@ -115,27 +119,31 @@ class MyWidgetState extends State<LoginPage> {
                 ),
               ],
             ),
-            separator,
+            divider,
             //Corpo
             Column(
               children: <Widget>[
-                //TextField Email
+                // Email
                 Container(
-                  height: itemHeight,
-                  padding: textfiedPadding,
-                  decoration: emailNaoEncontrado || emailInvalido ? textfiedDecorationError : textfiedDecoration,
-                  child: TextField(
+//                  height: itemHeight,
+                  padding: itemPadding,
+//                  decoration: emailNaoEncontrado || emailInvalido
+//                      ? itemDecorationError
+//                      : itemDecoration,
+                  child: TextFormField(
                     controller: cEmail,
                     keyboardType: TextInputType.emailAddress,
-                    style: textfiedTextStyle,
+                    style: itemTextStyle,
                     decoration: InputDecoration(
-                      enabledBorder: textfiedlBorder,
-                      focusedBorder: textfiedlBorder,
-                      labelStyle: textfiedLabeErrorlStyle,
-                      hintStyle: textfiedHintStyle,
-                      labelText: emailNaoEncontrado ? 'Email não Registrado' : emailInvalido ? 'Email inválido' : null,
+//                      enabledBorder: itemBorder,
+//                      focusedBorder: itemBorder,
+                      labelStyle: itemLabeErrorlStyle,
+                      hintStyle: itemHintStyle,
+                      labelText: emailNaoEncontrado
+                          ? 'Email não Registrado'
+                          : emailInvalido ? 'Email inválido' : null,
                       hintText: 'Email',
-                      icon: Icon(Icons.person, color: MyTheme.primaryDark()),
+                      icon: Icon(Icons.person, color: emailInvalido || emailNaoEncontrado ? iconColorError : iconColor),
                     ),
                     onTap: () {
                       setState(() {
@@ -145,24 +153,24 @@ class MyWidgetState extends State<LoginPage> {
                     },
                   ),
                 ),
-                //TextField Senha
+                // Senha
                 Container(
-                  height: itemHeight,
+//                  height: itemHeight,
                   margin: EdgeInsets.only(top: 20),
-                  padding: textfiedPadding,
-                  decoration: senhaIncorreta ? textfiedDecorationError : textfiedDecoration,
+                  padding: itemPadding,
+//                  decoration: senhaIncorreta
+//                      ? itemDecorationError
+//                      : itemDecoration,
                   child: TextField(
                     controller: cSenha,
                     obscureText: true,
-                    style: textfiedTextStyle,
+                    style: itemTextStyle,
                     decoration: InputDecoration(
-                      enabledBorder: textfiedlBorder,
-                      focusedBorder: textfiedlBorder,
-                      labelStyle: textfiedLabeErrorlStyle,
-                      hintStyle: textfiedHintStyle,
+                      labelStyle: itemLabeErrorlStyle,
+                      hintStyle: itemHintStyle,
                       labelText: senhaIncorreta ? 'Senha incorreta' : null,
                       hintText: 'Senha',
-                      icon: Icon(Icons.https, color: MyTheme.primaryDark()),
+                      icon: Icon(Icons.https, color: senhaIncorreta ? iconColorError : iconColor),
                     ),
                     onTap: () {
                       setState(() {
@@ -176,56 +184,53 @@ class MyWidgetState extends State<LoginPage> {
                   alignment: Alignment.centerRight,
                   child: FlatButton(
                     child: Text(
-                      'Recuperar Senha',
-                      style: textfiedTextStyle
+                        'Recuperar Senha',
+                        style: itemTextStyle
                     ),
                     onPressed: onRecuperarSenhaButtonPressed,
                   ),
                 ),
                 //Button Login
                 Container(
-                  width: widthScreen,
-                  height: itemHeight,
-                  margin: EdgeInsets.only(top: 10),
-                  decoration: BoxDecoration(
-                      color: MyTheme.tintColor(),
-                      borderRadius: BorderRadius.all(Radius.circular(60))
-                  ),
-                  child: ButtonTheme(
-                    minWidth: double.infinity,
+                    width: widthScreen,
                     height: itemHeight,
-                    child: FlatButton(
-                      child: Text('Login'.toUpperCase(),
-                        style: TextStyle(
-                            color: MyTheme.primary(),
-                            fontSize: 20
-                        ),
-                      ),
-                      onPressed: onLoginButtonPressed,
+                    margin: EdgeInsets.only(top: 10),
+                    decoration: BoxDecoration(
+                        color: MyTheme.tintColor(),
+                        borderRadius: BorderRadius.all(Radius.circular(60))
                     ),
-                  )
+                    child: ButtonTheme(
+                      minWidth: double.infinity,
+                      height: itemHeight,
+                      child: FlatButton(
+                        child: Text('Login'.toUpperCase(),
+                          style: TextStyle(
+                              color: MyTheme.primary(),
+                              fontSize: 20
+                          ),
+                        ),
+                        onPressed: onLoginButtonPressed,
+                      ),
+                    )
                 ),
               ],
             ),
             //Rodape
-            Column(
-              children: <Widget>[
-                FlatButton(
-                  child: Text('Cadastre-se', style: textfiedTextStyle),
-                  onPressed: onCadastroButtonPressed,
-                ),
-                Text('OU', style: textfiedTextStyle),
-                FlatButton(
-                  padding: EdgeInsets.only(top: 20),
-                  child: Image.asset(MyIcons.ic_google, width: 40, height: 40,),
-                  onPressed: onLoginWithGoogleButtonPressed,
-                ),
-              ],
-            ),
-          ],
+            Column(children: [
+              FlatButton(
+                child: Text('Cadastre-se', style: itemTextStyle),
+                onPressed: onCadastroButtonPressed,
+              ),
+              Text('OU', style: itemTextStyle),
+              divider,
+              FlatButton(
+                child: Image.asset(MyIcons.ic_google, width: 40, height: 40),
+                onPressed: onLoginWithGoogleButtonPressed,
+              ),
+            ]),
+          ]),
         ),
       ),
-      backgroundColor: MyTheme.primaryLight(),
     );
   }
 
@@ -238,7 +243,6 @@ class MyWidgetState extends State<LoginPage> {
   }
 
   void onLoginButtonPressed() async {
-
     String email = cEmail.text.trim();
     String senha = cSenha.text.trim();
     if (email.isEmpty || senha.isEmpty)
@@ -250,9 +254,10 @@ class MyWidgetState extends State<LoginPage> {
     });
 
     try {
-      var auth = await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: senha);
-      getFirebase.setfUser(auth.user);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: senha);
+      getFirebase.setUltinoEmail(email);
       Navigator.pushReplacementNamed(context, MainPage.tag);
+      Log.d(TAG, 'Login com Email', 'OK');
     } catch(e) {
       progressBarValue = 0;
       Log.e(TAG, 'Login com Email Fail', e);
@@ -276,22 +281,33 @@ class MyWidgetState extends State<LoginPage> {
 
   void onLoginWithGoogleButtonPressed() async {
     try{
-      print(TAG + ' Login com Google');
-      var user = await getFirebase.googleAuth();
-      getFirebase.setfUser(user);
-      print(TAG + ' Login com Google OK');
+      Log.d(TAG, 'Login com Google');
+      await getFirebase.googleAuth();
+      Log.d(TAG, 'Login com Google', 'OK');
       Navigator.pushReplacementNamed(context, MainPage.tag);
     } catch (e) {
       Log.e(TAG, 'Login com Google Fail', e);
+      Log.toast(context, 'Login with Google fails');
     }
   }
 
 
+  _checkGoogleServices() async {
+    if (! await Import.checkGoogleServices(true)) {
+      Log.d(TAG, 'checkGoogleServices', 'False');
+      Navigator.pop(context);
+    }
+    Log.d(TAG, 'checkGoogleServices', 'OK');
+  }
+
+  _loadUltimoEmail() async {
+    cEmail.text = await getFirebase.getUltinoEmail();
+  }
 
   void onCadastroButtonPressed() {
     Navigator.of(context).pushNamed(CadastroPage.tag);
   }
 
-//endregion
+  //endregion
 
 }

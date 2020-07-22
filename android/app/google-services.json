@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "721419790842-i4e4c597u6t43k8lolu0i3armr0f83mk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ookiisoftware.protips",
+            "certificate_hash": "c902cd82034163752bbeb1abcf4fa316f418241e"
+          }
+        },
+        {
           "client_id": "721419790842-90pegkhjgghhf5p1thk3ph5j6v3isc9o.apps.googleusercontent.com",
           "client_type": 3
         }

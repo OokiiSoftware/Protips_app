@@ -18,7 +18,7 @@ class PostPerfil {
 
   PostPerfil();
 
-  PostPerfil.fromMap(Map map) {
+  PostPerfil.fromJson(Map<dynamic, dynamic> map) {
     id = map['id'];
     foto = map['foto'];
     titulo = map['titulo'];
@@ -27,17 +27,17 @@ class PostPerfil {
     id_tipster = map['id_tipster'];
   }
 
-  static Map<String, PostPerfil> fromMapList(Map map) {
+  static Map<String, PostPerfil> fromJsonList(Map map) {
     Map<String, PostPerfil> items = Map();
     if (map == null)
       return items;
     for (String key in map.keys)
-      items[key] = PostPerfil.fromMap(map[key]);
+      items[key] = PostPerfil.fromJson(map[key]);
     return items;
   }
 
 
-  Map toMap() => {
+  Map<String, dynamic> toJson() => {
     "id": id,
     "foto": foto,
     "titulo": titulo,
@@ -58,12 +58,12 @@ class PostPerfil {
         .child(id_tipster)
         .child(FirebaseChild.POSTES_PERFIL)
         .child(data.substring(0, data.indexOf('.')))
-        .set(toMap())
+        .set(toJson())
         .then((value) => true)
         .catchError((e) => false);
 
     if (result)
-      getFirebase.user().post_perfil[id] = this;
+      getFirebase.user().postPerfil[id] = this;
     Log.d(TAG, 'Postar', result);
     return result;
   }
@@ -84,7 +84,7 @@ class PostPerfil {
           .child(id_tipster)
           .child(id + '.jpg').delete();
 
-      getFirebase.user().post_perfil.remove(id);
+      getFirebase.user().postPerfil.remove(id);
     }
     Log.d(TAG, 'excluir', result);
     return result;

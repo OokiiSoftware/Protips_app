@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:progress_dialog/progress_dialog.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/login_page.dart';
@@ -40,11 +44,14 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   void dispose() {
     super.dispose();
     _tabController.dispose();
+//    getFirebase.notificationManager.dispose();
+    Log.d(TAG, 'dispose', 'ok');
   }
 
   @override
   void initState() {
     super.initState();
+    Log.d(TAG, 'initState', 'ok');
     _fragmentInicio = FragmentInicio();
     _fragmentPerfil = FragmentPerfil();
     _fragmentPesquisa = FragmentPesquisa();
@@ -64,11 +71,14 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
+    bool userIsTipster = getFirebase.user().dados.isTipster;
+
     double screenHeight = MediaQuery.of(context).size.height/3;
     double iconSize = 200;
 
     var navIconColor = MyTheme.tintColor();
     var navIconSize = 15.0;
+    var drawerIconSize = 23.0;
     var navHeight = 50.0;
 
     return inicializado ? Scaffold(
@@ -76,13 +86,12 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
         elevation: 0,
         title: Text(_currentTitle),
         actions: <Widget>[
-          currentIndex == 1 ? IconButton(
+          if (currentIndex == 1) IconButton(
             icon: SvgPicture.asset(MyIcons.ic_pesquisa_svg, color: navIconColor, width: navIconSize + 5),
             onPressed: () {
               showSearch(context: context, delegate: DataSearch());
             },
-          ) :
-          Container(),
+          ),
           Padding(padding: EdgeInsets.only(right: 10))
         ],
       ),
@@ -126,7 +135,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        MyStrings.company_email,
+                        MyStrings.app_email,
                         style: TextStyle(
                           color: MyTheme.textSubtitleColor(),
                           fontSize: 15,
@@ -137,32 +146,37 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 ),
               ),
             ),
+            //Meu Perfil
             ListTile(
-              leading: Icon(Icons.person),
+              leading: Image.asset(MyIcons.ic_perfil, color: Colors.black38, width: drawerIconSize),
               title: Text(MyMenus.MEU_PERFIL),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).pushNamed(MeuPerfilPage.tag);
               },
             ),
-            ListTile(
-              leading: Icon(Icons.lightbulb_outline),
-              title: Text(MyMenus.MEUS_POSTS),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).pushNamed(PerfilPage.tag, arguments: getFirebase.user());
-              },
-            ),
+            //Meus Posts
+            if (userIsTipster)
+              ListTile(
+                leading: Icon(Icons.lightbulb_outline),
+                title: Text(MyMenus.MEUS_POSTS),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).pushNamed(PerfilPage.tag, arguments: getFirebase.user());
+                },
+              ),
+            //Atualização
             ListTile(
               leading: Icon(Icons.update),
               title: Text(MyMenus.ATUALIZACAO),
               onTap: () {
-                Navigator.pop(context);
                 onAtualizarTap();
+                Navigator.pop(context);
               },
             ),
+            //Loguot
             ListTile(
-              leading: Icon(Icons.account_circle),
+              leading: Icon(Icons.highlight_off),
               title: Text(MyMenus.LOGOUT),
               onTap: () {
                 Navigator.pop(context);
@@ -192,7 +206,9 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                   child: Tab(
                       iconMargin: EdgeInsets.all(0),
                       text: Titles.nav_titles_main[1],
-                      icon: SvgPicture.asset(MyIcons.ic_pesquisa_svg, color: navIconColor, width: navIconSize))),
+                      icon: SvgPicture.asset(MyIcons.ic_pesquisa_svg, color: navIconColor, width: navIconSize)
+                  )
+              ),
               Container(
                   height: navHeight,
                   child: Tab(
@@ -244,29 +260,47 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   //region Metodos
 
   Future<void> init() async {
-    var result = await getFirebase.init(context);
-    if (result == getFirebaseResult.ok) {
+    var result = await getFirebase.init();
+    try {
+      if (result == FirebaseInitResult.fUserNull)
+        throw Exception(FirebaseInitResult.fUserNull);
+
+      await OfflineData.readDirectorys();
+      if (await OfflineData.readOfflineData()) {
+        User item = await getUsers.get(getFirebase.fUser().uid);
+        if (item != null)
+          getFirebase.setUser(item);
+        setState(() {
+          inicializado = true;
+        });
+      }
+
+      //Obtem os dados do usuário logado
+      if (!await getFirebase.atualizarOfflineUser()) {
+        var result2 = await Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+        if (result2 == null) throw Exception(FirebaseInitResult.userNull);
+         else Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+      }
+
+      getFirebase.initNotificationManager(context);
+
+      getFirebase.observMyFirebaseData();
+
+      await getUsers.baixar();
       setState(() {
         inicializado = true;
       });
-      await getUsers.baixar();
-      setState(() {
-        currentIndex = 1;
-      });
-    } else if (result == getFirebaseResult.userNull) {
-      var result2 = await Navigator.of(context).pushNamed(MeuPerfilPage.tag);
-      if (result2 != null ) {
-        await getUsers.baixar();
-        setState(() {
-          inicializado = true;
-          currentIndex = 1;
-        });
-      }
-      else
-        Navigator.of(context).pushReplacementNamed(LoginPage.tag);
-    }
-    else
+
+      await OfflineData.saveOfflineData();
+      await getUsers.saveFotosPerfilLocal();
+      await getPosts.saveFotosLocal();
+
+      OfflineData.deletefile(OfflineData.appTempPath, OfflineData.appTempName);
+
+    } catch(e) {
+      Log.e(TAG, 'init', e);
       Navigator.of(context).pushReplacementNamed(LoginPage.tag);
+    }
   }
 
   void onLogoutTap() {
@@ -278,10 +312,13 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
    void onAtualizarTap() async {
      Log.toast(context, 'Verificando Atualização');
+     if(await openFile()) {
+       return;
+     }
      var resultData = await Import.buscarAtualizacao();
 
      if(resultData != null) {
-       showDialog(
+       var result = await showDialog(
            context: context,
            barrierDismissible: false,
            builder: (BuildContext context) {
@@ -290,22 +327,80 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                content: Text(MyStrings.BAIXAR_ATUALIZACAO),
                actions: <Widget>[
                  FlatButton(
-                   child: Text('Fechar'),
+                   child: Text(MyStrings.CANCELAR),
                    onPressed: () {
-                     Navigator.of(context).pop();
+                     Navigator.of(context).pop(false);
                    },
                  ),
                  FlatButton(
-                   child: Text('Baixar'),
+                   child: Text(MyStrings.BAIXAR),
                    onPressed: () {
-                     Import.openUrl(context, resultData);
-                     Navigator.of(context).pop();
+                     Navigator.of(context).pop(true);
                    },
                  ),
                ],
              );
            }
        );
+       if (result) {
+         double progressBarValue = 0;
+         final ProgressDialog pr = ProgressDialog(context, type: ProgressDialogType.Download, isDismissible: false);
+         pr.style(
+             message: MyStrings.BAIXANDO,
+             borderRadius: 10.0,
+             backgroundColor: Colors.white,
+             progressWidget: CircularProgressIndicator(),
+             elevation: 10.0,
+             insetAnimCurve: Curves.easeInOut,
+             progress: 0.0,
+             maxProgress: 100.0,
+             progressTextStyle: TextStyle(color: Colors.black, fontSize: 13.0, fontWeight: FontWeight.w400),
+             messageTextStyle: TextStyle(color: Colors.black, fontSize: 19.0, fontWeight: FontWeight.w600)
+         );
+
+         CancelToken cancelToken = CancelToken();
+         OfflineData.downloadFile(resultData, OfflineData.appTempPath, OfflineData.appTempName,
+             override: true, cancelToken: cancelToken, onProgress: (rec, total) {
+               progressBarValue = ((rec / total) * 100).floorToDouble();
+               pr.update(progress: progressBarValue, maxProgress: 100.0);
+//               Log.d(TAG, 'onAtualizarTap', progressBarValue);
+               if (progressBarValue >= 100) {
+                 if (pr.isShowing())
+                   pr.hide();
+                 openFile();
+                 Log.d(TAG, 'Atualizar', 'Comprete');
+               }
+             });
+
+         await pr.show();
+
+         /*showDialog(
+             context: context,
+             barrierDismissible: false,
+             builder: (BuildContext context) {
+               return AlertDialog(
+                 title: Text(MyStrings.BAIXANDO),
+                 content: progressBar,
+                 actions: <Widget>[
+                   FlatButton(
+                     child: Text(MyStrings.CANCELAR),
+                     onPressed: () {
+                       cancelToken.cancel();
+                       Navigator.of(context).pop();
+                     },
+                   ),
+                   FlatButton(
+                     child: Text(MyStrings.SEGUNDO_PLANO),
+                     onPressed: () {
+                       Navigator.of(context).pop();
+                     },
+                   ),
+                 ],
+               );
+             }
+         );*/
+       }
+//       Import.openUrl(resultData, context);
      } else
        Log.toast(context, 'Sem Atualização');
   }
@@ -315,6 +410,18 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       _currentTitle = Titles.main_page[index];
       currentIndex = index;
     });
+  }
+
+
+  Future<bool> openFile() async {
+    final filePath = OfflineData.appTempPath + '/' + OfflineData.appTempName;
+    final result = await OpenFile.open(filePath);
+
+    setState(() {
+      var _openResult = "type=${result.type}  message=${result.message}";
+      Log.d(TAG, 'openFile', _openResult);
+    });
+    return result.type == ResultType.done;
   }
 
   //endregion
@@ -355,10 +462,13 @@ class DataSearch extends SearchDelegate<String> {
 
     return ListView.builder(itemBuilder: (context, index) {
       User item = list[index];
+      bool fotoLocalExist = item.dados.fotoLocalExist;
       return ListTile(
         leading: ClipRRect(
             borderRadius: BorderRadius.circular(50),
-            child: Image.network(
+            child: fotoLocalExist ?
+                Image.file(File(item.dados.fotoLocal)) :
+            Image.network(
                 item.dados.foto,
                 errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
             )

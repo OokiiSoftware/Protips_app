@@ -1,6 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:protips/auxiliar/import.dart';
 import 'package:protips/pages/about_page.dart';
 import 'package:protips/pages/cadastro_page.dart';
 import 'package:protips/pages/crop_page.dart';
@@ -9,9 +7,12 @@ import 'package:protips/pages/login_page.dart';
 import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/pages/notificacoes_page.dart';
 import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/new_post_page.dart';
 import 'package:protips/pages/post_page.dart';
 import 'package:protips/pages/recuperar_senha_page.dart';
 import 'package:protips/res/resources.dart';
+
+import 'auxiliar/notification_manager.dart';
 
 void main() => runApp(Main());
 
@@ -20,9 +21,10 @@ class Main extends StatelessWidget {
   final routes = <String, WidgetBuilder> {
     LoginPage.tag: (context) => LoginPage(),
     MainPage.tag: (context) => MainPage(),
-    PostPage.tag: (context) => PostPage(),
     AboutPage.tag: (context) => AboutPage(),
+    PostPage.tag: (context) => PostPage(),
     PerfilPage.tag: (context) => PerfilPage(),
+    NewPostPage.tag: (context) => NewPostPage(),
     CadastroPage.tag: (context) => CadastroPage(),
     MeuPerfilPage.tag: (context) => MeuPerfilPage(),
     CropImagePage.tag: (context) => CropImagePage(),

@@ -2,6 +2,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+class SharedPreferencesKey {
+  static const String EMAIL = "email";
+  static const String ULTIMO_TOKEM = "ultimo_tokem";
+}
+
 class FirebaseChild {
   static const String IDENTIFICADOR = "identificadores";
   static const String USUARIO = "usuarios";
@@ -17,6 +22,7 @@ class FirebaseChild {
   static final String TELEFONE = "telefone";
 
   static const String TAGS = 'tags';
+  static const String LOGS = 'logs';
 
   static final String SOLICITACAO_NOVO_TIPSTER = "solicitacao_novo_tipster";
   static final String SEGUIDORES = "seguidores";
@@ -26,17 +32,20 @@ class FirebaseChild {
   static final String ESPORTES = "esportes";
   static final String LINHAS = "linhas";
   //Use LINHAS
-  @deprecated
+//  @deprecated
 //  static final String MERCADOS = "mercados";
-  static final String BLOQUEADO = "bloqueado";
+//  static final String BLOQUEADO = "bloqueado";
+  static final String IS_BLOQUEADO = "isBloqueado";
   static final String ADMINISTRADORES = "administradores";
   static final String VERSAO = "versao";
   static final String APP = "app";
   static final String APK = "apk";
   static final String IOS = "ios";
-  static final String TIPSTER = "tipster";
-  static final String TOKENS = "token";
+  static final String IS_TIPSTER = "isTipster";
+  static final String TOKENS = "tokens";
   static final String MESSAGES = "messages";
+  static final String NOTIFICACOES = "notificacoes";
+  static final String NOTIFICATIONS = "notifications";
   static final String AUTO_COMPLETE = "auto_complete";
   static final String CAMPEONATOS = "campeonatos";
 }
@@ -51,10 +60,12 @@ class MyTooltips {
 class MyStrings {
   static const String APP_NAME = 'ProTips';
   static const String app_email = 'protips@gmail.com';
-  static const String app_whatsapp = '(99) 98110-2438';
+  static const String app_whatsapp = '(88) 9996-4046';
   static const String company_email = 'okisoftware@gmail.com';
 
   static final String EXCLUIR = "Excluir";
+  static final String BAIXANDO = "Baixando";
+  static final String BAIXAR = "Baixar";
   static final String EXISTE = "Existe";
   static final String SIM = "Sim";
   static final String NAO = "Não";
@@ -63,7 +74,8 @@ class MyStrings {
   static const String BAIXAR_ATUALIZACAO = 'Baixar atualização';
   static const String AGUARDE = 'Aguarde..';
   static const String solicitacao_tipster = 'Solicitação para ser um Tipster';
-  static const String solicitacao_tipster_mensagem = 'Entre em contato com\nEmail: ' + app_email + '\nWhatsApp: ' + app_whatsapp;
+  static const String solicitacao_tipster_mensagem = 'Entre em contato com\nEmail: ' + app_email + '\nWhatsApp: ';
+  static const String solicitacao_filiado_mensagem = 'Não quero mais sem um Tipster';
   static const String solicitacao_filiado = 'Solicitação para ser um Filiado';
 
   static const String SOLICITAR = 'Solicitar';
@@ -78,6 +90,7 @@ class MyStrings {
   static const String ABRIR_IMAGEM = 'Abrir Imagem';
   static const String CONCLUIR = 'Concluir';
   static const String CANCELAR = 'Cancelar';
+  static const String SEGUNDO_PLANO = 'Segundo Plano';
   static const String POSTAR = 'Postar';
   static const String TITULO = 'Titulo';
   static const String LEGENDA = 'Legenda';
@@ -145,6 +158,9 @@ class MyColors {
 class MyTexts {
   static const ORDEM_POR = 'Ordem por';
   static const EXCLUIR_POST_PERMANENTE = 'Excluir este post permanentemente?';
+  static const SOLICITACAO_FILIAL = 'Solicitação de Filialdo';
+  static const SOLICITACAO_ACEITA = 'Solicitação Aceita';
+  static const NOVO_TIP = 'Novo Tip';
 }
 
 class MyMenus {
@@ -198,6 +214,7 @@ class MyIcons {
   static const String ic_pesquisa = 'assets/icons/ic_pesquisa.png';
   static const String ic_pesquisa_svg = 'assets/icons/ic_pesquisa.svg';
   static const String ic_positivo = 'assets/icons/ic_positivo.png';
+  static const String ic_image_broken = 'assets/icons/ic_image_broken.png';
 }
 
 class MyTheme {
@@ -225,7 +242,7 @@ class Titles {
   static const POST_TIP = 'POSTAR TIP';
   static const NOTIFICACOES = 'NOTIFICAÇÕES';
 
-  static const String TITLE_MAIN = 'PRO TIPS';
+  static const String TITLE_MAIN = 'PROTIPS';
   static const String TITLE_ABOUT = 'SOBRE NÓS';
 
 

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/user.dart';
@@ -109,12 +110,16 @@ class MyWidgetState extends State<FragmentPesquisa> {
   }
 
   Widget _itemLayout(User item) {
+    double fotoUserSize = 50;
+    bool fotoLocalExist = item.dados.fotoLocalExist;
+
     return ListTile(
       leading: ClipRRect(
           borderRadius: BorderRadius.circular(50),
-          child: Image.network(
-              item.dados.foto,
-              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
+          child: fotoLocalExist ?
+          Image.file(File(item.dados.fotoLocal), width: fotoUserSize, height: fotoUserSize) :
+          Image.network(item.dados.foto, width: fotoUserSize, height: fotoUserSize,
+              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoUserSize, height: fotoUserSize)
           )
       ),
       title: Text(item.dados.nome),

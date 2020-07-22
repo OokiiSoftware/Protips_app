@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
 
 class Post {
@@ -15,6 +16,7 @@ class Post {
   String _link;
   String _descricao;
   String _foto;
+  String _fotoLocal;
   String _odd_maxima;
   String _odd_minima;
   String _odd_atual;
@@ -31,7 +33,7 @@ class Post {
 
   Post();
 
-  Post.fromMap(Map map) {
+  Post.fromJson(Map<dynamic, dynamic> map) {
     id = map['id'];
     foto = map['foto'];
     titulo = map['titulo'];
@@ -55,7 +57,7 @@ class Post {
     bom = map['bom'];
   }
 
-  Map toMap() => {
+  Map<String, dynamic> toJson() => {
     "id": id,
     "foto": foto,
     "titulo": titulo,
@@ -77,12 +79,12 @@ class Post {
     "ruim": ruim,
   };
 
-  static Map<String, Post> fromMapList(Map map) {
+  static Map<String, Post> fromJsonList(Map map) {
     Map<String, Post> items = Map();
     if (map == null)
       return items;
     for (String key in map.keys)
-      items[key] = Post.fromMap(map[key]);
+      items[key] = Post.fromJson(map[key]);
     return items;
   }
 
@@ -99,21 +101,17 @@ class Post {
         .child(id_tipster)
         .child(FirebaseChild.POSTES)
         .child(Cript.encript(data))
-        .set(toMap())
-        .then((value) {
-//          for (User user in getSeguindo.users.values) {
-//            MyNotificationManager.getInstance(activity).sendNewPost(this, user);
-//          }
-          return true;
-        })
+        .set(toJson())
+        .then((value) => true)
         .catchError((e) {
           Log.e(TAG, 'postar', e);
           return false;
         });
 
-//    Import.get.seguindo.add(this);
-//    Import.getFirebase.getTipster().getPostes().put(getId(), this);
-
+    if (result)
+      for (User user in getSeguidores.users.values) {
+        await getFirebase.notificationManager.sendPost(this, user);
+      }
     Log.d(TAG, 'postar', result);
     return result;
   }
@@ -370,6 +368,17 @@ class Post {
 
   set foto(String value) {
     _foto = value;
+  }
+
+  bool get fotoLocalExist {
+    File file = File(fotoLocal);
+    return file.existsSync() ;
+  }
+
+  String get fotoLocal {
+    if (_fotoLocal == null)
+      _fotoLocal = id + '.jpg';
+    return _fotoLocal;
   }
 
   /*String get texto => _texto ?? '';

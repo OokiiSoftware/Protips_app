@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/notificacao.dart';
@@ -56,14 +57,17 @@ class MyWidgetState extends State<NotificacoesPage> {
         });
       },
       children: data.map<ExpansionPanel>((Notificacao item) {
+        bool fotoLocal = item.isFotoLocal;
+        double fotoUserSize = 50;
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
               leading: ClipRRect(
                   borderRadius: BorderRadius.circular(50),
-                  child: Image.network(
-                      item.foto,
-                      errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
+                  child: fotoLocal ?
+                  Image.file(File(item.foto), width: fotoUserSize, height: fotoUserSize) :
+                  Image.network(item.foto, width: fotoUserSize, height: fotoUserSize,
+                      errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoUserSize, height: fotoUserSize)
                   )
               ),
               title: Text(item.titulo),
@@ -83,16 +87,19 @@ class MyWidgetState extends State<NotificacoesPage> {
     );
   }
 
-  _addSeguidoresPendentes() {
+  _addSeguidoresPendentes() async {
     for (String key in user.seguidoresPendentes.values) {
-      User item = getUsers.get(key);
+      User item = await getUsers.get(key);
+      if (item== null)
+        continue;
       String id = randomString(10);
       String subtitulo = 'Solicitação de Filial';
       String titulo = item.dados.nome;
       String eTitulo = 'Clique para aceitar ou recurar esta solicitação';
       String eSubtitulo = 'Clique e segure para remover esta notificação';
-      String foto = item.dados.foto;
-      Notificacao n = Notificacao(id: id, titulo: titulo, subtitulo: subtitulo, eTitulo: eTitulo, eSubtitulo: eSubtitulo, foto: foto, onTap: () {
+      String foto = item.dados.fotoLocalExist ? item.dados.fotoLocal : item.dados.foto;
+      Notificacao n = Notificacao(id: id, titulo: titulo, subtitulo: subtitulo, isFotoLocal: item.dados.fotoLocalExist,
+          eTitulo: eTitulo, eSubtitulo: eSubtitulo, foto: foto, onTap: () {
         Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
       },
       onLongPress: () {
@@ -101,7 +108,9 @@ class MyWidgetState extends State<NotificacoesPage> {
         });
       });
 
-      data.add(n);
+      setState(() {
+        data.add(n);
+      });
     }
   }
 

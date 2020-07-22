@@ -1,26 +1,27 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/meu_perfil_page.dart';
-import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/post_page.dart';
 import 'package:protips/res/resources.dart';
 
 class FragmentInicio extends StatefulWidget {
-  List<Post> data;
-  FragmentInicio({this.data});
+  User user;
+  FragmentInicio({this.user});
   @override
-  State<StatefulWidget> createState() => MyWidgetState(data: data);
+  State<StatefulWidget> createState() => MyWidgetState(user: user);
 }
 class MyWidgetState extends State<FragmentInicio> {
 
-  MyWidgetState({this.data});
+  MyWidgetState({this.user});
 
   //region Variaveis
   static const String TAG = 'FragmentInicio';
 
-  List<Post> data = List<Post>();
+  User user;
+  List<Post> data;
   static bool canOpenPerfil = false;
 
   static double progressBarValue = 0;
@@ -33,11 +34,13 @@ class MyWidgetState extends State<FragmentInicio> {
   @override
   void initState() {
     super.initState();
-    if (data == null) {
-      data = List<Post>();
-      canOpenPerfil = true;
+    data = List<Post>();
+    canOpenPerfil = user == null;
+    if (user == null) {
+      _preencherLista(getPosts.postes);
+    } else {
+      _preencherLista(user.postes.values.toList());
     }
-    _onRefresh();
     progressBar = CircularProgressIndicator(value: progressBarValue);
   }
 
@@ -68,6 +71,10 @@ class MyWidgetState extends State<FragmentInicio> {
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
 
+    double fotoUserSize = 40;
+    bool fotoLocalExist = item.fotoLocalExist;
+    bool fotoLocalUserExist = user.dados.fotoLocalExist;
+
     return Container(
       alignment: Alignment.center,
       child: Column(children:[
@@ -85,11 +92,11 @@ class MyWidgetState extends State<FragmentInicio> {
                       Image.asset(MyIcons.ic_person, color: Colors.black) :
                       ClipRRect(
                           borderRadius: BorderRadius.circular(50),
-                          child: Image.network(
-                              user.dados.foto,
-                              width: 40,
-                              height: 40,
-                              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
+                          child: fotoLocalUserExist ?
+                          Image.file(File(user.dados.fotoLocal), width: fotoUserSize, height: fotoUserSize) :
+                          Image.network(
+                              user.dados.foto, width: fotoUserSize, height: fotoUserSize,
+                              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoUserSize, height: fotoUserSize)
                           )
                       )
                   ),
@@ -105,7 +112,7 @@ class MyWidgetState extends State<FragmentInicio> {
                   //Menu
                   PopupMenuButton<String>(
                       onSelected: (String result) {
-                        _onMenuItemPostCliked(result, item);
+                        onMenuItemPostCliked(result, item);
                       },
                       itemBuilder: (BuildContext context) {
                         var list = List<String>();
@@ -124,12 +131,16 @@ class MyWidgetState extends State<FragmentInicio> {
                 ],
               ),
             ),
-            onTap: canOpenPerfil ? () {
-              if (user.dados.id == getFirebase.fUser().uid)
-                Navigator.of(context).pushNamed(MeuPerfilPage.tag);
-              else
-                Navigator.of(context).pushNamed(PerfilPage.tag, arguments: user);
-            } : null,
+            onTap: () async {
+              Map<String, String> args = Map();
+              args['itemKey'] = item.data;
+              args['canOpenPerfil'] = canOpenPerfil.toString();
+              var result = await Navigator.of(context).pushNamed(PostPage.tag, arguments: args);
+              if (result != null && result == 'excluido')
+                setState(() {
+                  data.removeWhere((e) => e.id == item.id);
+                });
+            },
           ),
          Divider(
             color: MyTheme.accent(),
@@ -144,11 +155,11 @@ class MyWidgetState extends State<FragmentInicio> {
           ),
         //Foto
         Container(
-              child: item == null ?
-              Image.asset(MyIcons.ic_person, color: Colors.black) :
+              child: fotoLocalExist ?
+              Image.file(File(item.fotoLocal)) :
               Image.network(
                   item.foto,
-                  errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
+                  errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_image_broken)
               )
           ),
         divider,
@@ -215,20 +226,20 @@ class MyWidgetState extends State<FragmentInicio> {
     );
   }
 
-  _onMenuItemPostCliked(String value, Post post) {
+  onMenuItemPostCliked(String value, Post post) {
     switch(value) {
       case MyMenus.ABRIR_LINK:
-        Import.openUrl(context, post.link);
+        Import.openUrl(post.link, context);
         break;
       case MyMenus.EXCLUIR:
-        _onDelete(post);
+        onDelete(post);
         break;
       case MyMenus.DENUNCIAR:
         break;
     }
   }
 
-  _onDelete(Post item) async {
+  onDelete(Post item) async {
     progressBarValue = 0;
     String titulo = MyStrings.EXCLUIR;
     showDialog(
@@ -270,8 +281,15 @@ class MyWidgetState extends State<FragmentInicio> {
   Future<void> _onRefresh() async {
     await getUsers.baixar();
     data.clear();
-    data.addAll(getPosts.postes);
+    if (user == null)
+      _preencherLista(getPosts.postes);
+    else
+      _preencherLista(user.postes.values.toList());
     setState(() {});
+  }
+
+  _preencherLista(List<Post> list) {
+    data.addAll(list..sort((a, b) => a.data.compareTo(b.data)));
   }
 
   //endregion

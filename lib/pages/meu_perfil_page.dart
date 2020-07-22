@@ -126,6 +126,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
     //endregion
 
     progressBar = LinearProgressIndicator(value: progressBarValue);
+    bool fotoLocalExist = user.dados.fotoLocalExist;
 
     _souUm.text = souUm;
     _nascimento.text = dateNascimentoValue;
@@ -153,6 +154,8 @@ class MyWidgetState extends State<MeuPerfilPage> {
                   children: [
                     GestureDetector(
                       child: _fotoLocal == null ?
+                fotoLocalExist ?
+                Image.file(File(user.dados.fotoLocal)) :
                       _fotoWeb.isEmpty ?
                       Image.asset(MyIcons.ic_person) :
                       Image.network(
@@ -235,34 +238,11 @@ class MyWidgetState extends State<MeuPerfilPage> {
                   }),
                   CustomTextField(_email, TextInputType.emailAddress, MyStrings.EMAIL, readOnly: true),
                   CustomTextField(_telefone, TextInputType.phone, MyStrings.TELEFONE),
-                  CustomTextField(_nascimento, TextInputType.datetime, MyStrings.NASCIMENTO, dataIdadeMinima: _nascimentoIdadeMinima, onTap: () {
+                  //Nascimento
+                  CustomTextField(_nascimento, TextInputType.datetime, MyStrings.NASCIMENTO, dataIdadeMinima: _nascimentoIdadeMinima, readOnly: true, onTap: () {
                     _nascimentoIdadeMinima = false;
                     _selectDate(context);
                   }),
-                  //Nascimento
-                  /*Container(
-                    margin: itemMargin,
-                    padding: itemPadding,
-                    decoration: itemDecoration,
-                    child: TextField(
-                      controller: _nascimento,
-                      keyboardType: TextInputType.datetime,
-                      style: itemTextStyle,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        enabledBorder: itemlBorder,
-                        focusedBorder: itemlBorder,
-                        prefixStyle: _nascimentoIsEmpyt ? itemPrefixStyleErro : itemPrefixStyle,
-                        prefixText: MyStrings.NASCIMENTO + '\t',
-                        labelText: _nascimentoIdadeMinima ? MyStrings.IDADE_MINIMA : null,
-                      ),
-                      onTap: () {
-                        _nascimentoIdadeMinima = false;
-                        _nascimentoIsEmpyt = false;
-                        _selectDate(context);
-                      },
-                    ),
-                  ),*/
                   //Estado
                   CustomDropdownButton(_dropDownEstados, _currentEstado, MyStrings.ESTADO),
                   //Privacidade
@@ -278,12 +258,12 @@ class MyWidgetState extends State<MeuPerfilPage> {
                   //Descrição
                   CustomTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO),
                   //Sou Um
-                  CustomTextField(_souUm, TextInputType.name, MyStrings.SOU_UM),
+                  CustomTextField(_souUm, TextInputType.name, MyStrings.SOU_UM, readOnly: true),
 
-                  //Button
-                  Container(
+                  //Button Sotilitar Ser Tipster
+                 if (!isPrimeiroLogin)
+                   Container(
                     margin: EdgeInsets.fromLTRB(containerPadding, 0, containerPadding, _containerPaddingTop),
-
                     decoration: itemDecoration,
                     child: ButtonTheme(
                       child: FlatButton(
@@ -310,6 +290,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
 
   //region Metodos
 
+  // ignore: non_constant_identifier_names
   Widget CustomTextField(TextEditingController _controller, TextInputType _inputType, String prefixText, {void onTap(), bool readOnly = false, bool valueIsEmpty,  bool dataIdadeMinima, bool tipNameExiste}) {
     //region Variaveis
     double containerPadding = 30;
@@ -348,6 +329,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
     );
   }
 
+  // ignore: non_constant_identifier_names
   Widget CustomDropdownButton(List<DropdownMenuItem<String>> items, String _currenValue, String prefixText) {
     //region Variaveis
     double containerPadding = 30;
@@ -398,7 +380,8 @@ class MyWidgetState extends State<MeuPerfilPage> {
       bool resultOK = await dados.salvar(context);
       if (resultOK) {
         user.dados = dados;
-        getFirebase.setUser(user, true);
+        getFirebase.setUser(user);
+        await OfflineData.saveOfflineData();
         currentPhoto = user.dados.foto;
         if (isPrimeiroLogin) {
           await dados.addIdentificador();
@@ -437,9 +420,8 @@ class MyWidgetState extends State<MeuPerfilPage> {
     dados.isPrivado = _currentPrivacidade == Arrays.privacidade[1];
     dados.endereco.estado = _currentEstado;
 
-    dados.tags = user.dados.tags;
     dados.isTipster = user.dados.isTipster;
-    dados.bloqueado = user.dados.bloqueado;
+    dados.isBloqueado = user.dados.isBloqueado;
     return dados;
   }
 
@@ -519,17 +501,62 @@ class MyWidgetState extends State<MeuPerfilPage> {
   void _solicitarAlterarCategoria() {
     bool b = user.solicitacaoEmAndamento();
     if (user.dados.isTipster && !b) {
-
+      _solicitarSerFiliado();
     } else {
       _solicitarSerTipster(b);
     }
   }
 
 
+  _solicitarSerFiliado() {
+    String title = MyStrings.solicitacao_filiado;
+    String mensagem = MyStrings.solicitacao_filiado_mensagem;
+
+    String okButton = MyStrings.OK;
+    String cancelButton = MyStrings.CANCELAR;
+
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(title),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text(mensagem),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              FlatButton(
+                child: Text(cancelButton),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              FlatButton(
+                child: Text(okButton),
+                onPressed: () async {
+                  if (await user.habilitarTipster(false)) {
+                    getTipster.remove(user.dados.id);
+                    getPosts.removeAll(user.dados.id);
+                  }
+                  setState(() {
+                    souUm = MyStrings.FILIADO;
+                  });
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        }
+    );
+  }
 
   void _solicitarSerTipster(final bool solicitei) {
     String title = MyStrings.solicitacao_tipster;
     String mensagem = MyStrings.solicitacao_tipster_mensagem;
+    String whatsapp = MyStrings.app_whatsapp;
 
     String okButton = solicitei ? MyStrings.OK : MyStrings.SOLICITAR;
     String cancelButton = solicitei ? MyStrings.CANCELAR_SOLICITACAO : MyStrings.CANCELAR;
@@ -543,6 +570,12 @@ class MyWidgetState extends State<MeuPerfilPage> {
               child: ListBody(
                 children: <Widget>[
                   Text(mensagem),
+                  GestureDetector(
+                    child: Text(whatsapp, style: TextStyle(color: MyTheme.primary(), fontStyle: FontStyle.italic)),
+                    onTap: () {
+                      Import.openWhatsApp(context, whatsapp);
+                    },
+                  )
                 ],
               ),
             ),

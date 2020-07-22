@@ -8,7 +8,7 @@ import 'package:protips/model/user_dados.dart';
 import 'package:protips/pages/crop_page.dart';
 import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/pages/notificacoes_page.dart';
-import 'package:protips/pages/post_page.dart';
+import 'package:protips/pages/new_post_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:random_string/random_string.dart';
 
@@ -37,7 +37,7 @@ class MyWidgetState extends State<FragmentPerfil> {
   void initState() {
     super.initState();
     progressBar = LinearProgressIndicator(value: progressBarValue);
-    data.addAll(getFirebase.user().post_perfil.values.toList()..sort((a, b) => a.data.compareTo(b.data)));
+    data.addAll(getFirebase.user().postPerfil.values.toList()..sort((a, b) => a.data.compareTo(b.data)));
   }
 
   @override
@@ -45,6 +45,8 @@ class MyWidgetState extends State<FragmentPerfil> {
     //region Variaveis
     double itemFontSize = 15;
     double itemSpacing = 3;
+    double fotoSize = 90;
+
     Color itemColor = MyTheme.primaryLight2();
     var itemTextStyle = TextStyle(color: MyTheme.textColor(), fontSize: itemFontSize);
     var headItemPadding = Padding(padding: EdgeInsets.only(left: 3));
@@ -60,7 +62,8 @@ class MyWidgetState extends State<FragmentPerfil> {
     UserDados dados = user.dados;
 
     String foto = dados.foto;
-    bool fotoNull = foto == null || foto.isEmpty;
+    String fotoLocal = dados.fotoLocal;
+    bool fotoLocalExist = dados.fotoLocalExist;
 
     if (user.seguidoresPendentes.length > 0)
       hasNotificacao = true;
@@ -75,8 +78,7 @@ class MyWidgetState extends State<FragmentPerfil> {
             expandedHeight: headerHeight,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                height: headerHeight,
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.fromLTRB(15, 20, 10, 15),
                 color: MyTheme.primaryLight(),
                 child: Row(
                   children: [
@@ -88,24 +90,23 @@ class MyWidgetState extends State<FragmentPerfil> {
                           child: Stack(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
-                                child: fotoNull ? Image.asset(MyIcons.ic_person) :
-                                Image.network(foto,
-                                    width: 100,
-                                    height: 100,
-                                    errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)),
+                                borderRadius: BorderRadius.circular(100),
+                                child: fotoLocalExist ? Image.file(File(fotoLocal), width: fotoSize, height: fotoSize) :
+                                foto.isEmpty ? Image.asset(MyIcons.ic_person) :
+                                Image.network(foto, width: fotoSize, height: fotoSize,
+                                    errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoSize, height: fotoSize)),
                               ),
                               Align(
-                                alignment: Alignment.bottomRight,
-                                child: Padding(
-                                  padding: EdgeInsets.all(10),
-                                  child: Icon(Icons.add_circle, size: 35, color: MyTheme.accent())
-                              ))
+                                  alignment: Alignment.bottomRight,
+                                  child: Padding(
+                                      padding: EdgeInsets.only(left: 5, bottom: 10),
+                                      child: Icon(Icons.add_circle, size: 30, color: MyTheme.accent())
+                                  ))
                             ],
                           ),
                           onTap: () {
                             _onPerfilPage();
-                        },
+                          },
                         ),
                       ),
                     ),
@@ -144,8 +145,8 @@ class MyWidgetState extends State<FragmentPerfil> {
                             Icon(Icons.group, color: itemColor),
                             headItemPadding,
                             Text((dados.isTipster ? MyStrings.FILIADOS : MyStrings.TIPSTERS) + ': ' +
-                                    (dados.isTipster ? user.seguidores.values.length.toString() :
-                                    user.seguindo.values.length.toString()), style: itemTextStyle)
+                                (dados.isTipster ? user.seguidores.values.length.toString() :
+                                user.seguindo.values.length.toString()), style: itemTextStyle)
                           ],
                         ),
                       ],
@@ -169,7 +170,7 @@ class MyWidgetState extends State<FragmentPerfil> {
           //Grid Botões
           SliverPadding(
             padding: EdgeInsets.only(left: 5, right: 5),
-            sliver: dados.isTipster ? SliverGrid.count(
+            sliver: SliverGrid.count(
               crossAxisSpacing: gridSpace,
               mainAxisSpacing: gridSpace,
               crossAxisCount: 3,
@@ -177,43 +178,33 @@ class MyWidgetState extends State<FragmentPerfil> {
                 buttonNotificacoes(gridItemPadding, gridItemBackground),
                 buttonN(gridItemPadding, gridItemBackground),
                 buttonF(gridItemPadding, gridItemBackground),
-                buttonNewPost(gridItemBackground),
-                buttonNewPerfilPost(gridItemBackground),
+                if(dados.isTipster) buttonNewPost(gridItemBackground),
+                if(dados.isTipster) buttonNewPerfilPost(gridItemBackground),
               ],
-            ) :
-            SliverGrid.count(
-              crossAxisSpacing: gridSpace,
-              mainAxisSpacing: gridSpace,
-              crossAxisCount: 3,
-              children: [
-                buttonNotificacoes(gridItemPadding, gridItemBackground),
-                buttonN(gridItemPadding, gridItemBackground),
-                buttonF(gridItemPadding, gridItemBackground),
-              ],
-            ),
+            )
           ),
 
-          SliverPadding(
+          //PostList Label
+          if(dados.isTipster)
+            SliverPadding(
             padding: EdgeInsets.all(0),
             sliver: SliverGrid.count(
               crossAxisCount: 1,
               childAspectRatio: 10,
               children: [
-                Container(
-                  child: dados.isTipster ? Container(
+                  Container(
                     height: 40,
                     margin: EdgeInsets.only(top: gridSpace),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(color: MyTheme.primaryDark()),
                     child: Text('Meus Posts'.toUpperCase(), style: itemTextStyle),
-                  ) :
-                  Container(),
-                ),
+                  )
               ],
             ),
           ),
           //PostList
-          SliverPadding(
+          if(dados.isTipster)
+            SliverPadding(
             padding: EdgeInsets.all(5),
             sliver: SliverGrid(
                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -440,7 +431,7 @@ class MyWidgetState extends State<FragmentPerfil> {
                   setState(() {
                     if (result) {
                       data.remove(item);
-                      getFirebase.user().post_perfil.remove(item.id);
+                      getFirebase.user().postPerfil.remove(item.id);
                     }
                   });
                 },
@@ -451,12 +442,13 @@ class MyWidgetState extends State<FragmentPerfil> {
     );
   }
 
-  _onPerfilPage() {
-    Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+  _onPerfilPage() async {
+    await Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+    setState(() {});
   }
 
   _onNewPost() {
-    Navigator.of(context).pushNamed(PostPage.tag);
+    Navigator.of(context).pushNamed(NewPostPage.tag);
   }
 
   //endregion

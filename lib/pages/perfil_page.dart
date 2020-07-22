@@ -1,11 +1,13 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
 
+// ignore: must_be_immutable
 class PerfilPage extends StatefulWidget {
   static const String tag = 'PerfilPage';
   User user;
@@ -44,6 +46,7 @@ class MyWidgetState extends State<PerfilPage> {
     if (user == null)
       user = getArgs();
     String foto = user.dados.foto;
+    bool fotoLocalExist = user.dados.fotoLocalExist;
 
     var eu = getFirebase.user();
     bool isMyPerfil = user.dados.id == getFirebase.fUser().uid;
@@ -54,9 +57,9 @@ class MyWidgetState extends State<PerfilPage> {
     bool isFilial = eu.seguidores.containsKey(user.dados.id);
 
     tabItems = [
-      itemsGrid(user.post_perfil.values.toList()..sort((a, b) => a.data.compareTo(b.data))),
-      itemsList(user.post_perfil.values.toList()..sort((a, b) => a.data.compareTo(b.data))),
-      FragmentInicio(data: user.postes.values.toList()..sort((a, b) => a.data.compareTo(b.data)))
+      itemsGrid(user.postPerfil.values.toList()..sort((a, b) => a.data.compareTo(b.data))),
+      itemsList(user.postPerfil.values.toList()..sort((a, b) => a.data.compareTo(b.data))),
+      FragmentInicio(user: user)
     ];
 
     double headerHeight = 200;
@@ -89,7 +92,9 @@ class MyWidgetState extends State<PerfilPage> {
                           padding: EdgeInsets.only(left: 15),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(70),
-                            child: foto == null ? Image.asset(MyIcons.ic_person) :
+                            child: fotoLocalExist ?
+                            Image.file(File(user.dados.fotoLocal)) :
+                            foto == null ? Image.asset(MyIcons.ic_person) :
                             Image.network(foto, errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)),
                           ),
                         ),
@@ -216,11 +221,11 @@ class MyWidgetState extends State<PerfilPage> {
                   if (isMyPerfil) {
                     list.remove(MyMenus.ABRIR_WHATSAPP);
                     list.remove(MyMenus.DENUNCIAR);
+                    list.add(MyMenus.MEU_PERFIL);
                   } else if (user.dados.isPrivado)
                     list.remove(MyMenus.ABRIR_WHATSAPP);
 
-                  return list.map((item) =>
-                      PopupMenuItem<String>(value: item, child: Text(item))).toList();
+                  return list.map((item) => PopupMenuItem<String>(value: item, child: Text(item))).toList();
                 }
             )
           ],
@@ -318,12 +323,16 @@ class MyWidgetState extends State<PerfilPage> {
     });
   }
 
-  _onMenuItemCliked(String value) {
+  _onMenuItemCliked(String value) async {
     switch(value) {
       case MyMenus.ABRIR_WHATSAPP:
         Import.openWhatsApp(context, user.dados.telefone);
         break;
       case MyMenus.DENUNCIAR:
+        break;
+      case MyMenus.MEU_PERFIL:
+        await Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+        setState(() {});
         break;
     }
   }

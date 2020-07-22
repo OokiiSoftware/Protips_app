@@ -14,7 +14,7 @@ description: A new Flutter application.
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.2.0 <3.0.0"
+  sdk: ">=2.2.2 <3.0.0"
 
 dependencies:
   firebase_core: ^0.4.4
@@ -22,16 +22,25 @@ dependencies:
   firebase_storage: ^3.1.6
   firebase_database: ^3.1.6
   firebase_analytics: ^1.0.4
-#  pull_to_refresh: ^1.6.0
+  firebase_messaging: ^6.0.16
+  google_api_availability: ^2.0.4
+  flutter_local_notifications: ^1.4.4+2
+  shared_preferences: ^0.5.8
+  progress_dialog: ^1.2.4
+  #pull_to_refresh: ^1.6.0
   google_sign_in: ^4.1.1
   image_picker: ^0.6.7+3
+  path_provider: ^1.6.11
   device_info: ^0.4.2+4
   random_string: ^2.1.0
   flutter_svg: ^0.18.0
   url_launcher: ^5.5.0
   fluttertoast: ^6.0.1
   image_crop: ^0.3.2
+  open_file: ^3.0.1
+  rxdart: ^0.24.1 # <- Subject
   intl: ^0.15.2
+  dio: any
   flutter:
     sdk: flutter
 
@@ -40,8 +49,19 @@ dependencies:
   cupertino_icons: ^0.1.2
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.7.5
+  flutter_launcher_name: ^0.0.1
   flutter_test:
     sdk: flutter
+
+flutter_icons:
+  image_path_android: "assets/icons/ic_launcher.png"
+  image_path_ios: "assets/icons/ic_launcher.png"
+  android: true
+  ios: true
+
+flutter_launcher_name:
+  name: 'ProTips222'
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

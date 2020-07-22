@@ -8,7 +8,9 @@ class Token {
   String _device;
   String _provider;
 
-  Token.from(Map map) {
+  Token();
+
+  Token.fromJson(Map map) {
     value = map['value'];
     data = map['data'];
     device = map['device'];
@@ -22,12 +24,21 @@ class Token {
     value = t.token;
   }
 
-  Map toMap() => {
+  Map toJson() => {
     'id': value,
     'data': data,
     'device': device,
     'provider': provider,
   };
+
+  static Map<String, Token> fromJsonList(Map map) {
+    Map<String, Token> items = Map();
+    if (map == null)
+      return items;
+    for (String key in map.keys)
+      items[key] = Token.fromJson(map[key]);
+    return items;
+  }
 
   //region get set
 

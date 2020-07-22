@@ -17,8 +17,8 @@ class UserDados {
 
   String _id;
   String _nome;
-  String _tags;
   String _foto;
+  String _fotoLocal;
   String _email;
   String _senha;
   String _tipname;
@@ -26,7 +26,7 @@ class UserDados {
   String _descricao;
   bool _isPrivado;
   bool _isTipster;
-  bool _bloqueado;
+  bool _isBloqueado;
   Data _nascimento;
   Endereco _endereco;
   //endregion
@@ -36,9 +36,8 @@ class UserDados {
     nascimento = new Data();
   }
 
-  UserDados.fromMap(Map map) {
+  UserDados.fromJson(Map<dynamic, dynamic> map) {
     id = map['id'];
-    tags = map['tags'];
     nome = map['nome'];
     email = map['email'];
     tipname = map['tipname'];
@@ -46,22 +45,22 @@ class UserDados {
     foto = map['foto'];
     telefone = map['telefone'];
     isPrivado = map['isPrivado'];
-    bloqueado = map['bloqueado'];
-    isTipster = map['tipster'];
+    isBloqueado = map['isBloqueado'];
+    isTipster = map['isTipster'];
     endereco = Endereco.from(map['endereco']);
     nascimento = Data.from(map['nascimento']);
   }
 
-  Map toMap() => {
+  Map<String, dynamic> toJson() => {
     "id": id,
-    "tags": tags,
     "foto": foto,
     "nome": nome,
     "email": email,
     "tipname": tipname,
     "isPrivado": isPrivado,
+    "isTipster": isTipster,
     "telefone": telefone,
-    "bloqueado": bloqueado,
+    "isBloqueado": isBloqueado,
     "descricao": descricao,
     "endereco": endereco.toMap(),
     "nascimento": nascimento.toMap(),
@@ -82,7 +81,7 @@ class UserDados {
         .child(FirebaseChild.USUARIO)
         .child(id)
         .child(FirebaseChild.DADOS)
-        .set(toMap()).then((value) {
+        .set(toJson()).then((value) {
           Log.d(TAG, 'salvar', 'OK');
           return true;
         }).catchError((e) {
@@ -156,40 +155,6 @@ class UserDados {
         .catchError((e) => null);
   }
 
-  Future<bool> addTag(String tag) async {
-    if (tags.contains(tag))
-      return null;
-    tags+= tag;
-    var result = await getFirebase.databaseReference()
-        .child(FirebaseChild.USUARIO)
-        .child(id)
-        .child(FirebaseChild.DADOS)
-        .child(FirebaseChild.TAGS)
-        .set(tags)
-        .then((value) => true)
-        .catchError((e) => false);
-
-    Log.d(TAG, 'addTag', result);
-    return result;
-  }
-
-  Future<bool> removeTag(String tag) async {
-    if (!tags.contains(tag))
-      return null;
-    tags = tags.replaceAll(tag, '');
-    var result = await getFirebase.databaseReference()
-        .child(FirebaseChild.USUARIO)
-        .child(id)
-        .child(FirebaseChild.DADOS)
-        .child(FirebaseChild.TAGS)
-        .set(tags)
-        .then((value) => true)
-        .catchError((e) => false);
-
-    Log.d(TAG, 'removeTag', result);
-    return result;
-  }
-
   //endregion
 
   //region get set
@@ -200,10 +165,10 @@ class UserDados {
     _isTipster = value;
   }
 
-  bool get bloqueado => _bloqueado ?? false;
+  bool get isBloqueado => _isBloqueado ?? false;
 
-  set bloqueado(bool value) {
-    _bloqueado = value;
+  set isBloqueado(bool value) {
+    _isBloqueado = value;
   }
 
   bool get isPrivado => _isPrivado ?? false;
@@ -235,6 +200,22 @@ class UserDados {
   set foto(String value) {
     _foto = value;
   }
+
+
+  bool get fotoLocalExist {
+    File file = File(fotoLocal);
+    return file.existsSync() ;
+  }
+
+  String get fotoLocal {
+    if (_fotoLocal == null)
+      _fotoLocal = id + '.jpg';
+    return _fotoLocal;
+  }
+
+//  set fotoLocal(String value) {
+//    _fotoLocal = value;
+//  }
 
   String get senha => _senha ?? '';
 
@@ -270,12 +251,6 @@ class UserDados {
 
   set id(String value) {
     _id = value;
-  }
-
-  String get tags => _tags ?? '';
-
-  set tags(String value) {
-    _tags = value;
   }
 
   //endregion
