@@ -389,7 +389,7 @@ class MyWidgetState extends State<FragmentPerfil> {
                     post.foto = result.path;
                     post.titulo = _titulo.text;
                     post.texto = _legenda.text;
-                    post.id_tipster = getFirebase.fUser().uid;
+                    post.idTipster = getFirebase.fUser().uid;
                     post.data = DateTime.now().toString();
 
                     Navigator.of(context).pop();

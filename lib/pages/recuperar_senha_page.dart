@@ -48,12 +48,12 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
         ]
     );
 
-    var textfiedPadding = EdgeInsets.only(left: 10, right: 10);
+    var textfiedPadding = EdgeInsets.only(left: 15, right: 10);
     var textfiedLabelStyle = TextStyle(color: MyTheme.primary());
     var textfiedLabeErrorlStyle = TextStyle(color: Colors.red);
     var textfiedTextStyle = TextStyle(color: MyTheme.textColor());
 
-    progressBar = LinearProgressIndicator(value: progressBarValue,);
+    progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: MyTheme.primaryLight());
 
     if (!reload) {
       String email = ModalRoute.of(context).settings.arguments;
@@ -67,9 +67,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
     //endregion
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Recuperar Senha'),
-      ),
+      appBar: AppBar(title: Text(Titles.RECUPERAR_SENHA)),
       body: Container(
         alignment: Alignment.center,
         child: ListView(
@@ -118,6 +116,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
                 keyboardType: TextInputType.emailAddress,
                 style: textfiedTextStyle,
                 decoration: InputDecoration(
+                  contentPadding: EdgeInsets.fromLTRB(0, 0, 10, 0),
                   enabledBorder: textfiedlBorder,
                   focusedBorder: textfiedlBorder,
                   labelStyle: textfiedLabeErrorlStyle,

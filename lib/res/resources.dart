@@ -10,44 +10,44 @@ class SharedPreferencesKey {
 class FirebaseChild {
   static const String IDENTIFICADOR = "identificadores";
   static const String USUARIO = "usuarios";
-  static final String CONTATO = "contatos";
-  static final String DADOS = "dados";
-  static final String CONVERSAS = "conversas";
+  static const String CONTATO = "contatos";
+  static const String DADOS = "dados";
+  static const String CONVERSAS = "conversas";
 
-  static final String PERFIL = "perfil";
-  static final String POSTES = "postes";
-  static final String POSTES_PERFIL = "post_perfil";
+  static const String PERFIL = "perfil";
+  static const String POSTES = "postes";
+  static const String POSTES_PERFIL = "post_perfil";
 
-  static final String SEGUIDORES_PENDENTES = "seguidoresPendentes";
-  static final String TELEFONE = "telefone";
+  static const String SEGUIDORES_PENDENTES = "seguidoresPendentes";
+  static const String TELEFONE = "telefone";
 
   static const String TAGS = 'tags';
   static const String LOGS = 'logs';
 
-  static final String SOLICITACAO_NOVO_TIPSTER = "solicitacao_novo_tipster";
-  static final String SEGUIDORES = "seguidores";
-  static final String SEGUINDO = "seguindo";
-  static final String BOM = "bom";
-  static final String RUIM = "ruim";
-  static final String ESPORTES = "esportes";
-  static final String LINHAS = "linhas";
+  static const String SOLICITACAO_NOVO_TIPSTER = "solicitacao_novo_tipster";
+  static const String SEGUIDORES = "seguidores";
+  static const String SEGUINDO = "seguindo";
+  static const String BOM = "bom";
+  static const String RUIM = "ruim";
+  static const String ESPORTES = "esportes";
+  static const String LINHAS = "linhas";
   //Use LINHAS
 //  @deprecated
 //  static final String MERCADOS = "mercados";
 //  static final String BLOQUEADO = "bloqueado";
-  static final String IS_BLOQUEADO = "isBloqueado";
-  static final String ADMINISTRADORES = "administradores";
-  static final String VERSAO = "versao";
-  static final String APP = "app";
-  static final String APK = "apk";
-  static final String IOS = "ios";
-  static final String IS_TIPSTER = "isTipster";
-  static final String TOKENS = "tokens";
-  static final String MESSAGES = "messages";
-  static final String NOTIFICACOES = "notificacoes";
-  static final String NOTIFICATIONS = "notifications";
-  static final String AUTO_COMPLETE = "auto_complete";
-  static final String CAMPEONATOS = "campeonatos";
+  static const String IS_BLOQUEADO = "isBloqueado";
+  static const String ADMINISTRADORES = "administradores";
+  static const String VERSAO = "versao";
+  static const String APP = "app";
+  static const String APK = "apk";
+  static const String IOS = "ios";
+  static const String IS_TIPSTER = "isTipster";
+  static const String TOKENS = "tokens";
+  static const String MESSAGES = "messages";
+  static const String NOTIFICACOES = "notificacoes";
+  static const String NOTIFICATIONS = "notifications";
+  static const String AUTO_COMPLETE = "auto_complete";
+  static const String CAMPEONATOS = "campeonatos";
 }
 
 class MyTooltips {
@@ -59,22 +59,28 @@ class MyTooltips {
 
 class MyStrings {
   static const String APP_NAME = 'ProTips';
-  static const String app_email = 'protips@gmail.com';
+  static const String app_email = 'app.protips@gmail.com';
   static const String app_whatsapp = '(88) 9996-4046';
+  static const String whatsapp = 'Whatsapp';
   static const String company_email = 'okisoftware@gmail.com';
+  static const String company_name = 'ŌkīSoftware';
 
-  static final String EXCLUIR = "Excluir";
-  static final String BAIXANDO = "Baixando";
-  static final String BAIXAR = "Baixar";
-  static final String EXISTE = "Existe";
-  static final String SIM = "Sim";
-  static final String NAO = "Não";
-  static final String MSG_EXCLUIR_POST_PERFIL = "Excluir este post permanentemente?";
+  static const String VERSAO = "Versão";
+  static const String CONTATOS = "contatos";
+  static const String DESENVOLVIDO_POR = "desenvolvido por";
+  static const String POR = "por";
+  static const String EXCLUIR = "Excluir";
+  static const String BAIXANDO = "Baixando";
+  static const String BAIXAR = "Baixar";
+  static const String EXISTE = "Existe";
+  static const String SIM = "Sim";
+  static const String NAO = "Não";
+  static const String MSG_EXCLUIR_POST_PERFIL = "Excluir este post permanentemente?";
   static const String VERIF_ATUALIZACAO = 'Verificando atualização';
   static const String BAIXAR_ATUALIZACAO = 'Baixar atualização';
   static const String AGUARDE = 'Aguarde..';
   static const String solicitacao_tipster = 'Solicitação para ser um Tipster';
-  static const String solicitacao_tipster_mensagem = 'Entre em contato com\nEmail: ' + app_email + '\nWhatsApp: ';
+  static const String solicitacao_tipster_mensagem = 'Entre em contato\nEmail:';
   static const String solicitacao_filiado_mensagem = 'Não quero mais sem um Tipster';
   static const String solicitacao_filiado = 'Solicitação para ser um Filiado';
 
@@ -133,9 +139,10 @@ class MyStrings {
   static const String QUERO_SER_FILIADO = 'Quero ser um Filiado';
 
   static const String IDADE_MINIMA = 'Idade mínima é 18 anos';
+  static const String LIMPAR_TUDO = 'Limpar tudo';
 
-  static const String MSG_USUARIO_SALVO = 'Dados Salvos';
-  static const String MSG_USUARIO_SALVO_ERRO = 'Erro ao salvar os dados';
+//  static const String MSG_USUARIO_SALVO = 'Dados Salvos';
+//  static const String MSG_USUARIO_SALVO_ERRO = 'Erro ao salvar os dados';
 }
 
 class MyColors {
@@ -157,6 +164,7 @@ class MyColors {
 
 class MyTexts {
   static const ORDEM_POR = 'Ordem por';
+  static const PERFIL_USER_SALVO = 'Dados salvos';
   static const EXCLUIR_POST_PERMANENTE = 'Excluir este post permanentemente?';
   static const SOLICITACAO_FILIAL = 'Solicitação de Filialdo';
   static const SOLICITACAO_ACEITA = 'Solicitação Aceita';
@@ -169,6 +177,7 @@ class MyMenus {
   static const String MEU_PERFIL = 'Meu Perfil';
   static const String MEUS_POSTS = 'Meus Posts';
   static const String LOGOUT = 'Sair';
+  static const String SOBRE = 'Sobre';
 
   static const ABRIR_LINK = 'Abrir link';
   static const ABRIR_WHATSAPP = 'Abrir WhatsApp';
@@ -188,8 +197,10 @@ class MyMenus {
 
 class MyErros {
   static const ABRIR_LINK = 'Erro ao abrir link';
+  static const ABRIR_EMAIL = 'Erro ao abrir o email';
   static const ABRIR_WHATSAPP = 'Erro ao abrir WhatsApp';
   static const ERRO_GENERICO = 'Ocorreu um erro';
+  static const PERFIL_USER_SALVO = 'Erro ao salvar os dados';
 }
 
 class MyIcons {
@@ -241,9 +252,10 @@ class Titles {
   static const PERFIL = 'PERFIL';
   static const POST_TIP = 'POSTAR TIP';
   static const NOTIFICACOES = 'NOTIFICAÇÕES';
+  static const RECUPERAR_SENHA = 'Recuperar Senha';
 
-  static const String TITLE_MAIN = 'PROTIPS';
-  static const String TITLE_ABOUT = 'SOBRE NÓS';
+  static const String MAIN = 'PROTIPS';
+  static const String ABOUT = 'SOBRE NÓS';
 
 
   static const main_page = [

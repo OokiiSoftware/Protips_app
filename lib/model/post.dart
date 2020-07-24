@@ -11,18 +11,18 @@ class Post {
   static const String TAG = "Post";
 
   String _id;
-  String _id_tipster;
+  String _idTipster;
   String _titulo;
   String _link;
   String _descricao;
   String _foto;
   String _fotoLocal;
-  String _odd_maxima;
-  String _odd_minima;
-  String _odd_atual;
+  String _oddMaxima;
+  String _oddMinima;
+  String _oddAtual;
   String _unidade;
-  String _horario_maximo;
-  String _horario_minimo;
+  String _horarioMaximo;
+  String _horarioMinimo;
   String _data;
   String _esporte;
   String _linha;
@@ -40,14 +40,14 @@ class Post {
     link = map['link'];
     descricao = map['descricao'];
 //    texto = map['texto'];
-    odd_maxima = map['odd_maxima'];
-    odd_minima = map['odd_minima'];
-    odd_atual = map['odd_atual'];
+    oddMaxima = map['odd_maxima'];
+    oddMinima = map['odd_minima'];
+    oddAtual = map['odd_atual'];
     unidade = map['unidade'];
-    horario_maximo = map['horario_maximo'];
-    horario_minimo = map['horario_minimo'];
+    horarioMaximo = map['horario_maximo'];
+    horarioMinimo = map['horario_minimo'];
     data = map['data'];
-    id_tipster = map['id_tipster'];
+    idTipster = map['id_tipster'];
     esporte = map['esporte'];
     linha = map['linha'];
 //    mercado = map['mercado'];
@@ -63,18 +63,18 @@ class Post {
     "titulo": titulo,
     "link": link,
     "descricao": descricao,
-    "odd_maxima": odd_maxima,
-    "odd_minima": odd_minima,
-    "odd_atual": odd_atual,
+    "odd_maxima": oddMaxima,
+    "odd_minima": oddMinima,
+    "odd_atual": oddAtual,
     "unidade": unidade,
-    "horario_maximo": horario_maximo,
-    "horario_minimo": horario_minimo,
+    "horario_maximo": horarioMaximo,
+    "horario_minimo": horarioMinimo,
     "data": data,
     "esporte": esporte,
     "linha": linha,
     "campeonato": campeonato,
     "publico": publico,
-    "id_tipster": id_tipster,
+    "id_tipster": idTipster,
     "bom": bom,
     "ruim": ruim,
   };
@@ -98,7 +98,7 @@ class Post {
 
     result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES)
         .child(Cript.encript(data))
         .set(toJson())
@@ -121,7 +121,7 @@ class Post {
       return null;
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES)
         .child(Cript.encript(data))
         .child(FirebaseChild.BOM)
@@ -141,7 +141,7 @@ class Post {
       return null;
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES)
         .child(Cript.encript(data))
         .child(FirebaseChild.RUIM)
@@ -161,7 +161,7 @@ class Post {
     return null;
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES)
         .child(Cript.encript(data))
         .child(FirebaseChild.BOM)
@@ -179,7 +179,7 @@ class Post {
       return null;
      var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES)
         .child(Cript.encript(data))
         .child(FirebaseChild.RUIM)
@@ -195,7 +195,7 @@ class Post {
   Future<bool> excluir() async {
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES)
         .child(data)
         .remove()
@@ -208,7 +208,7 @@ class Post {
     result = await getFirebase.storage()
         .child(FirebaseChild.USUARIO)
         .child(FirebaseChild.POSTES)
-        .child(id_tipster)
+        .child(idTipster)
         .child(id + '.jpg')
         .delete()
         .then((value) => true)
@@ -233,7 +233,7 @@ class Post {
       final StorageReference ref = getFirebase.storage()
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES)
-          .child(id_tipster)
+          .child(idTipster)
           .child(id + '.jpg');
 
       var uploadTask = ref.putFile(file);
@@ -259,10 +259,10 @@ class Post {
     _id = value;
   }
 
-  String get id_tipster => _id_tipster ?? '';
+  String get idTipster => _idTipster ?? '';
 
-  set id_tipster(String value) {
-    _id_tipster = value;
+  set idTipster(String value) {
+    _idTipster = value;
   }
 
   String get titulo => _titulo ?? '';
@@ -328,16 +328,16 @@ class Post {
     _data = value;
   }
 
-  String get horario_minimo => _horario_minimo ?? '';
+  String get horarioMinimo => _horarioMinimo ?? '';
 
-  set horario_minimo(String value) {
-    _horario_minimo = value;
+  set horarioMinimo(String value) {
+    _horarioMinimo = value;
   }
 
-  String get horario_maximo => _horario_maximo ?? '';
+  String get horarioMaximo => _horarioMaximo ?? '';
 
-  set horario_maximo(String value) {
-    _horario_maximo = value;
+  set horarioMaximo(String value) {
+    _horarioMaximo = value;
   }
 
   String get unidade => _unidade ?? '';
@@ -346,22 +346,22 @@ class Post {
     _unidade = value;
   }
 
-  String get odd_atual => _odd_atual ?? '';
+  String get oddAtual => _oddAtual ?? '';
 
-  set odd_atual(String value) {
-    _odd_atual = value;
+  set oddAtual(String value) {
+    _oddAtual = value;
   }
 
-  String get odd_minima => _odd_minima ?? '';
+  String get oddMinima => _oddMinima ?? '';
 
-  set odd_minima(String value) {
-    _odd_minima = value;
+  set oddMinima(String value) {
+    _oddMinima = value;
   }
 
-  String get odd_maxima => _odd_maxima ?? '';
+  String get oddMaxima => _oddMaxima ?? '';
 
-  set odd_maxima(String value) {
-    _odd_maxima = value;
+  set oddMaxima(String value) {
+    _oddMaxima = value;
   }
 
   String get foto => _foto ?? '';

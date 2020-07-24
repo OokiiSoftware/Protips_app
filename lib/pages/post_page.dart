@@ -44,7 +44,7 @@ class MyWidgetState extends State<PostPage> {
     if (_post == null)
       Navigator.pop(context);
     return Scaffold(
-      appBar: AppBar(title: Text(Titles.TITLE_MAIN)),
+      appBar: AppBar(title: Text(Titles.MAIN)),
       body: SingleChildScrollView(
         child: itemLayout(_post),
       ),
@@ -56,8 +56,8 @@ class MyWidgetState extends State<PostPage> {
   //region Metodos
 
   Widget itemLayout(Post item) {
-    User user = getTipster.get(item.id_tipster);
-    bool isMyPost = item.id_tipster == getFirebase.fUser().uid;
+    User user = getTipster.get(item.idTipster);
+    bool isMyPost = item.idTipster == getFirebase.fUser().uid;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
 
@@ -174,7 +174,7 @@ class MyWidgetState extends State<PostPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Text(MyStrings.ODD_ATUAL),
-                  Text(item.odd_atual),
+                  Text(item.oddAtual),
                   Text(item.unidade),
                 ],
               ),
@@ -193,8 +193,8 @@ class MyWidgetState extends State<PostPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Text(MyStrings.ODD),
-                  Text(item.odd_minima),
-                  Text(item.odd_maxima),
+                  Text(item.oddMinima),
+                  Text(item.oddMaxima),
                 ],
               ),
               //Horarios
@@ -202,8 +202,8 @@ class MyWidgetState extends State<PostPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Text(MyStrings.HORARIO),
-                  Text(item.horario_minimo),
-                  Text(item.horario_maximo),
+                  Text(item.horarioMinimo),
+                  Text(item.horarioMaximo),
                 ],
               ),
               divider,

@@ -13,7 +13,7 @@ class PostPerfil {
   String _titulo;
   String _texto;
   String _data;
-  String _id_tipster;
+  String _idTipster;
   //endregion
 
   PostPerfil();
@@ -24,7 +24,7 @@ class PostPerfil {
     titulo = map['titulo'];
     texto = map['texto'];
     data = map['data'];
-    id_tipster = map['id_tipster'];
+    idTipster = map['id_tipster'];
   }
 
   static Map<String, PostPerfil> fromJsonList(Map map) {
@@ -43,7 +43,7 @@ class PostPerfil {
     "titulo": titulo,
     "texto": texto,
     "data": data,
-    "id_tipster": id_tipster,
+    "id_tipster": idTipster,
   };
 
   //region Métodos
@@ -55,7 +55,7 @@ class PostPerfil {
 
     result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES_PERFIL)
         .child(data.substring(0, data.indexOf('.')))
         .set(toJson())
@@ -71,7 +71,7 @@ class PostPerfil {
   Future<bool> excluir() async {
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
-        .child(id_tipster)
+        .child(idTipster)
         .child(FirebaseChild.POSTES_PERFIL)
         .child(data)
         .remove()
@@ -81,7 +81,7 @@ class PostPerfil {
       await getFirebase.storage()
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES_PERFIL)
-          .child(id_tipster)
+          .child(idTipster)
           .child(id + '.jpg').delete();
 
       getFirebase.user().postPerfil.remove(id);
@@ -104,7 +104,7 @@ class PostPerfil {
       final StorageReference ref = getFirebase.storage()
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES_PERFIL)
-          .child(id_tipster)
+          .child(idTipster)
           .child(id + '.jpg');
 
       var uploadTask = ref.putFile(file);
@@ -124,18 +124,16 @@ class PostPerfil {
 
   //region gets sets
 
-  String get id => _id;
+  String get id => _id ?? '';
 
   set id(String value) {
     _id = value;
   }
 
-  String get foto => _foto ?? '';
+  String get idTipster => _idTipster ?? '';
 
-  String get id_tipster => _id_tipster;
-
-  set id_tipster(String value) {
-    _id_tipster = value;
+  set idTipster(String value) {
+    _idTipster = value;
   }
 
   String get data {
@@ -159,6 +157,8 @@ class PostPerfil {
   set titulo(String value) {
     _titulo = value;
   }
+
+  String get foto => _foto ?? '';
 
   set foto(String value) {
     _foto = value;

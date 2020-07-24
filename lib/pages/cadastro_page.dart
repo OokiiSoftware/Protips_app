@@ -29,6 +29,7 @@ class MyWidgetState extends State<CadastroPage> {
   Widget build(BuildContext context) {
     double itemHeight = 45;
 
+    var itemContentPadding = EdgeInsets.fromLTRB(12, 0, 12, 0);
     var textfiedlBorder = OutlineInputBorder(
         borderSide: BorderSide(color: MyTheme.tintColor()),
       borderRadius: BorderRadius.circular(60)
@@ -87,6 +88,7 @@ class MyWidgetState extends State<CadastroPage> {
                     keyboardType: TextInputType.name,
                     style: textfiedTextStyle,
                     decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
                       enabledBorder: nomeVazio ? textfiedlBorderError : textfiedlBorder,
                       focusedBorder: nomeVazio ? textfiedlBorderError : textfiedlBorder,
                       labelStyle: textfiedLabelStyle,
@@ -109,6 +111,7 @@ class MyWidgetState extends State<CadastroPage> {
                     keyboardType: TextInputType.emailAddress,
                     style: textfiedTextStyle,
                     decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
                       enabledBorder: emailVazio || emailInvalido ? textfiedlBorderError : textfiedlBorder,
                       focusedBorder: emailVazio || emailInvalido ? textfiedlBorderError : textfiedlBorder,
                       suffixText: emailInvalido ? 'email inválido' : null,
@@ -133,6 +136,7 @@ class MyWidgetState extends State<CadastroPage> {
                     obscureText: true,
                     style: textfiedTextStyle,
                     decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
                       enabledBorder: senhaVazio || senhaFraca ? textfiedlBorderError : textfiedlBorder,
                       focusedBorder: senhaVazio || senhaFraca ? textfiedlBorderError : textfiedlBorder,
                       labelStyle: textfiedLabelStyle,
@@ -157,6 +161,7 @@ class MyWidgetState extends State<CadastroPage> {
                     obscureText: true,
                     style: textfiedTextStyle,
                     decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
                       enabledBorder: confSenhaVazio || senhasDiferentes ? textfiedlBorderError : textfiedlBorder,
                       focusedBorder: confSenhaVazio || senhasDiferentes ? textfiedlBorderError : textfiedlBorder,
                       labelStyle: textfiedLabelStyle,

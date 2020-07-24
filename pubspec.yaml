@@ -26,6 +26,7 @@ dependencies:
   google_api_availability: ^2.0.4
   flutter_local_notifications: ^1.4.4+2
   shared_preferences: ^0.5.8
+#  keyboard_avoider: ^0.1.2
   progress_dialog: ^1.2.4
   #pull_to_refresh: ^1.6.0
   google_sign_in: ^4.1.1

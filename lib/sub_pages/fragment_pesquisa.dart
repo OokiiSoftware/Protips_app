@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/res/resources.dart';
 
@@ -114,21 +113,22 @@ class MyWidgetState extends State<FragmentPesquisa> {
     bool fotoLocalExist = item.dados.fotoLocalExist;
 
     return ListTile(
-      leading: ClipRRect(
-          borderRadius: BorderRadius.circular(50),
-          child: fotoLocalExist ?
-          Image.file(File(item.dados.fotoLocal), width: fotoUserSize, height: fotoUserSize) :
-          Image.network(item.dados.foto, width: fotoUserSize, height: fotoUserSize,
-              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoUserSize, height: fotoUserSize)
-          )
-      ),
-      title: Text(item.dados.nome),
-      subtitle: Text(item.dados.descricao),
+        leading: ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: fotoLocalExist ?
+            Image.file(File(item.dados.fotoLocal), width: fotoUserSize,
+                height: fotoUserSize) :
+            Image.network(
+                item.dados.foto, width: fotoUserSize, height: fotoUserSize,
+                errorBuilder: (c, u, e) =>
+                    Image.asset(MyIcons.ic_person, width: fotoUserSize,
+                        height: fotoUserSize)
+            )
+        ),
+        title: Text(item.dados.nome),
+        subtitle: Text(item.dados.descricao),
         onTap: () {
-          if (item.dados.id == getFirebase.fUser().uid)
-            Navigator.of(context).pushNamed(MeuPerfilPage.tag);
-          else
-            Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
+          Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
         }
     );
 

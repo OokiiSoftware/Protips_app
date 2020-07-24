@@ -326,7 +326,7 @@ class MyWidgetState extends State<PerfilPage> {
   _onMenuItemCliked(String value) async {
     switch(value) {
       case MyMenus.ABRIR_WHATSAPP:
-        Import.openWhatsApp(context, user.dados.telefone);
+        Import.openWhatsApp(user.dados.telefone, context);
         break;
       case MyMenus.DENUNCIAR:
         break;

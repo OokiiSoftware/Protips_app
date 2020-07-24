@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/post_page.dart';
+import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/res/resources.dart';
 
+// ignore: must_be_immutable
 class FragmentInicio extends StatefulWidget {
   User user;
   FragmentInicio({this.user});
@@ -22,10 +23,10 @@ class MyWidgetState extends State<FragmentInicio> {
 
   User user;
   List<Post> data;
-  static bool canOpenPerfil = false;
+  bool canOpenPerfil = false;
 
-  static double progressBarValue = 0;
-  static CircularProgressIndicator progressBar;
+  double progressBarValue = 0;
+  CircularProgressIndicator progressBar;
 
   //endregion
 
@@ -66,8 +67,8 @@ class MyWidgetState extends State<FragmentInicio> {
   //region Metodos
 
   Widget itemLayout(Post item) {
-    User user = getTipster.get(item.id_tipster);
-    bool isMyPost = item.id_tipster == getFirebase.fUser().uid;
+    User user = getTipster.get(item.idTipster);
+    bool isMyPost = item.idTipster == getFirebase.fUser().uid;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
 
@@ -131,15 +132,17 @@ class MyWidgetState extends State<FragmentInicio> {
                 ],
               ),
             ),
-            onTap: () async {
-              Map<String, String> args = Map();
-              args['itemKey'] = item.data;
-              args['canOpenPerfil'] = canOpenPerfil.toString();
-              var result = await Navigator.of(context).pushNamed(PostPage.tag, arguments: args);
-              if (result != null && result == 'excluido')
-                setState(() {
-                  data.removeWhere((e) => e.id == item.id);
-                });
+            onTap: () {
+              if (canOpenPerfil)
+                Navigator.of(context).pushNamed(PerfilPage.tag, arguments: user);
+//              Map<String, String> args = Map();
+//              args['itemKey'] = item.data;
+//              args['canOpenPerfil'] = canOpenPerfil.toString();
+//              var result = await Navigator.of(context).pushNamed(PostPage.tag, arguments: args);
+//              if (result != null && result == 'excluido')
+//                setState(() {
+//                  data.removeWhere((e) => e.id == item.id);
+//                });
             },
           ),
          Divider(
@@ -187,7 +190,7 @@ class MyWidgetState extends State<FragmentInicio> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Text(MyStrings.ODD_ATUAL),
-                  Text(item.odd_atual),
+                  Text(item.oddAtual),
                   Text(item.unidade),
                 ],
               ),
@@ -206,8 +209,8 @@ class MyWidgetState extends State<FragmentInicio> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Text(MyStrings.ODD),
-                  Text(item.odd_minima),
-                  Text(item.odd_maxima),
+                  Text(item.oddMinima),
+                  Text(item.oddMaxima),
                 ],
               ),
               //Horarios
@@ -215,8 +218,8 @@ class MyWidgetState extends State<FragmentInicio> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Text(MyStrings.HORARIO),
-                  Text(item.horario_minimo),
-                  Text(item.horario_maximo),
+                  Text(item.horarioMinimo),
+                  Text(item.horarioMaximo),
                 ],
               ),
               divider,

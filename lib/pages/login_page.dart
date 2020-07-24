@@ -69,6 +69,8 @@ class MyWidgetState extends State<LoginPage> {
         ]
     );
 
+    var itemContentPadding = EdgeInsets.fromLTRB(0, 0, 12, 0);
+
     var itemPadding = EdgeInsets.symmetric(horizontal: 15);
     var itemHintStyle = TextStyle(color: MyTheme.primary());
     var itemLabeErrorlStyle = TextStyle(color: Colors.red);
@@ -125,18 +127,20 @@ class MyWidgetState extends State<LoginPage> {
               children: <Widget>[
                 // Email
                 Container(
-//                  height: itemHeight,
+                  height: itemHeight,
                   padding: itemPadding,
-//                  decoration: emailNaoEncontrado || emailInvalido
-//                      ? itemDecorationError
-//                      : itemDecoration,
+                  decoration: emailNaoEncontrado || emailInvalido
+                      ? itemDecorationError
+                      : itemDecoration,
                   child: TextFormField(
                     controller: cEmail,
+                    textInputAction: TextInputAction.next,
                     keyboardType: TextInputType.emailAddress,
                     style: itemTextStyle,
                     decoration: InputDecoration(
-//                      enabledBorder: itemBorder,
-//                      focusedBorder: itemBorder,
+                      contentPadding: itemContentPadding,
+                      enabledBorder: itemBorder,
+                      focusedBorder: itemBorder,
                       labelStyle: itemLabeErrorlStyle,
                       hintStyle: itemHintStyle,
                       labelText: emailNaoEncontrado
@@ -155,23 +159,30 @@ class MyWidgetState extends State<LoginPage> {
                 ),
                 // Senha
                 Container(
-//                  height: itemHeight,
+                  height: itemHeight,
                   margin: EdgeInsets.only(top: 20),
                   padding: itemPadding,
-//                  decoration: senhaIncorreta
-//                      ? itemDecorationError
-//                      : itemDecoration,
+                  decoration: senhaIncorreta
+                      ? itemDecorationError
+                      : itemDecoration,
                   child: TextField(
                     controller: cSenha,
                     obscureText: true,
                     style: itemTextStyle,
+                    textInputAction: TextInputAction.go,
                     decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
+                      enabledBorder: itemBorder,
+                      focusedBorder: itemBorder,
                       labelStyle: itemLabeErrorlStyle,
                       hintStyle: itemHintStyle,
                       labelText: senhaIncorreta ? 'Senha incorreta' : null,
                       hintText: 'Senha',
                       icon: Icon(Icons.https, color: senhaIncorreta ? iconColorError : iconColor),
                     ),
+                    onSubmitted: (s) {
+                      onLoginButtonPressed();
+                    },
                     onTap: () {
                       setState(() {
                         senhaIncorreta = false;

@@ -41,43 +41,43 @@ class Endereco {
 
   //region get set
 
-  String get cep => _cep;
+  String get cep => _cep ?? '';
 
   set cep(String value) {
     _cep = value;
   }
 
-  String get rua => _rua;
+  String get rua => _rua ?? '';
 
   set rua(String value) {
     _rua = value;
   }
 
-  String get numero => _numero;
+  String get numero => _numero ?? '';
 
   set numero(String value) {
     _numero = value;
   }
 
-  String get bairro => _bairro;
+  String get bairro => _bairro ?? '';
 
   set bairro(String value) {
     _bairro = value;
   }
 
-  String get cidade => _cidade;
+  String get cidade => _cidade ?? '';
 
   set cidade(String value) {
     _cidade = value;
   }
 
-  String get estado => _estado;
+  String get estado => _estado ?? '';
 
   set estado(String value) {
     _estado = value;
   }
 
-  String get pais => _pais;
+  String get pais => _pais ?? '';
 
   set pais(String value) {
     _pais = value;

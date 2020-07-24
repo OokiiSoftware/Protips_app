@@ -12,12 +12,11 @@ import 'package:protips/pages/post_page.dart';
 import 'package:protips/pages/recuperar_senha_page.dart';
 import 'package:protips/res/resources.dart';
 
-import 'auxiliar/notification_manager.dart';
-
 void main() => runApp(Main());
 
 class Main extends StatelessWidget {
   static const String TAG = 'Main';
+
   final routes = <String, WidgetBuilder> {
     LoginPage.tag: (context) => LoginPage(),
     MainPage.tag: (context) => MainPage(),

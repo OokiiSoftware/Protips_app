@@ -6,6 +6,7 @@ import 'package:open_file/open_file.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/pages/about_page.dart';
 import 'package:protips/pages/login_page.dart';
 import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/pages/perfil_page.dart';
@@ -181,6 +182,15 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
               onTap: () {
                 Navigator.pop(context);
                 onLogoutTap();
+              },
+            ),
+            //Sobre
+            ListTile(
+              leading: Icon(Icons.info_outline),
+              title: Text(MyMenus.SOBRE),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).pushNamed(AboutPage.tag);
               },
             ),
           ],

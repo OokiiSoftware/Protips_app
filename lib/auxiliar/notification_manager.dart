@@ -26,7 +26,7 @@ class NotificationManager {
 
   void init() async {
     pref = await SharedPreferences.getInstance();
-    _currentToken = pref.getString(SharedPreferencesKey.ULTIMO_TOKEM);
+    currentToken = pref.getString(SharedPreferencesKey.ULTIMO_TOKEM);
 
     //region FlutterLocalNotifications
 
@@ -96,7 +96,8 @@ class NotificationManager {
     //endregion
 
     String tokem = await _fcm.getToken();
-    _saveTokem(_createToken(tokem));
+    await _saveTokem(_createToken(tokem));
+    user.validarTokens();
     Log.d(TAG, 'fcm', 'tokem', tokem);
   }
 
@@ -106,26 +107,33 @@ class NotificationManager {
     return _user;
 }
 
+  // ignore: unnecessary_getters_setters
+  String get currentToken => _currentToken;
+  // ignore: unnecessary_getters_setters
+  set currentToken(String value) {
+    _currentToken = value;
+  }
+
   Future<bool> sendPost(Post post, User destino) async {
     try {
-      await destino.refresh();
+      await destino.validarTokens();
       Log.d(TAG, 'sendPost', 'destino', destino.dados.nome);
       for (String token in destino.tokens.keys) {
         String body = MyStrings.ESPORTE + ': ' + post.esporte;
-        body += '\n'+ MyStrings.ODD_ATUAL + ': ' + post.odd_atual;
+        body += '\n'+ MyStrings.ODD_ATUAL + ': ' + post.oddAtual;
 
         if (post.campeonato.isNotEmpty)
           body += '\n'+ MyStrings.CAMPEONATO + ': ' + post.campeonato;
 
-        if (post.odd_minima.isNotEmpty && post.odd_maxima.isNotEmpty)
-          body += '\n'+ MyStrings.ODD + ': ' + post.odd_minima + ' - ' + post.odd_maxima;
+        if (post.oddMinima.isNotEmpty && post.oddMaxima.isNotEmpty)
+          body += '\n'+ MyStrings.ODD + ': ' + post.oddMinima + ' - ' + post.oddMaxima;
 
-        if (post.horario_minimo.isNotEmpty && post.horario_maximo.isNotEmpty)
-          body += '\n'+ MyStrings.HORARIO + ': ' + post.horario_minimo + ' - ' + post.horario_maximo;
+        if (post.horarioMinimo.isNotEmpty && post.horarioMaximo.isNotEmpty)
+          body += '\n'+ MyStrings.HORARIO + ': ' + post.horarioMinimo + ' - ' + post.horarioMaximo;
 
         PushNotification notificacao = PushNotification();
         notificacao.de = user.dados.id;
-        notificacao.title = MyTexts.NOVO_TIP + ': ' + destino.dados.nome;
+        notificacao.title = MyTexts.NOVO_TIP + ': ' + user.dados.nome;
         notificacao.body = body;
         notificacao.timestamp = post.data;
         notificacao.token = token;
@@ -138,10 +146,10 @@ class NotificationManager {
     }
   }
 
-  Future<bool> sendSolicitacao(User user) async {
+  Future<bool> sendSolicitacao(User destino) async {
     try {
-      await user.refresh();
-      for (String token in user.tokens.keys) {
+      await destino.validarTokens();
+      for (String token in destino.tokens.keys) {
         String titulo = MyTexts.SOLICITACAO_FILIAL;
         String texto = getFirebase.user().dados.nome;
 
@@ -160,10 +168,10 @@ class NotificationManager {
     }
   }
 
-  Future<bool> sendSolicitacaoAceita(User user) async {
+  Future<bool> sendSolicitacaoAceita(User destino) async {
     try {
-      await user.refresh();
-      for (String token in user.tokens.keys) {
+      await destino.validarTokens();
+      for (String token in destino.tokens.keys) {
         String titulo = MyTexts.SOLICITACAO_ACEITA;
         String texto = getFirebase.user().dados.nome;
 
@@ -192,13 +200,13 @@ class NotificationManager {
 
   _saveTokem(Token token) async {
     await user.salvarToken(token);
-    _currentToken = token.value;
+    currentToken = token.value;
 
-    pref.setString(SharedPreferencesKey.ULTIMO_TOKEM, _currentToken);
+    pref.setString(SharedPreferencesKey.ULTIMO_TOKEM, currentToken);
   }
 
   _updateToken(Token token) async {
-    await user.removeToken(_currentToken);
+    await user.removeToken(currentToken);
     _saveTokem(token);
   }
 

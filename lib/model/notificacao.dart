@@ -53,7 +53,7 @@ class PushNotification {
   String _token;
   String _action;
   String _timestamp;
-  String _item_id;
+  String _itemId;
 //  Map<dynamic, dynamic> _destinos;
 
   Map toJson() => {
@@ -62,7 +62,7 @@ class PushNotification {
     'de': de,
     'token': token,
     'action': action,
-    'item_id': item_id,
+    'item_id': itemId,
     'timestamp': timestamp,
   };
 
@@ -74,7 +74,7 @@ class PushNotification {
     de = map['de'];
     token = map['token'];
     action = map['action'];
-    item_id = map['item_id'];
+    itemId = map['item_id'];
     timestamp = map['timestamp'];
   }
 
@@ -144,10 +144,10 @@ class PushNotification {
     _title = value;
   }
 
-  String get item_id => _item_id ?? '';
+  String get itemId => _itemId ?? '';
 
-  set item_id(String value) {
-    _item_id = value;
+  set itemId(String value) {
+    _itemId = value;
   }
 
   //endregion

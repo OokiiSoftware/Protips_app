@@ -1,11 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:image_crop/image_crop.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/input_formatter.dart';
 import 'package:protips/model/data.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
@@ -31,6 +33,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
   final cropKey = GlobalKey<CropState>();
   File _fotoLocal;
 
+  final _mobileFormatter = NumberTextInputFormatter();
   bool soliciteiSerTipster;
 
   //region TextEditingController
@@ -225,18 +228,22 @@ class MyWidgetState extends State<MeuPerfilPage> {
                 childAspectRatio: 8,
                 mainAxisSpacing: 8,
                 children: [
+                  //Nome
                   CustomTextField(_nome, TextInputType.name, MyStrings.NOME, valueIsEmpty: _nomeIsEmpyt, onTap: () {
                     setState(() {
                       _nomeIsEmpyt = false;
                     });
                   }),
+                  //Tipname
                   CustomTextField(_tipName, TextInputType.name, MyStrings.TIP_NAME, readOnly: !isPrimeiroLogin, valueIsEmpty: _tipNameIsEmpyt, tipNameExiste: _tipNameExixte, onTap: () {
                     setState(() {
                       _tipNameIsEmpyt = false;
                       _tipNameExixte = false;
                     });
                   }),
+                  //Email
                   CustomTextField(_email, TextInputType.emailAddress, MyStrings.EMAIL, readOnly: true),
+                  //Telefone
                   CustomTextField(_telefone, TextInputType.phone, MyStrings.TELEFONE),
                   //Nascimento
                   CustomTextField(_nascimento, TextInputType.datetime, MyStrings.NASCIMENTO, dataIdadeMinima: _nascimentoIdadeMinima, readOnly: true, onTap: () {
@@ -297,8 +304,10 @@ class MyWidgetState extends State<MeuPerfilPage> {
     double _containerPaddingTop = 0;
     double itemPaddingValue = 10;
 
+    bool isPhone = _inputType == TextInputType.phone;
     //region Container que contem os textField
     var itemPadding = EdgeInsets.only(left: itemPaddingValue, right: itemPaddingValue, top: 10);
+    var itemContentPadding = EdgeInsets.fromLTRB(12, 0, 12, 0);
 
     var itemlBorder = OutlineInputBorder(borderSide: BorderSide(color: MyTheme.tintColor()));
     var itemDecoration = BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(5)), color: MyTheme.tintColor(),);
@@ -318,7 +327,12 @@ class MyWidgetState extends State<MeuPerfilPage> {
         keyboardType: _inputType,
         style: itemTextStyle,
         readOnly: readOnly,
+        inputFormatters: [
+          if (isPhone) WhitelistingTextInputFormatter.digitsOnly,
+          if (isPhone) _mobileFormatter,
+        ],
         decoration: InputDecoration(
+          contentPadding: itemContentPadding,
           enabledBorder: itemlBorder,
           focusedBorder: itemlBorder,
           labelStyle: (valueIsEmpty??false) || (tipNameExiste??false) || (dataIdadeMinima??false) ? itemPrefixStyleErro : itemPrefixStyle,
@@ -388,7 +402,8 @@ class MyWidgetState extends State<MeuPerfilPage> {
           Navigator.pop(context, true);
         }
       }
-      String text = resultOK ? MyStrings.MSG_USUARIO_SALVO : MyStrings.MSG_USUARIO_SALVO_ERRO;
+      String text = resultOK ? MyTexts.PERFIL_USER_SALVO : MyErros.PERFIL_USER_SALVO;
+      Log.toast(context, text, isError: !resultOK);
       Log.d(TAG, 'Salvar', text);
     }
 
@@ -557,6 +572,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
     String title = MyStrings.solicitacao_tipster;
     String mensagem = MyStrings.solicitacao_tipster_mensagem;
     String whatsapp = MyStrings.app_whatsapp;
+    String email = MyStrings.app_email;
 
     String okButton = solicitei ? MyStrings.OK : MyStrings.SOLICITAR;
     String cancelButton = solicitei ? MyStrings.CANCELAR_SOLICITACAO : MyStrings.CANCELAR;
@@ -571,10 +587,13 @@ class MyWidgetState extends State<MeuPerfilPage> {
                 children: <Widget>[
                   Text(mensagem),
                   GestureDetector(
-                    child: Text(whatsapp, style: TextStyle(color: MyTheme.primary(), fontStyle: FontStyle.italic)),
-                    onTap: () {
-                      Import.openWhatsApp(context, whatsapp);
-                    },
+                    child: Text(email, style: TextStyle(color: MyTheme.primary())),
+                    onTap: () {Import.openEmail(email, context);},
+                  ),
+                  Text(MyStrings.whatsapp),
+                  GestureDetector(
+                    child: Text(whatsapp, style: TextStyle(color: MyTheme.primary())),
+                    onTap: () {Import.openWhatsApp(whatsapp, context);},
                   )
                 ],
               ),

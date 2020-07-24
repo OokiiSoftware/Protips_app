@@ -135,14 +135,7 @@ class User {
   }
 
   Future<bool> logout() async {
-    var result = await getFirebase.databaseReference()
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
-        .child(FirebaseChild.TOKENS)
-        .child(getFirebase.token.value)
-        .remove()
-        .then((value) => true)
-        .catchError((e) => false);
+    var result = await removeToken(getFirebase.notificationManager.currentToken);
 
     Log.d(TAG, 'logout', result);
     return result;
@@ -174,6 +167,8 @@ class User {
 
 
   Future<bool> salvarToken(Token token) async {
+    if (token == null)
+      return false;
     Log.d(TAG, 'salvarToken', token.device);
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
@@ -184,11 +179,23 @@ class User {
         .then((value) => true)
         .catchError((e) => false);
 
+    await getFirebase.databaseReference()
+        .child(FirebaseChild.TOKENS)
+        .child(token.value)
+        .set(dados.id)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    tokens[token.value] = token;
+
     Log.d(TAG, 'salvarToken', result);
     return result;
   }
 
   Future<bool> removeToken(String token) async {
+    if (token == null)
+      return false;
+    //Remove do meu usuario
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
@@ -198,8 +205,44 @@ class User {
         .then((value) => true)
         .catchError((e) => false);
 
+    //remove da lista geral de tokens
+    await getFirebase.databaseReference()
+        .child(FirebaseChild.TOKENS)
+        .child(token)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    tokens.remove(token);
+
     Log.d(TAG, 'salvarToken', result);
     return result;
+  }
+
+  Future<bool> validarTokens() async {
+    try {
+      List<String> tokensAntigos = [];
+      for (String token in tokens.keys) {
+        var result = await getFirebase.databaseReference()
+            .child(FirebaseChild.TOKENS)
+            .child(token)
+            .once()
+            .then((value) => value)
+            .catchError((e) => null);
+
+        if (result == null || result.value.toString() != dados.id) {
+          tokensAntigos.add(token);
+        }
+      }
+      for (String token in tokensAntigos) {
+        await removeToken(token);
+        Log.d(TAG, 'validarToken', 'Removendo token antigo', token);
+      }
+      return true;
+    } catch(e) {
+      Log.e(TAG, 'validarToken', e);
+      return false;
+    }
   }
 
 

@@ -17,10 +17,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:protips/model/data.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/post_perfil.dart';
-import 'package:protips/model/token.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
-import 'package:protips/model/device_info.dart';
+import 'file:///C:/Users/jhona/Documents/GitHub/protips_app/lib/auxiliar/device_info.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -119,7 +118,27 @@ class Import {
     }
   }
 
-  static void openWhatsApp(BuildContext context, String numero) async {
+  static void openEmail(String email, [BuildContext context]) async {
+    final Uri _emailLaunchUri = Uri(
+        scheme: 'mailto',
+        path: '$email',
+        queryParameters: {
+          'subject': 'Solicitação Tipster'
+        }
+    );
+    try {
+      if (await canLaunch(_emailLaunchUri.toString()))
+        await launch(_emailLaunchUri.toString());
+      else
+        throw Exception(MyErros.ABRIR_EMAIL);
+    } catch(e) {
+      if (context != null)
+        Log.toast(context, MyErros.ABRIR_EMAIL, isError: true);
+      Log.e(TAG, 'openUrl', e);
+    }
+  }
+
+  static void openWhatsApp(String numero, [BuildContext context]) async {
     try {
       numero = numero.replaceAll(' ', '').replaceAll('(', '').replaceAll(')', '').replaceAll('-', '');
       var whatsappUrl ="whatsapp://send?phone=55$numero";
@@ -128,7 +147,8 @@ class Import {
       else
         throw Exception(MyErros.ABRIR_WHATSAPP);
     } catch(e) {
-      Log.toast(context, MyErros.ABRIR_WHATSAPP, isError: true);
+      if (context != null)
+        Log.toast(context, MyErros.ABRIR_WHATSAPP, isError: true);
       Log.e(TAG, 'openUrl', e);
     }
   }
@@ -160,9 +180,10 @@ class getFirebase {
   static FirebaseAuth _auth = FirebaseAuth.instance;
   static NotificationManager _fcm;
   static GoogleSignIn _googleSignIn = GoogleSignIn();
-  static Token _token;
+//  static Token _token;
 
   static User _user;
+  static bool _isAdmin;
   //endregion
 
   //region Firebase App
@@ -242,13 +263,15 @@ class getFirebase {
     _fcm.init();
   }
 
-  static void finalize() {
+  static void finalize() async {
     _firebaseUser = null;
-    _user = null;
-    _token = null;
+//    _token = null;
     getTipster.reset();
     getPosts.reset();
     getSeguindo.reset();
+    await _user.logout();
+    _fcm = null;
+    _user = null;
   }
 
   static Map map() => {
@@ -256,7 +279,9 @@ class getFirebase {
     'storageBucket': 'gs://protips-oki.appspot.com'
   };
 
-  static Token get token => _token;
+//  static Token get token => _token;
+
+  static bool get isAdmin => _isAdmin ?? false;
 
   static NotificationManager get notificationManager => _fcm;
 
@@ -309,8 +334,6 @@ class getFirebase {
       _user = await getUsers.baixarUser(_firebaseUser.uid);
       if (_user == null)
         throw new Exception(user_Null);
-//      _token  = Token.fromToken(await _firebaseUser.getIdToken());
-//      await _user.salvarToken(_token);
       return true;
     }catch(e) {
       Log.e(TAG, 'atualizarOfflineUser', e);
@@ -627,7 +650,7 @@ class getPosts {
     _postes.remove(key);
   }
   static void removeAll(String userId) {
-    _postes.removeWhere((key, value) => value.id_tipster == userId);
+    _postes.removeWhere((key, value) => value.idTipster == userId);
   }
 
   static void reset() {
