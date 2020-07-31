@@ -1,10 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/pages/denuncia_page.dart';
 import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/sub_pages/fragment_g_denuncias.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
 
 // ignore: must_be_immutable
@@ -13,26 +14,18 @@ class PerfilPage extends StatefulWidget {
   User user;
   PerfilPage({this.user});
   @override
-  State<StatefulWidget> createState() => MyWidgetState(user: user);
+  State<StatefulWidget> createState() => MyWidgetState(user);
 }
 class MyWidgetState extends State<PerfilPage> {
 
-  //region Variaveis
+  MyWidgetState(this.user);
 
+  //region Variaveis
   static const String TAG = 'PerfilPage';
 
   User user;
-  MyWidgetState({this.user});
-
-  List<Widget> tabItems;
-
-  bool isPendente;
-  bool isSeguindo;
-  bool isPendenteFilial;
-
-  LinearProgressIndicator progressBar;
+  bool dadosAtualizados = false;
   double progressBarValue = 0;
-
   //endregion
 
   //region overrides
@@ -41,12 +34,11 @@ class MyWidgetState extends State<PerfilPage> {
   Widget build(BuildContext context) {
     //region Variaveis
 
-    progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: MyTheme.primaryLight());
-
     if (user == null)
       user = getArgs();
-    String foto = user.dados.foto;
-    bool fotoLocalExist = user.dados.fotoLocalExist;
+
+    if (!dadosAtualizados)
+      _updateUser();
 
     var eu = getFirebase.user();
     bool isMyPerfil = user.dados.id == getFirebase.fUser().uid;
@@ -56,11 +48,22 @@ class MyWidgetState extends State<PerfilPage> {
     bool isFilialPendente = eu.seguidoresPendentes.containsKey(user.dados.id);
     bool isFilial = eu.seguidores.containsKey(user.dados.id);
 
-    tabItems = [
-      itemsGrid(user.postPerfil.values.toList()..sort((a, b) => a.data.compareTo(b.data))),
-      itemsList(user.postPerfil.values.toList()..sort((a, b) => a.data.compareTo(b.data))),
-      FragmentInicio(user: user)
+    bool isAdminAndHasDenuncias = getFirebase.isAdmin && user.denuncias.length > 0;
+
+    var tabItems = [
+      itemsGrid(user.postPerfilList),
+      itemsList(user.postPerfilList),
+      FragmentInicio(user: user),
     ];
+    var tabs = [
+      Tab(icon: Icon(Icons.view_module)),
+      Tab(icon: Icon(Icons.list)),
+      Tab(icon: Icon(Icons.lightbulb_outline)),
+    ];
+    if(isAdminAndHasDenuncias) {
+      tabItems.add(FragmentDenunciasG(user));
+      tabs.add(Tab(icon: Icon(Icons.comment)));
+    }
 
     double headerHeight = 200;
     Color itemColor = MyTheme.primaryLight2();
@@ -70,7 +73,7 @@ class MyWidgetState extends State<PerfilPage> {
     //endregion
 
     return DefaultTabController(
-      length: 3,
+      length: tabItems.length,
       child: Scaffold(
         appBar: AppBar(
           toolbarHeight: headerHeight,
@@ -92,10 +95,7 @@ class MyWidgetState extends State<PerfilPage> {
                           padding: EdgeInsets.only(left: 15),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(70),
-                            child: fotoLocalExist ?
-                            Image.file(File(user.dados.fotoLocal)) :
-                            foto == null ? Image.asset(MyIcons.ic_person) :
-                            Image.network(foto, errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)),
+                            child: MyIcons.fotoUser(user.dados, null)
                           ),
                         ),
                       ],
@@ -144,7 +144,7 @@ class MyWidgetState extends State<PerfilPage> {
                   ],
                 ),
               ]),
-              progressBar,
+              LinearProgressIndicator(value: progressBarValue, backgroundColor: MyTheme.primaryLight()),
               //Botões aceitar, recurar ect..
               Row(children: [
                 //Seguir Desseguir
@@ -204,14 +204,9 @@ class MyWidgetState extends State<PerfilPage> {
             ]),
           ),
           bottom: TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.view_module)),
-              Tab(icon: Icon(Icons.list)),
-              Tab(icon: Icon(Icons.lightbulb_outline)),
-            ],
+            tabs: tabs,
           ),
-          actions: [
-            PopupMenuButton<String>(
+          actions: [PopupMenuButton<String>(
                 onSelected: (String result) {
                   _onMenuItemCliked(result);
                 },
@@ -227,8 +222,7 @@ class MyWidgetState extends State<PerfilPage> {
 
                   return list.map((item) => PopupMenuItem<String>(value: item, child: Text(item))).toList();
                 }
-            )
-          ],
+            )],
         ),
         body: TabBarView(
           children: tabItems,
@@ -259,7 +253,7 @@ class MyWidgetState extends State<PerfilPage> {
               return Container(
                   alignment: Alignment.center,
                   child: GestureDetector(
-                    child: Image.network(item.foto),
+                    child: MyIcons.fotoPostNetwork(item.foto),
                     onTap: () {
                       Import.showPopup(context, item);
                     },
@@ -284,24 +278,28 @@ class MyWidgetState extends State<PerfilPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Divider(height: 2, thickness: 1, color: MyTheme.textColorInvert()),
             //Titulo
-            Container(
-              alignment: Alignment.topCenter,
-              padding: EdgeInsets.all(10),
-              color: MyTheme.primary(),
-              child: Text(item.titulo, style: TextStyle(color: MyTheme.textColor(), fontSize: 20)
+            if(item.titulo.isNotEmpty)
+              Container(
+                alignment: Alignment.topCenter,
+                padding: EdgeInsets.all(10),
+                color: MyTheme.primary(),
+                child: Text(item.titulo,
+                    style: TextStyle(color: MyTheme.textColor(), fontSize: 20)
+                ),
               ),
-            ),
             //Foto
-            Image.network(item.foto),
+            MyIcons.fotoPostNetwork(item.foto),
             //Legenda
-            Container(
-              alignment: Alignment.centerLeft,
-              padding: EdgeInsets.all(10),
-              color: MyTheme.transparentColor(),
-              child: Text(item.texto, style: TextStyle(color: MyTheme.textColorInvert(), fontSize: 20)),
-            ),
-            Divider(height: 1, thickness: 2, color: MyTheme.textColorInvert())
+            if(item.texto.isNotEmpty)
+              Container(
+                alignment: Alignment.centerLeft,
+                padding: EdgeInsets.all(10),
+                color: MyTheme.transparentColor(),
+                child: Text(item.texto, style: TextStyle(
+                    color: MyTheme.textColorInvert(), fontSize: 20)),
+              ),
           ],
         );
       },
@@ -317,6 +315,19 @@ class MyWidgetState extends State<PerfilPage> {
     return args;
   }
 
+  _updateUser() async {
+    if (user == null)
+      return;
+    var item = await getUsers.baixarUser(user.dados.id);
+    if (item != null) {
+      getUsers.add(item);
+      setState(() {
+        user = item;
+      });
+    }
+    dadosAtualizados = true;
+  }
+
   _setProgressBarVisible(bool visible) {
     setState(() {
       progressBarValue = visible ? null : 0;
@@ -329,6 +340,7 @@ class MyWidgetState extends State<PerfilPage> {
         Import.openWhatsApp(user.dados.telefone, context);
         break;
       case MyMenus.DENUNCIAR:
+        Navigator.of(context).pushNamed(DenunciaPage.tag, arguments: user);
         break;
       case MyMenus.MEU_PERFIL:
         await Navigator.of(context).pushNamed(MeuPerfilPage.tag);

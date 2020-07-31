@@ -190,18 +190,18 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
         progressBarValue = 0;
       });
     } catch (e) {
-      setState(() {
-        progressBarValue = 0;
-      });
-      Log.e(TAG, 'enviarEmail', e);
-      if (e.toString().contains('ERROR_INVALID_EMAIL'))
-        setState(() {
-          emailInvalido = true;
-        });
-      if (e.toString().contains('ERROR_USER_NOT_FOUND'))
-        setState(() {
-          emailNaoEncontrado = true;
-        });
+      bool sendError = true;
+      progressBarValue = 0;
+      if (e.toString().contains('ERROR_INVALID_EMAIL')) {
+        emailInvalido = true;
+        sendError = false;
+      }
+      if (e.toString().contains('ERROR_USER_NOT_FOUND')) {
+        emailNaoEncontrado = true;
+        sendError = false;
+      }
+      setState(() {});
+      Log.e(TAG, 'enviarEmail', e, sendError);
     }
   }
 

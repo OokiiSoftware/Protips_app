@@ -1,4 +1,5 @@
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/token.dart';
@@ -11,18 +12,17 @@ class UserTag {
 
 class User {
 
-//  bool _isExpanded = false;
-//  bool get isExpanded => _isExpanded ?? false;
-//  set isExpanded(bool value) {_isExpanded = value;}
+  bool isExpanded = false;
 
   //region Variaveis
   static const String TAG = 'User';
 
   UserDados _dados;
 
-  Map<dynamic, dynamic> _seguidores;
   Map<dynamic, dynamic> _seguindo;
+  Map<dynamic, dynamic> _seguidores;
   Map<dynamic, dynamic> _seguidoresPendentes;
+  Map<dynamic, dynamic> _denuncias;
   Map<dynamic, dynamic> _tags;
 
   Map<String, Post> _postes;
@@ -37,11 +37,12 @@ class User {
 
   User() {
     tags = Map();
+    postes = Map();
     seguindo = Map();
+    denuncias = Map();
     seguidores = Map();
     postPerfil = Map();
     seguidoresPendentes = Map();
-    postes = Map();
     dados = UserDados();
   }
 
@@ -59,6 +60,7 @@ class User {
     tags = Map();
     postes = Map();
     seguindo = Map();
+    denuncias = Map();
     seguidores = Map();
     postPerfil = Map();
     seguidoresPendentes = Map();
@@ -93,6 +95,7 @@ class User {
     seguidores = map['seguidores'];
     seguindo = map['seguindo'];
     tokens = Token.fromJsonList(map['tokens']);
+    denuncias = Denuncia.fromJsonList(map['denuncias']);
     tags = map['tags'];
   }
 
@@ -104,6 +107,7 @@ class User {
     "seguidoresPendentes": seguidoresPendentes,
     "postes": postes,
     "tokens": tokens,
+    "denuncias": denuncias,
     "post_perfil": postPerfil
   };
 
@@ -157,7 +161,7 @@ class User {
         Log.d(TAG, 'refresh', 'OK');
         return true;
       }
-      Log.e(TAG, 'refresh', 'NO OK', 'user == null');
+      Log.d(TAG, 'refresh', 'NO OK', 'user == null');
       return false;
     } catch(e) {
       Log.e(TAG, 'refresh', e);
@@ -165,6 +169,38 @@ class User {
     }
   }
 
+  Future<bool> excluir() async {
+    var result = await getFirebase.databaseReference()
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      for (Post item in postes.values)
+        await item.excluir();
+    Log.d(TAG, 'excluir', result);
+    return result;
+  }
+
+  Future<bool> bloquear(bool valor) async {
+    var result = await getFirebase.databaseReference()
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.DADOS)
+        .child(FirebaseChild.IS_BLOQUEADO)
+        .set(valor)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      dados.isBloqueado = valor;
+    Log.d(TAG, 'bloquear', result);
+    return result;
+  }
+
+  //region Token
 
   Future<bool> salvarToken(Token token) async {
     if (token == null)
@@ -245,6 +281,9 @@ class User {
     }
   }
 
+  //endregion
+
+  //region Tipster
 
   Future<bool> solicitarSerTipster() async {
     var result = await getFirebase.databaseReference()
@@ -267,6 +306,14 @@ class User {
     return result;
   }
 
+  Future<bool> solicitarSerTipsterAprovar() async {
+    if (await solicitarSerTipsterCancelar(true)) {
+      getFirebase.notificationManager.sendSolicitacaoAceita(this);
+      return await bloquear(false);
+    }
+    return false;
+  }
+
   Future<bool> habilitarTipster(bool valor) async {
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
@@ -286,7 +333,7 @@ class User {
     return result;
   }
 
-  Future<bool> solicitarSerTipsterCancelar() async {
+  Future<bool> solicitarSerTipsterCancelar([bool _habilitarTipster = false]) async {
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER)
         .child(dados.id)
@@ -300,7 +347,7 @@ class User {
     String tag = UserTag.SOLICITACAO_SER_TIPSTER;
     await removeTag(tag);
 
-    await habilitarTipster(false);
+    await habilitarTipster(_habilitarTipster);
 //    await desbloquear();
     dados.isTipster = false;
 
@@ -312,6 +359,9 @@ class User {
     return tags.containsKey(UserTag.SOLICITACAO_SER_TIPSTER);
   }
 
+  //endregion
+
+  //region Filial
 
   Future<bool> addSolicitacao(User user) async {
     String userId = user.dados.id;
@@ -415,6 +465,9 @@ class User {
     return result;
   }
 
+  //endregion
+
+  //region Diversos
 
   Future<bool> addTag(String tag) async {
     if (tags.containsKey(tag))
@@ -454,53 +507,28 @@ class User {
     return result;
   }
 
+  Future<bool> removeDenuncia(String key) async {
+    if (!denuncias.containsKey(key))
+      return true;
 
-  Future<bool> bloquear(bool valor) async {
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
-        .child(FirebaseChild.DADOS)
-        .child(FirebaseChild.IS_BLOQUEADO)
-        .set(valor)
-        .then((value) => true)
-        .catchError((e) => false);
-
-    if (result)
-      dados.isBloqueado = valor;
-    Log.d(TAG, 'bloquear', result);
-    return result;
-  }
-
-//  Future<bool> _desbloquear() async {
-//    var result = await getFirebase.databaseReference()
-//        .child(FirebaseChild.USUARIO)
-//        .child(dados.id)
-//        .child(FirebaseChild.DADOS)
-//        .child(FirebaseChild.IS_BLOQUEADO)
-//        .set(false)
-//        .then((value) => true)
-//        .catchError((e) => false);
-//
-//    if (result)
-//      dados.isBloqueado = false;
-//    Log.d(TAG, 'desbloquear', result);
-//    return result;
-//  }
-
-  Future<bool> excluir() async {
-    var result = await getFirebase.databaseReference()
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
+        .child(FirebaseChild.DENUNCIAS)
+        .child(key)
         .remove()
         .then((value) => true)
         .catchError((e) => false);
 
     if (result)
-      for (Post item in postes.values)
-        await item.excluir();
-    Log.d(TAG, 'excluir', result);
+      denuncias.remove(key);
+    Log.d(TAG, 'removeDenuncia', result);
     return result;
   }
+
+  //endregion
+
+  //region greem red
 
   int bomCount() {
     int count = 0;
@@ -537,7 +565,15 @@ class User {
 
   //endregion
 
+  //endregion
+
   //region get set
+
+  List<PostPerfil> get postPerfilList {
+    List<PostPerfil> list = [];
+    list.addAll(postPerfil.values..toList());
+    return list..sort((a, b) => b.data.compareTo(a.data));
+  }
 
   Map<String, PostPerfil> get postPerfil {
     if (_postPerfil == null)
@@ -559,6 +595,16 @@ class User {
   // ignore: unnecessary_getters_setters
   set tokens(Map<String, Token> value) {
     _tokens = value;
+  }
+
+  Map<dynamic, dynamic> get denuncias {
+    if (_denuncias == null)
+      _denuncias = Map();
+    return _denuncias;
+  }
+
+  set denuncias(Map<dynamic, dynamic> value) {
+    _denuncias = value;
   }
 
   Map<String, Post> get postes {

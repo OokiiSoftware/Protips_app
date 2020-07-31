@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/pages/denuncia_page.dart';
 import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/res/resources.dart';
 
@@ -37,11 +37,7 @@ class MyWidgetState extends State<FragmentInicio> {
     super.initState();
     data = List<Post>();
     canOpenPerfil = user == null;
-    if (user == null) {
-      _preencherLista(getPosts.postes);
-    } else {
-      _preencherLista(user.postes.values.toList());
-    }
+    _preencherLista();
     progressBar = CircularProgressIndicator(value: progressBarValue);
   }
 
@@ -67,20 +63,22 @@ class MyWidgetState extends State<FragmentInicio> {
   //region Metodos
 
   Widget itemLayout(Post item) {
+    //region Variaveis
     User user = getTipster.get(item.idTipster);
-    bool isMyPost = item.idTipster == getFirebase.fUser().uid;
+    String meuId = getFirebase.fUser().uid;
+    bool isMyPost = item.idTipster == meuId;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
 
     double fotoUserSize = 40;
-    bool fotoLocalExist = item.fotoLocalExist;
-    bool fotoLocalUserExist = user.dados.fotoLocalExist;
+
+    //endregion
 
     return Container(
-      alignment: Alignment.center,
-      child: Column(children:[
-        //header
-        GestureDetector(
+        alignment: Alignment.center,
+        child: Column(children: [
+          //header
+          GestureDetector(
             child: Container(
               color: MyTheme.tintColor2(),
               child: Row(
@@ -93,12 +91,7 @@ class MyWidgetState extends State<FragmentInicio> {
                       Image.asset(MyIcons.ic_person, color: Colors.black) :
                       ClipRRect(
                           borderRadius: BorderRadius.circular(50),
-                          child: fotoLocalUserExist ?
-                          Image.file(File(user.dados.fotoLocal), width: fotoUserSize, height: fotoUserSize) :
-                          Image.network(
-                              user.dados.foto, width: fotoUserSize, height: fotoUserSize,
-                              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoUserSize, height: fotoUserSize)
-                          )
+                          child: MyIcons.fotoUser(user.dados, fotoUserSize)
                       )
                   ),
                   //Dados
@@ -106,7 +99,8 @@ class MyWidgetState extends State<FragmentInicio> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user?.dados?.nome ?? '', style: TextStyle(fontSize: 17)),
+                      Text(user?.dados?.nome ?? '',
+                          style: TextStyle(fontSize: 17)),
                       Text(item?.data)
                     ],
                   )),
@@ -126,7 +120,8 @@ class MyWidgetState extends State<FragmentInicio> {
                           list.remove(MyMenus.ABRIR_LINK);
 
                         return list.map((item) =>
-                            PopupMenuItem<String>(value: item, child: Text(item))).toList();
+                            PopupMenuItem<String>(value: item,
+                                child: Text(item))).toList();
                       }
                   ),
                 ],
@@ -135,97 +130,161 @@ class MyWidgetState extends State<FragmentInicio> {
             onTap: () {
               if (canOpenPerfil)
                 Navigator.of(context).pushNamed(PerfilPage.tag, arguments: user);
-//              Map<String, String> args = Map();
-//              args['itemKey'] = item.data;
-//              args['canOpenPerfil'] = canOpenPerfil.toString();
-//              var result = await Navigator.of(context).pushNamed(PostPage.tag, arguments: args);
-//              if (result != null && result == 'excluido')
-//                setState(() {
-//                  data.removeWhere((e) => e.id == item.id);
-//                });
             },
           ),
-         Divider(
+          Divider(
             color: MyTheme.accent(),
             height: 3,
             thickness: 3,
           ),
-        //Titulo
-        Container(
+          //Titulo
+          Container(
             alignment: Alignment.topCenter,
             padding: EdgeInsets.all(7),
             child: Text(item?.titulo, style: TextStyle(fontSize: 17)),
           ),
-        //Foto
-        Container(
-              child: fotoLocalExist ?
-              Image.file(File(item.fotoLocal)) :
-              Image.network(
-                  item.foto,
-                  errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_image_broken)
-              )
+          //Foto
+          Container(
+              child: MyIcons.fotoPost(item)
           ),
-        divider,
-        //descricao
-        Container(
+          divider,
+          //descricao
+          if (item.descricao.isNotEmpty) Container(
             alignment: Alignment.topLeft,
             padding: EdgeInsets.fromLTRB(10, 2, 10, 2),
             child: Text(item.descricao),
           ),
-        //Dados
-        Column(
-            children: [
-              //categoria
-              Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                crossAxisAlignment: CrossAxisAlignment.end,
+          //Dados
+          DataTable(
+              headingRowHeight: 20,
+              dataRowHeight: 20,
+              columns: [
+                DataColumn(label: Text(
+                    MyStrings.ESPORTE.toUpperCase() + ': ' + item.esporte)),
+                DataColumn(label: Text(
+                    MyStrings.LINHA.toUpperCase() + ': ' + item.linha)),
+              ], rows: [
+            DataRow(cells: [
+              DataCell(Text(
+                  MyStrings.ODD_ATUAL.toUpperCase() + ': ' + item.oddAtual)),
+              DataCell(
+                  Text(MyStrings.UNIDADES.toUpperCase() + ': ' + item.unidade)),
+            ]),
+          ]),
+          if (item.oddMinima.isNotEmpty || item.oddMaxima.isNotEmpty ||
+              item.horarioMinimo.isNotEmpty || item.horarioMaximo.isNotEmpty)
+            DataTable(
+                headingRowHeight: 20,
+                dataRowHeight: 20,
+                columns: [
+                  DataColumn(label: Text('')),
+                  DataColumn(label: Text(MyStrings.MINIMO.toUpperCase())),
+                  DataColumn(label: Text(MyStrings.MAXIMO.toUpperCase())),
+                ], rows: [
+              if (item.oddMinima.isNotEmpty || item.oddMaxima.isNotEmpty)
+                DataRow(cells: [
+                  DataCell(Text(MyStrings.ODD.toUpperCase())),
+                  DataCell(Text(item.oddMinima)),
+                  DataCell(Text(item.oddMaxima)),
+                ]),
+              if (item.horarioMinimo.isNotEmpty ||
+                  item.horarioMaximo.isNotEmpty)
+                DataRow(cells: [
+                  DataCell(Text(MyStrings.HORARIO.toUpperCase())),
+                  DataCell(Text(item.horarioMinimo)),
+                  DataCell(Text(item.horarioMaximo)),
+                ]),
+            ]),
+          //Green | Red Buttons
+          if (item.idTipster == meuId)
+            Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Text(MyStrings.CATEGORIA),
-                  Text(item.esporte),
-                  Text(item.linha),
-                ],
-              ),
-              //ODD Atual
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(MyStrings.ODD_ATUAL),
-                  Text(item.oddAtual),
-                  Text(item.unidade),
-                ],
-              ),
-              divider,
-              //Minimos e maximos
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(''),
-                  Text(MyStrings.MINIMO),
-                  Text(MyStrings.MAXIMO),
-                ],
-              ),
-              //Odd
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(MyStrings.ODD),
-                  Text(item.oddMinima),
-                  Text(item.oddMaxima),
-                ],
-              ),
-              //Horarios
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(MyStrings.HORARIO),
-                  Text(item.horarioMinimo),
-                  Text(item.horarioMaximo),
-                ],
-              ),
-              divider,
-            ],
-          )
-      ])
+                  Text('\tEste Tip teve: '),
+                  Tooltip(message: 'Green', child: FlatButton(
+                    child: Image.asset(MyIcons.ic_positivo, width: 30),
+                    color: item.bom.containsKey(meuId) ? Colors.black12 : Colors
+                        .white,
+                    onPressed: () async {
+                      if (item.bom.containsKey(meuId))
+                        await item.removeBom(meuId);
+                      else
+                        await item.addBom(meuId);
+                      setState(() {});
+                    },
+                  )),
+                  Tooltip(message: 'Red', child: FlatButton(
+                    child: Image.asset(MyIcons.ic_negativo, width: 30),
+                    color: item.ruim.containsKey(meuId)
+                        ? Colors.black12
+                        : Colors
+                        .white,
+                    onPressed: () async {
+                      if (item.ruim.containsKey(meuId))
+                        await item.removeRuim(meuId);
+                      else
+                        await item.addRuim(meuId);
+                      setState(() {});
+                    },
+                  )),
+                ]),
+//        Column(
+//            children: [
+          //categoria
+//              Row(
+//                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+////                crossAxisAlignment: CrossAxisAlignment.end,
+//                children: [
+//                  Text(MyStrings.ESPORTE +': '),
+//                  Text(item.esporte),
+//                  Text('  |  '),
+//                  Text(MyStrings.LINHA +': '),
+//                  Text(item.linha),
+//                ],
+//              ),
+//              //ODD Atual
+//              Row(
+//                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                children: [
+//                  Text(MyStrings.ODD_ATUAL +': '),
+//                  Text(item.oddAtual),
+//                  Text('  |  '),
+//                  Text(MyStrings.UNIDADES +': '),
+//                  Text(item.unidade),
+//                ],
+//              ),
+//              divider,
+          //Minimos e maximos
+//              Row(
+//                mainAxisAlignment: MainAxisAlignment.spaceAround,
+//                children: [
+//                  Text(''),
+//                  Text(MyStrings.MINIMO),
+//                  Text(MyStrings.MAXIMO),
+//                ],
+//              ),
+          //Odd
+//              if (item.oddMinima.isNotEmpty || item.oddMaxima.isNotEmpty) Row(
+//                mainAxisAlignment: MainAxisAlignment.spaceAround,
+//                children: [
+//                  Text(MyStrings.ODD),
+//                  Text(item.oddMinima),
+//                  Text(item.oddMaxima),
+//                ],
+//              ),
+          //Horarios
+//              if (item.horarioMinimo.isNotEmpty || item.horarioMaximo.isNotEmpty) Row(
+//                mainAxisAlignment: MainAxisAlignment.spaceAround,
+//                children: [
+//                  Text(MyStrings.HORARIO),
+//                  Text(item.horarioMinimo),
+//                  Text(item.horarioMaximo),
+//                ],
+//              ),
+//              divider,
+//            ],
+//          )
+        ])
     );
   }
 
@@ -238,6 +297,7 @@ class MyWidgetState extends State<FragmentInicio> {
         onDelete(post);
         break;
       case MyMenus.DENUNCIAR:
+        Navigator.of(context).pushNamed(DenunciaPage.tag, arguments: post);
         break;
     }
   }
@@ -283,16 +343,23 @@ class MyWidgetState extends State<FragmentInicio> {
 
   Future<void> _onRefresh() async {
     await getUsers.baixar();
-    data.clear();
-    if (user == null)
-      _preencherLista(getPosts.postes);
-    else
-      _preencherLista(user.postes.values.toList());
+    _preencherLista();
     setState(() {});
   }
 
-  _preencherLista(List<Post> list) {
-    data.addAll(list..sort((a, b) => a.data.compareTo(b.data)));
+  _preencherLista() {
+    data.clear();
+    List<Post> list = [];
+    if (user == null)
+      list.addAll(getPosts.data);
+    else {
+      String meuId = getFirebase.fUser().uid;
+      if (getFirebase.isAdmin || user.dados.id == meuId || user.seguidores.containsKey(meuId))
+        list.addAll(user.postes.values.toList());
+      else
+        list.addAll(user.postes.values.where((e) => e.isPublico).toList());
+    }
+    data.addAll(list..sort((a, b) => b.data.compareTo(a.data)));
   }
 
   //endregion

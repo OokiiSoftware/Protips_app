@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -7,14 +6,17 @@ import 'package:progress_dialog/progress_dialog.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/about_page.dart';
+import 'package:protips/pages/gerencia_page.dart';
 import 'package:protips/pages/login_page.dart';
 import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/tutorial_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
 import 'package:protips/sub_pages/fragment_perfil.dart';
 import 'package:protips/sub_pages/fragment_pesquisa.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatefulWidget {
   static const String tag = 'MainPage';
@@ -37,6 +39,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   TabBarView _tabBarView;
   bool inicializado = false;
+  bool isTipster = false;
   //endregion
 
   //region overrides
@@ -72,7 +75,8 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    bool userIsTipster = getFirebase.user().dados.isTipster;
+    Log.setToast = context;
+    isTipster = getFirebase.user().dados.isTipster;
 
     double screenHeight = MediaQuery.of(context).size.height/3;
     double iconSize = 200;
@@ -82,11 +86,17 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     var drawerIconSize = 23.0;
     var navHeight = 50.0;
 
-    return inicializado ? Scaffold(
+    return inicializado ?
+    Scaffold(
       appBar: AppBar(
         elevation: 0,
         title: Text(_currentTitle),
         actions: <Widget>[
+          if (currentIndex == 0 && getFirebase.isAdmin)
+            Tooltip(message: 'Gerencia', child: IconButton(
+              icon: Icon(Icons.whatshot),
+              onPressed: () {Navigator.of(context).pushNamed(GerenciaPage.tag);},
+            )),
           if (currentIndex == 1) IconButton(
             icon: SvgPicture.asset(MyIcons.ic_pesquisa_svg, color: navIconColor, width: navIconSize + 5),
             onPressed: () {
@@ -147,25 +157,6 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 ),
               ),
             ),
-            //Meu Perfil
-            ListTile(
-              leading: Image.asset(MyIcons.ic_perfil, color: Colors.black38, width: drawerIconSize),
-              title: Text(MyMenus.MEU_PERFIL),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).pushNamed(MeuPerfilPage.tag);
-              },
-            ),
-            //Meus Posts
-            if (userIsTipster)
-              ListTile(
-                leading: Icon(Icons.lightbulb_outline),
-                title: Text(MyMenus.MEUS_POSTS),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.of(context).pushNamed(PerfilPage.tag, arguments: getFirebase.user());
-                },
-              ),
             //Atualização
             ListTile(
               leading: Icon(Icons.update),
@@ -175,22 +166,49 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 Navigator.pop(context);
               },
             ),
-            //Loguot
+            //Meus Posts
+            if (isTipster)
+              ListTile(
+                leading: Icon(Icons.lightbulb_outline),
+                title: Text(MyMenus.MEUS_POSTS),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).pushNamed(PerfilPage.tag, arguments: getFirebase.user());
+                },
+              ),
+            //Meu Perfil
             ListTile(
-              leading: Icon(Icons.highlight_off),
-              title: Text(MyMenus.LOGOUT),
+              leading: Image.asset(MyIcons.ic_perfil, color: Colors.black38, width: drawerIconSize),
+              title: Text(MyMenus.MEU_PERFIL),
               onTap: () {
                 Navigator.pop(context);
-                onLogoutTap();
+                Navigator.of(context).pushNamed(MeuPerfilPage.tag);
               },
             ),
+            if (isTipster)
+              ListTile(
+                leading: Icon(Icons.help),
+                title: Text(MyMenus.TUTORIAL),
+                onTap: () {
+                  Navigator.pop(context);Navigator.of(context).pushNamed(TutorialPage.tag);
+                },
+              ),
             //Sobre
             ListTile(
-              leading: Icon(Icons.info_outline),
+              leading: Icon(Icons.info),
               title: Text(MyMenus.SOBRE),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.of(context).pushNamed(AboutPage.tag);
+              },
+            ),
+            //Loguot
+            ListTile(
+              leading: Icon(Icons.remove_circle),
+              title: Text(MyMenus.LOGOUT),
+              onTap: () {
+                Navigator.pop(context);
+                onLogoutTap();
               },
             ),
           ],
@@ -292,6 +310,9 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
          else Navigator.of(context).pushNamed(MeuPerfilPage.tag);
       }
 
+      isTipster = getFirebase.user().dados.isTipster;
+      _verificarTutorial();
+
       getFirebase.initNotificationManager(context);
 
       getFirebase.observMyFirebaseData();
@@ -306,9 +327,15 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       await getPosts.saveFotosLocal();
 
       OfflineData.deletefile(OfflineData.appTempPath, OfflineData.appTempName);
+      onAtualizarTap(false);
 
     } catch(e) {
-      Log.e(TAG, 'init', e);
+      bool sendError = true;
+      if (e.toString().contains(FirebaseInitResult.fUserNull.toString()))
+        sendError = false;
+      if (e.toString().contains(FirebaseInitResult.userNull.toString()))
+        sendError = false;
+      Log.e(TAG, 'init', e, sendError);
       Navigator.of(context).pushReplacementNamed(LoginPage.tag);
     }
   }
@@ -320,21 +347,22 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     Navigator.pushReplacementNamed(context, LoginPage.tag);
   }
 
-   void onAtualizarTap() async {
-     Log.toast(context, 'Verificando Atualização');
+   void onAtualizarTap([bool showMsg = true]) async {
+    if (showMsg)
+       Log.toast('Verificando Atualização');
      if(await openFile()) {
        return;
      }
      var resultData = await Import.buscarAtualizacao();
 
      if(resultData != null) {
-       var result = await showDialog(
+       bool result = await showDialog(
            context: context,
            barrierDismissible: false,
            builder: (BuildContext context) {
              return AlertDialog(
-               title: Text(MyStrings.VERIF_ATUALIZACAO),
-               content: Text(MyStrings.BAIXAR_ATUALIZACAO),
+               title: Text(MyTexts.VERIF_ATUALIZACAO),
+               content: Text(MyTexts.BAIXAR_ATUALIZACAO),
                actions: <Widget>[
                  FlatButton(
                    child: Text(MyStrings.CANCELAR),
@@ -384,13 +412,13 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
          await pr.show();
 
-         /*showDialog(
+       showDialog(
              context: context,
              barrierDismissible: false,
              builder: (BuildContext context) {
                return AlertDialog(
                  title: Text(MyStrings.BAIXANDO),
-                 content: progressBar,
+                 content: CircularProgressIndicator(),
                  actions: <Widget>[
                    FlatButton(
                      child: Text(MyStrings.CANCELAR),
@@ -400,7 +428,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                      },
                    ),
                    FlatButton(
-                     child: Text(MyStrings.SEGUNDO_PLANO),
+                     child: Text(MyTexts.SEGUNDO_PLANO),
                      onPressed: () {
                        Navigator.of(context).pop();
                      },
@@ -408,11 +436,13 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                  ],
                );
              }
-         );*/
+         );
        }
-//       Import.openUrl(resultData, context);
+//       if (result)
+//         Import.openUrl(resultData, context);
      } else
-       Log.toast(context, 'Sem Atualização');
+       if (showMsg)
+         Log.toast('Sem Atualização');
   }
 
   void _onPageChanged(int index) {
@@ -422,6 +452,11 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     });
   }
 
+  void _verificarTutorial() async {
+    var pref = await SharedPreferences.getInstance();
+    if(isTipster && pref.getBool(SharedPreferencesKey.ULTIMO_TUTORIAL_OK) == null)
+      Navigator.of(context).pushNamed(TutorialPage.tag);
+  }
 
   Future<bool> openFile() async {
     final filePath = OfflineData.appTempPath + '/' + OfflineData.appTempName;
@@ -440,7 +475,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
 class DataSearch extends SearchDelegate<String> {
 
-  final sugestoes = getUsers.users.values.toList();
+  final sugestoes = getUsers.data.values.toList();
 
   @override
   String get searchFieldLabel => MyStrings.PESQUISAR;
@@ -472,16 +507,11 @@ class DataSearch extends SearchDelegate<String> {
 
     return ListView.builder(itemBuilder: (context, index) {
       User item = list[index];
-      bool fotoLocalExist = item.dados.fotoLocalExist;
+
       return ListTile(
         leading: ClipRRect(
             borderRadius: BorderRadius.circular(50),
-            child: fotoLocalExist ?
-                Image.file(File(item.dados.fotoLocal)) :
-            Image.network(
-                item.dados.foto,
-                errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
-            )
+            child: MyIcons.fotoUser(item.dados, 50)
         ),
         title: RichText(
           text: TextSpan(

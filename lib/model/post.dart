@@ -27,7 +27,7 @@ class Post {
   String _esporte;
   String _linha;
   String _campeonato;
-  bool _publico;
+  bool _isPublico;
   Map<dynamic, dynamic> _bom, _ruim;
   //endregion
 
@@ -52,7 +52,7 @@ class Post {
     linha = map['linha'];
 //    mercado = map['mercado'];
     campeonato = map['campeonato'];
-    publico = map['publico'];
+    isPublico = map['isPublico'];
     ruim = map['ruim'];
     bom = map['bom'];
   }
@@ -73,7 +73,7 @@ class Post {
     "esporte": esporte,
     "linha": linha,
     "campeonato": campeonato,
-    "publico": publico,
+    "isPublico": isPublico,
     "id_tipster": idTipster,
     "bom": bom,
     "ruim": ruim,
@@ -100,7 +100,7 @@ class Post {
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
-        .child(Cript.encript(data))
+        .child(data)
         .set(toJson())
         .then((value) => true)
         .catchError((e) {
@@ -109,8 +109,10 @@ class Post {
         });
 
     if (result)
-      for (User user in getSeguidores.users.values) {
-        await getFirebase.notificationManager.sendPost(this, user);
+      for (String key in getFirebase.user().seguidores.values) {
+        User user = await getUsers.get(key);
+        if (user != null)
+          await getFirebase.notificationManager.sendPost(this, user);
       }
     Log.d(TAG, 'postar', result);
     return result;
@@ -118,41 +120,43 @@ class Post {
 
   Future<bool> addBom(String userId) async {
     if (bom.containsValue(userId))
-      return null;
+      return true;
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
-        .child(Cript.encript(data))
+        .child(data)
         .child(FirebaseChild.BOM)
         .child(userId)
         .set(userId)
         .then((value) => true)
         .catchError((e) => false);
     if (result) {
-      removeRuim(userId);
+      await removeRuim(userId);
       bom[userId] = userId;
     }
+    Log.d(TAG, 'addBom', result);
     return result ?? false;
   }
 
   Future<bool> addRuim(String userId) async {
     if (ruim.containsValue(userId))
-      return null;
+      return true;
     var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
-        .child(Cript.encript(data))
+        .child(data)
         .child(FirebaseChild.RUIM)
         .child(userId)
         .set(userId)
         .then((value) => true)
         .catchError((e) => false);
     if (result) {
-      removeBom(userId);
+      await removeBom(userId);
       ruim[userId] = userId;
     }
+    Log.d(TAG, 'addRuim', result);
     return result ?? false;
   }
 
@@ -163,7 +167,7 @@ class Post {
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
-        .child(Cript.encript(data))
+        .child(data)
         .child(FirebaseChild.BOM)
         .child(userId)
         .remove()
@@ -171,24 +175,26 @@ class Post {
         .catchError((e) => false);
     if (result)
       bom.remove(userId);
+    Log.d(TAG, 'removeBom', result);
     return result;
   }
 
   Future<bool> removeRuim(String userId) async {
     if (!ruim.containsValue(userId))
-      return null;
+      return true;
      var result = await getFirebase.databaseReference()
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
-        .child(Cript.encript(data))
+        .child(data)
         .child(FirebaseChild.RUIM)
         .child(userId)
         .remove()
          .then((value) => true)
          .catchError((e) => false);
      if (result)
-      ruim.remove(userId);
+       ruim.remove(userId);
+    Log.d(TAG, 'removeRuim', result);
     return result;
   }
 
@@ -292,10 +298,10 @@ class Post {
     _bom = value;
   }
 
-  bool get publico => _publico ?? false;
+  bool get isPublico => _isPublico ?? false;
 
-  set publico(bool value) {
-    _publico = value;
+  set isPublico(bool value) {
+    _isPublico = value;
   }
 
   String get campeonato => _campeonato ?? '';
@@ -371,8 +377,12 @@ class Post {
   }
 
   bool get fotoLocalExist {
-    File file = File(fotoLocal);
+    File file = File(getPosts.localPath + '/' + fotoLocal);
     return file.existsSync() ;
+  }
+
+  File get fotoToFile {
+    return File(getPosts.localPath + '/' + fotoLocal);
   }
 
   String get fotoLocal {
@@ -380,12 +390,6 @@ class Post {
       _fotoLocal = id + '.jpg';
     return _fotoLocal;
   }
-
-  /*String get texto => _texto ?? '';
-
-  set texto(String value) {
-    _texto = value;
-  }*/
 
   String get descricao => _descricao ?? '';
 

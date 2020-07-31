@@ -14,7 +14,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_api_availability/google_api_availability.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:protips/model/data.dart';
+import 'package:protips/model/data_hora.dart';
+import 'package:protips/model/denuncia.dart';
+import 'package:protips/model/error.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
@@ -27,7 +29,7 @@ import 'notification_manager.dart';
 
 class Import {
   static const String TAG = 'Import';
-  static const double APP_VERSION = 1.134;
+  static const double APP_VERSION = 1.2;
   static Map<String, dynamic> _deviceData;
 
   static String getDeviceName() {
@@ -67,7 +69,7 @@ class Import {
         return AlertDialog(
           backgroundColor: MyTheme.transparentColor(),
           content: GestureDetector(
-            child: Image.network(item.foto),
+            child: MyIcons.fotoPostNetwork(item.foto),
             onTapUp: (value) {
               Navigator.pop(context);
             },
@@ -79,30 +81,35 @@ class Import {
 
   static Future<String> buscarAtualizacao() async {
     Log.d(TAG, 'buscarAtualizacao', 'Iniciando');
-    return await getFirebase.databaseReference()
+    double _value = await getFirebase.databaseReference()
         .child(FirebaseChild.VERSAO)
         .once()
-        .then((value) async {
-          String url;
-          double _value = value.value;
-          Log.d(TAG, 'buscarAtualizacao', 'Versão', _value);
-          if (_value > APP_VERSION) {
-            String folder = Platform.isAndroid ? FirebaseChild.APK : FirebaseChild.IOS;
-            String ext = Platform.isAndroid ? '.apk': '' ;
-            String fileName = MyStrings.APP_NAME + '_' + _value.toString() + ext;
-            Log.d(TAG, 'buscarAtualizacao', 'fileName', fileName);
-            url = await getFirebase.storage()
-                .child(FirebaseChild.APP)
-                .child(folder)
-                .child(fileName)
-                .getDownloadURL();
-          }
-          Log.d(TAG, 'buscarAtualizacao', 'url', url ?? 'Null');
-          return url;
-    }).catchError((e) {
+        .then((value) => value.value)
+        .catchError((e) {
       Log.e(TAG, 'buscarAtualizacao', e);
-      return null;
+      return -1.0;
     });
+    String url;
+
+    Log.d(TAG, 'buscarAtualizacao', 'Versão', _value);
+    if (_value > 0 && _value > APP_VERSION) {
+//      url = 'https://play.google.com/store/apps/details?id=com.ookiisoftware.protips';
+      String folder = Platform.isAndroid ? FirebaseChild.APK : FirebaseChild.IOS;
+      String ext = Platform.isAndroid ? '.apk' : '';
+      String fileName = MyStrings.APP_NAME + '_' + _value.toString() + ext;
+      Log.d(TAG, 'buscarAtualizacao', 'fileName', fileName);
+      try {
+        url = await getFirebase.storage()
+            .child(FirebaseChild.APP)
+            .child(folder)
+            .child(fileName)
+            .getDownloadURL();
+      } catch(e) {
+        Log.e(TAG, 'buscarAtualizacao', e);
+      }
+    }
+
+    return url;
   }
 
   static void openUrl(String url, [BuildContext context]) async {
@@ -113,7 +120,7 @@ class Import {
         throw Exception(MyErros.ABRIR_LINK);
     } catch(e) {
       if (context != null)
-        Log.toast(context, MyErros.ABRIR_LINK, isError: true);
+        Log.toast(MyErros.ABRIR_LINK, isError: true);
       Log.e(TAG, 'openUrl', e);
     }
   }
@@ -133,7 +140,7 @@ class Import {
         throw Exception(MyErros.ABRIR_EMAIL);
     } catch(e) {
       if (context != null)
-        Log.toast(context, MyErros.ABRIR_EMAIL, isError: true);
+        Log.toast(MyErros.ABRIR_EMAIL, isError: true);
       Log.e(TAG, 'openUrl', e);
     }
   }
@@ -148,13 +155,13 @@ class Import {
         throw Exception(MyErros.ABRIR_WHATSAPP);
     } catch(e) {
       if (context != null)
-        Log.toast(context, MyErros.ABRIR_WHATSAPP, isError: true);
+        Log.toast(MyErros.ABRIR_WHATSAPP, isError: true);
       Log.e(TAG, 'openUrl', e);
     }
   }
 }
 
-class Cript {
+/*class Cript {
   static String encript(String value) {
 //    return md5.convert(utf8.encode(value)).toString();
     return value;
@@ -162,7 +169,7 @@ class Cript {
   static String dencript(String value) {
     return value;
   }
-}
+}*/
 
 enum FirebaseInitResult {
   ok, userNull, fUserNull, none
@@ -248,13 +255,45 @@ class getFirebase {
       if (_firebaseUser == null)
         throw new Exception(firebaseUser_Null);
 
+      _checkAdmin();
       Log.d(TAG, 'init', 'Firebase OK');
       return FirebaseInitResult.ok;
     } catch (e) {
-      Log.e(TAG, 'init', e);
-      if (e.toString().contains(firebaseUser_Null))
+      if (e.toString().contains(firebaseUser_Null)) {
+        Log.e(TAG, 'init', e, false);
         return FirebaseInitResult.fUserNull;
+      } else
+        Log.e(TAG, 'init', e);
       return FirebaseInitResult.none;
+    }
+  }
+  
+  static void initAdmin() async {
+    databaseReference().child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER).onValue.listen((event) async {
+      Map<dynamic, dynamic> map = event.snapshot.value;
+      if (map != null)
+        for(String key in map.keys) {
+          var item = await getUsers.get(key);
+          if (item != null)
+            getSolicitacoes.add(item);
+        }
+    });
+
+    getDenuncias.baixar();
+    getErros.baixar();
+  }
+
+  static void _checkAdmin() async {
+    try {
+      var snapshot = await getFirebase.databaseReference()
+          .child(FirebaseChild.ADMINISTRADORES).child(fUser().uid).once();
+      var b = snapshot.value;
+      if (b != null && b is bool)
+        _isAdmin = b;
+      if (isAdmin)
+        initAdmin();
+    } catch (e) {
+      Log.e(TAG, '_checkAdmin', e);
     }
   }
 
@@ -265,10 +304,10 @@ class getFirebase {
 
   static void finalize() async {
     _firebaseUser = null;
+    _isAdmin = false;
 //    _token = null;
     getTipster.reset();
     getPosts.reset();
-    getSeguindo.reset();
     await _user.logout();
     _fcm = null;
     _user = null;
@@ -336,7 +375,10 @@ class getFirebase {
         throw new Exception(user_Null);
       return true;
     }catch(e) {
-      Log.e(TAG, 'atualizarOfflineUser', e);
+      if (e.toString().contains(user_Null))
+        Log.e(TAG, 'atualizarOfflineUser', e, false);
+      else
+        Log.e(TAG, 'atualizarOfflineUser', e);
       return false;
     }
   }
@@ -353,15 +395,15 @@ class OfflineData {
 
   static Future<void> readDirectorys() async {
     String directory = await OfflineData._getDirectoryPath();
-    getUsers._localPath = directory + '/' + FirebaseChild.USUARIO;
-    getPosts._localPath = directory + '/' + FirebaseChild.POSTES;
+    getUsers.localPath = directory + '/' + FirebaseChild.USUARIO;
+    getPosts.localPath = directory + '/' + FirebaseChild.POSTES;
     appTempPath = directory + '/' + FirebaseChild.APP;
   }
 
   static Future<bool> saveOfflineData() async {
     try {
       File _pathUsers = _getUserFile(await _getDirectoryPath());
-      String data = jsonEncode(getUsers.users);
+      String data = jsonEncode(getUsers.data);
       await _pathUsers.writeAsString(data);
       Log.d(TAG, 'saveOfflineData', 'OK', _pathUsers.path);
       return true;
@@ -384,7 +426,7 @@ class OfflineData {
   }
   static Future<bool> deleteOfflineData() async {
     try {
-      File file = _getUserFile(getUsers._localPath);
+      File file = _getUserFile(getUsers.localPath);
       if (file.existsSync())
         await file.delete();
       Log.d(TAG, 'deleteOfflineData', 'OK');
@@ -435,6 +477,9 @@ class OfflineData {
   }
 
   static Future<bool> downloadFile(String url, String path, String fileName, {bool override = false, ProgressCallback onProgress, CancelToken cancelToken}) async {
+    if (url == null || url.isEmpty)
+      return true;
+
     try {
       String _path = '$path/$fileName';
       File file = File(_path);
@@ -445,18 +490,19 @@ class OfflineData {
           return true;
         }
       }
-      Log.d(TAG, 'downloadFile', _path);
+      Log.d(TAG, 'downloadFile', 'Iniciando');
       await _dio.download(url, _path, onReceiveProgress: onProgress, cancelToken: cancelToken);
+      Log.d(TAG, 'downloadFile', 'OK');
       return true;
     } catch(e) {
-      Log.e(TAG, 'downloadFile', e);
+      Log.e(TAG, 'downloadFile', e, url);
       return false;
     }
   }
 
   static Future<void> saveData(String data) async {
     var dir = await _getDirectoryPath();
-    var fileName = Data.now() + '.txt';
+    var fileName = DataHora.now() + '.txt';
     File file = File('$dir/$fileName');
     await file.writeAsString(data);
     Log.d(TAG, 'saveData', 'OK', fileName);
@@ -466,32 +512,34 @@ class OfflineData {
 // ignore: camel_case_types
 class getUsers {
   static const String TAG = 'getUsers';
-  static String _localPath;
+  static String localPath;
 
-  static Map<String, User> _users = new Map();
+  static Map<String, User> _data = new Map();
 
-  static Map<String, User> get users => _users;
+  static Map<String, User> get data => _data;
   static Future<User> get(String key) async {
-    if (_users[key] == null) {
+    if (_data[key] == null) {
       var item = await baixarUser(key);
       if (item != null)
         add(item);
     }
-    return _users[key];
+    return _data[key];
   }
 
-  static void add(User user) {
-    _users[user.dados.id] = user;
+  static void add(User item) {
+    _data[item.dados.id] = item;
+    if(item.dados.id == getFirebase.user().dados.id)
+      getFirebase.setUser(item);
   }
-  static void addAll(Map<String, User> users) {
-    _users.addAll(users);
+  static void addAll(Map<String, User> items) {
+    _data.addAll(items);
   }
   static void remove(String key) {
-    _users.remove(key);
+    _data.remove(key);
   }
 
   static void reset() {
-    _users.clear();
+    _data.clear();
   }
 
   static Future<void> baixar() async {
@@ -520,10 +568,16 @@ class getUsers {
   static void dd(Map<dynamic, dynamic> map) {
     if (map == null)
       return;
+
+    reset();
+    getPosts.reset();
+    getTipster.reset();
+
     for (String key in map.keys) {
       try {
         User item = User.fromJson(map[key]);
-        bool addTipster = item.dados.isTipster && !item.dados.isBloqueado && !item.solicitacaoEmAndamento();
+        bool addTipster = item.dados.isTipster && !item.dados.isBloqueado &&
+            !item.solicitacaoEmAndamento();
 
         if (addTipster) {
           //Adiciona os Posts de quem eu sigo e meu Postes
@@ -531,14 +585,11 @@ class getUsers {
             getPosts.addAll(item.postes);
           } else {
             for (Post post in item.postes.values) {
-              if (post.publico)
+              if (post.isPublico)
                 getPosts.add(post);
             }
           }
           getTipster.add(item);
-        }
-        if (getFirebase.user().seguidores.containsKey(key)) {
-          getSeguidores.add(item);
         }
         add(item);
       } catch(e) {
@@ -550,10 +601,12 @@ class getUsers {
 
   static Future<void> saveFotosPerfilLocal() async {
     await OfflineData.createPerfilDirectory();
-
-    for (User item in _users.values) {
+    //Salva minha foto
+    await OfflineData.downloadFile(getFirebase.user().dados.foto, localPath, getFirebase.user().dados.fotoLocal, override: true);
+    //Salva foto de meus tipsters
+    for (User item in getTipster.data) {
       try {
-        await OfflineData.downloadFile(item.dados.foto, _localPath, item.dados.fotoLocal, override: true);
+        await OfflineData.downloadFile(item.dados.foto, localPath, item.dados.fotoLocal, override: true);
       } catch(e) {
         Log.e(TAG, 'saveLocalFotos', e);
         continue;
@@ -567,102 +620,201 @@ class getUsers {
 // ignore: camel_case_types
 class getTipster {
   static const String TAG = 'getUsers';
-  static Map<String, User> _users = new Map();
+  static Map<String, User> _data = new Map();
 
-  static List<User> get users => _users.values.toList();
-  static User get(String key) => _users[key];
+  static List<User> get data => _data.values.toList();
+  static User get(String key) => _data[key];
 
-  static void add(User user) {
-    _users[user.dados.id] = user;
+  static void add(User item) {
+    _data[item.dados.id] = item;
   }
-  static void addAll(Map<String, User> users) {
-    _users.addAll(users);
+  static void addAll(Map<String, User> items) {
+    _data.addAll(items);
   }
   static void remove(String key) {
-    _users.remove(key);
+    _data.remove(key);
   }
 
   static void reset() {
-    _users.clear();
+    _data.clear();
   }
 
 }
 
+// Solicitações para ser um Tipster
 // ignore: camel_case_types
-class getSeguindo {
-  static Map<String, User> _users = new Map();
+class getSolicitacoes {
+  static Map<String, User> _data = new Map();
 
-  static Map<String, User> get users => _users;
+  static List<User> get data => _data.values.toList();
 
   static void remove(String key) {
-    _users.remove(key);
+    _data.remove(key);
   }
 
-  static void add(User user) {
-    _users[user.dados.id] = user;
+  static void add(User item) {
+    _data[item.dados.id] = item;
   }
 
-  static User get(String key) => _users[key];
+  static User get(String key) => _data[key];
 
   static void reset() {
-    _users.clear();
+    _data.clear();
   }
 }
 
+//Lista de erros que ocorre nos dispositivos dos usuários
 // ignore: camel_case_types
-class getSeguidores {
-  static Map<String, User> _users = new Map();
+class getErros {
+  static const String TAG = 'getErros';
+  static Map<String, Error> _data = new Map();
 
-  static Map<String, User> get users => _users;
+  static List<Error> get data => _data.values.toList();
 
   static void remove(String key) {
-    _users.remove(key);
+    _data.remove(key);
   }
 
-  static void add(User user) {
-    _users[user.dados.id] = user;
+  static void add(Error item) {
+    _data[item.data] = item;
   }
 
-  static User get(String key) => _users[key];
+  static Error get(String key) => _data[key];
+
+  static Future<void> baixar() async {
+    Map<dynamic, dynamic> result = await getFirebase.databaseReference().child(FirebaseChild.LOGS)
+        .once().then((value) => value.value).catchError((ex) => null);
+    if (result != null) {
+      reset();
+      for (dynamic item in result.values) {
+        try {
+          Error e = Error.fromJson(item);
+          var e2 = _findSimilar(e);
+          if(e2 != null)
+            get(e2.data).quantidade++;
+          else
+            add(e);
+        } catch(e) {
+          Log.d(TAG, 'ERROR: baixar', e);
+          continue;
+        }
+      }
+    }
+  }
+
+  static Error _findSimilar(Error e) {
+    try {
+      return _data.values.firstWhere((x) => x.metodo == e.metodo && x.classe == e.classe && x.valor == e.valor);
+    } catch(e) {
+      return null;
+    }
+  }
 
   static void reset() {
-    _users.clear();
+    _data.clear();
+  }
+}
+
+//Lista de Denuncias feitas por usuários
+// ignore: camel_case_types
+class getDenuncias {
+  static const String TAG = 'getErros';
+  static Map<String, Denuncia> _data = new Map();
+
+  static List<Denuncia> get data => _data.values.toList();
+
+  static void remove(String key) {
+    _data.remove(key);
+  }
+
+  static void add(Denuncia item) {
+    _data[item.data] = item;
+  }
+
+  static Denuncia get(String key) => _data[key];
+
+  static Future<void> baixar() async {
+    Map<dynamic, dynamic> result = await getFirebase.databaseReference().child(FirebaseChild.DENUNCIAS)
+        .once().then((value) => value.value).catchError((ex) => null);
+    if (result != null) {
+      reset();
+      for (dynamic item in result.values) {
+        try {
+          Denuncia e = Denuncia.fromJson(item);
+          var e2 = _findSimilar(e);
+          if(e2 != null)
+            get(e2.data).quantidade++;
+          else
+            add(e);
+        } catch(e) {
+          Log.d(TAG, 'ERROR: baixar', e);
+          continue;
+        }
+      }
+    }
+  }
+
+  static Denuncia _findSimilar(Denuncia e) {
+    try {
+      return _data.values.firstWhere((x) => x.texto == e.texto && x.assunto == e.assunto && (x.idUser == e.idUser || x.itemKey == e.itemKey));
+    } catch(e) {
+      return null;
+    }
+  }
+
+  static void reset() {
+    _data.clear();
   }
 }
 
 // ignore: camel_case_types
 class getPosts {
   static const String TAG = 'getPosts';
-  static String _localPath;
+  static String localPath;
 
-  static Map<String, Post> _postes = new Map();
+  static Map<String, Post> _data = new Map();
 
-  static List<Post> get postes => _postes.values.toList()..sort((a, b) => b.data.compareTo(a.data));
-  static Post get(String key) => _postes[key];
+  static List<Post> get data => _data.values.toList()..sort((a, b) => b.data.compareTo(a.data));
+  static Post get(String key) => _data[key];
+
+  static Future<Post> baixar(String postKey, String userId) async {
+    if (_data[postKey] == null) {
+      var result = await getFirebase.databaseReference().child(FirebaseChild.USUARIO)
+      .child(userId).child(FirebaseChild.POSTES).child(postKey).once().then((value) => value.value);
+      if (result != null) {
+        Post item = Post.fromJson(result);
+        add(item);
+        return item;
+      }
+      return null;
+    } else {
+      return _data[postKey];
+    }
+  }
 
   static void add(Post item) {
-    _postes[item.id] = item;
+    _data[item.id] = item;
   }
   static void addAll(Map<String, Post> items) {
-    _postes.addAll(items);
+    _data.addAll(items);
   }
   static void remove(String key) {
-    _postes.remove(key);
+    _data.remove(key);
   }
   static void removeAll(String userId) {
-    _postes.removeWhere((key, value) => value.idTipster == userId);
+    _data.removeWhere((key, value) => value.idTipster == userId);
   }
 
   static void reset() {
-    _postes.clear();
+    _data.clear();
   }
 
   static Future<void> saveFotosLocal() async {
     await OfflineData.createPostDirectory();
 
-    for (Post item in _postes.values) {
+    for (Post item in _data.values) {
       try {
-        await OfflineData.downloadFile(item.foto, _localPath, item.fotoLocal);
+        await OfflineData.downloadFile(item.foto, localPath, item.fotoLocal);
       } catch(e) {
         Log.e(TAG, 'saveLocalFotos', e);
         continue;
@@ -674,26 +826,25 @@ class getPosts {
 }
 
 class Log {
-
   static FlutterToast _toast;
+  static set setToast (BuildContext context) {
+    _toast = FlutterToast(context);
+  }
 
-  static void toast(BuildContext context, String texto, {bool isError = false}) {
-    if (_toast == null)
-      _toast = FlutterToast(context);
+  static void toast(String texto, {bool isError = false}) {
+    var tint = isError ? MyTheme.textColor() : MyTheme.textColorInvert();
     Widget body = Container(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(25.0),
-        color: MyTheme.accent(),
+        color: isError ? Colors.red : MyTheme.accent(),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isError ? Icons.clear : Icons.check),
-          SizedBox(
-            width: 12.0,
-          ),
-          Text(texto),
+          Icon(isError ? Icons.clear : Icons.check, color: tint),
+          SizedBox(width: 12.0),
+          Text(texto, style: TextStyle(color: tint)),
         ],
       ),
     );
@@ -702,21 +853,28 @@ class Log {
 
   static void d(String tag, String metodo, [dynamic value, dynamic value1, dynamic value2, dynamic value3]) {
     String msg = '';
-    if (value != null) msg += ': ' + value.toString();
+    if (value != null) msg += value.toString();
     if (value1 != null) msg += ': ' + value1.toString();
     if (value2 != null) msg += ': ' + value2.toString();
     if (value3 != null) msg += ': ' + value3.toString();
     print(tag + ": D/" + metodo + ": " + msg);
   }
   static void e(String tag, String metodo, dynamic e, [dynamic value, dynamic value1, dynamic value2, dynamic value3]) {
-    String msg = ": E/" + metodo + ": " + e.toString();
-    if (value != null) msg += ': ' + value.toString();
+    String msg = e.toString();
+    bool send = true;
+    if (value != null) {
+      if (value is bool && value == false)
+        send = false;
+      else
+        msg += ': ' + value.toString();
+    }
     if (value1 != null) msg += ': ' + value1.toString();
     if (value2 != null) msg += ': ' + value2.toString();
     if (value3 != null) msg += ': ' + value3.toString();
-    print(tag + msg);
+    print(tag + ": E/: " + metodo + msg);
 //    _saveLog(tag + msg);
-    _sendError(tag, msg);
+    if (send)
+      _sendError(tag, metodo, msg);
   }
 
 //  static _saveLog(String data) {
@@ -727,16 +885,25 @@ class Log {
 //    }
 //  }
   
-  static _sendError(String tag, String value) {
+  static _sendError(String tag, String metodo, String value) {
+    String id = getFirebase.fUser()?.uid ?? 'deslogado';
+
+    Error e = Error();
+    e.data = DataHora.now();
+    e.classe = tag;
+    e.metodo = metodo;
+    e.valor = value;
+    e.userId = id;
+    e.salvar();
+
     try {
-      String data = tag + value;
-      String id = getFirebase.fUser()?.uid ?? '_deslogado';
-      getFirebase.databaseReference()
-          .child(FirebaseChild.LOGS)
-          .child(tag)
-          .child(id)
-          .child(Data.now())
-          .set(data);
+//      String data = tag + value;
+//      getFirebase.databaseReference()
+//          .child(FirebaseChild.LOGS)
+//          .child(tag)
+//          .child(id)
+//          .child(Data.now())
+//          .set(data);
     } catch(e) {
       //Todo \(ºvº)/
     }

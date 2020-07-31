@@ -10,7 +10,7 @@ class Endereco {
 
   Endereco();
 
-  Endereco.from(Map map) {
+  Endereco.fromJson(Map map) {
     pais = map['pais'];
     estado = map['estado'];
     cidade = map['cidade'];
@@ -29,7 +29,7 @@ class Endereco {
     cep = endereco.cep;
   }
 
-  Map toMap() => {
+  Map toJson() => {
       "Pais": _pais,
       "estado": _estado,
       "cidade": _cidade,

@@ -1,20 +1,17 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/res/resources.dart';
 
 class Notificacao {
 
-  bool _isExpanded;
+  bool isExpanded = false;
   bool isFotoLocal = false;
-  bool get isExpanded => _isExpanded ?? false;
-  set isExpanded(bool value) {
-    _isExpanded = value;
-  }
 
   String id;
   String titulo;
   String subtitulo;
-  String eSubtitulo;
+  Widget eSubtitulo;
   String eTitulo;
   String foto;
   String tag;
@@ -23,13 +20,15 @@ class Notificacao {
     this.id = '',
     this.titulo = '',
     this.subtitulo = '',
-    this.eSubtitulo = '',
+    this.eSubtitulo,
     this.eTitulo = '',
     this.foto = '',
     this.tag = '',
     this.isFotoLocal = false,
     this.onTap,
     this.onLongPress});
+
+  get hasFoto => foto.isNotEmpty;
 
   VoidCallback onTap;
   VoidCallback onLongPress;
@@ -40,8 +39,9 @@ class NotificationActions {
   static const String NOVO_TIP = 'NOVO_TIP';
   static const String SOLICITACAO_TIPSTER = 'SOLICITACAO_TIPSTER';
   static const String SOLICITACAO_FILIAL = 'SOLICITACAO_FILIAL';
-  static const String SOLICITACAO_ACEIRA = 'SOLICITACAO_ACEIRA';
+  static const String SOLICITACAO_ACEITA = 'SOLICITACAO_ACEITA';
   static const String ATUALIZACAO = 'ATUALIZACAO';
+  static const String DENUNCIA = 'DENUNCIA';
 }
 
 class PushNotification {
@@ -152,18 +152,4 @@ class PushNotification {
 
   //endregion
 
-}
-
-class ReceivedNotification {
-  final int id;
-  final String title;
-  final String body;
-  final String payload;
-
-  ReceivedNotification({
-    @required this.id,
-    @required this.title,
-    @required this.body,
-    @required this.payload,
-  });
 }

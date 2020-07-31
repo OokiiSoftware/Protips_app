@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
@@ -21,13 +22,12 @@ class MyWidgetState extends State<FragmentPerfil> {
   //region Variaveis
   static const String TAG = 'FragmentPerfil';
 
-  List<PostPerfil> data = new List<PostPerfil>();
+  List<PostPerfil> _data = new List<PostPerfil>();
   bool hasNotificacao = false;
 
   User user/* = getFirebase.user()*/;
 
   double progressBarValue = 0;
-  LinearProgressIndicator progressBar;
 
   //endregion
 
@@ -36,8 +36,6 @@ class MyWidgetState extends State<FragmentPerfil> {
   @override
   void initState() {
     super.initState();
-    progressBar = LinearProgressIndicator(value: progressBarValue);
-    data.addAll(getFirebase.user().postPerfil.values.toList()..sort((a, b) => a.data.compareTo(b.data)));
   }
 
   @override
@@ -61,12 +59,11 @@ class MyWidgetState extends State<FragmentPerfil> {
     user = getFirebase.user();
     UserDados dados = user.dados;
 
-    String foto = dados.foto;
-    String fotoLocal = dados.fotoLocal;
-    bool fotoLocalExist = dados.fotoLocalExist;
-
     if (user.seguidoresPendentes.length > 0)
       hasNotificacao = true;
+
+    _data.clear();
+    _data.addAll(user.postPerfilList);
 
     //endregion
 
@@ -91,10 +88,7 @@ class MyWidgetState extends State<FragmentPerfil> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(100),
-                                child: fotoLocalExist ? Image.file(File(fotoLocal), width: fotoSize, height: fotoSize) :
-                                foto.isEmpty ? Image.asset(MyIcons.ic_person) :
-                                Image.network(foto, width: fotoSize, height: fotoSize,
-                                    errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoSize, height: fotoSize)),
+                                child: MyIcons.fotoUser(user.dados, fotoSize)
                               ),
                               Align(
                                   alignment: Alignment.bottomRight,
@@ -163,7 +157,7 @@ class MyWidgetState extends State<FragmentPerfil> {
               crossAxisCount: 1,
               childAspectRatio: 90,
               children: [
-                progressBar
+                LinearProgressIndicator(value: progressBarValue)
               ],
             ),
           ),
@@ -176,8 +170,8 @@ class MyWidgetState extends State<FragmentPerfil> {
               crossAxisCount: 3,
               children: [
                 buttonNotificacoes(gridItemPadding, gridItemBackground),
-                buttonN(gridItemPadding, gridItemBackground),
-                buttonF(gridItemPadding, gridItemBackground),
+//                buttonN(gridItemPadding, gridItemBackground),
+//                buttonF(gridItemPadding, gridItemBackground),
                 if(dados.isTipster) buttonNewPost(gridItemBackground),
                 if(dados.isTipster) buttonNewPerfilPost(gridItemBackground),
               ],
@@ -213,7 +207,7 @@ class MyWidgetState extends State<FragmentPerfil> {
                   crossAxisSpacing: itemSpacing,
                 ),
               delegate: SliverChildBuilderDelegate((context, index) {
-                final item = data[index];
+                final item = _data[index];
                 return Stack(
                   alignment: AlignmentDirectional.topEnd,
                   children: [
@@ -221,7 +215,7 @@ class MyWidgetState extends State<FragmentPerfil> {
                     Container(
                         alignment: Alignment.center,
                         child: GestureDetector(
-                          child: Image.network(item.foto),
+                          child: MyIcons.fotoPostNetwork(item.foto),
                           onTap: () {
                             Import.showPopup(context, item);
                           },
@@ -244,7 +238,7 @@ class MyWidgetState extends State<FragmentPerfil> {
                   ],
                 );
               },
-              childCount: data.length
+                  childCount: _data.length
               ),
             ),
           )
@@ -267,8 +261,9 @@ class MyWidgetState extends State<FragmentPerfil> {
           height: double.infinity,
           child: FlatButton(
             child: Image.asset(hasNotificacao?MyIcons.ic_sms_2:MyIcons.ic_sms),
-            onPressed: () {
-              Navigator.of(context).pushNamed(NotificacoesPage.tag);
+            onPressed: () async {
+              await Navigator.of(context).pushNamed(NotificacoesPage.tag);
+              setState(() {});
             },
           ),
         ),
@@ -381,25 +376,21 @@ class MyWidgetState extends State<FragmentPerfil> {
                 FlatButton(
                   child: Text(MyStrings.POSTAR),
                   onPressed: () async {
-                    setState(() {
-                      progressBarValue = null;
-                    });
+                    Navigator.of(context).pop();
+                    _progressBar(true);
                     PostPerfil post = new PostPerfil();
                     post.id = randomString(10);
                     post.foto = result.path;
                     post.titulo = _titulo.text;
                     post.texto = _legenda.text;
                     post.idTipster = getFirebase.fUser().uid;
-                    post.data = DateTime.now().toString();
+                    post.data = DataHora.now();
 
-                    Navigator.of(context).pop();
-                    bool resultOK = await post.postar();
-                    setState(() {
-                      if (resultOK) {
-                        data.add(post);
-                      }
-                      progressBarValue = 0;
-                    });
+                    if (await post.postar())
+                      setState(() {});
+                    else
+                      Log.toast(MyErros.ERRO_GENERICO, isError: true);
+                    _progressBar(false);
                   },
                 ),
               ],
@@ -415,7 +406,7 @@ class MyWidgetState extends State<FragmentPerfil> {
       builder: (BuildContext context) {
           return AlertDialog(
             title: Text(MyStrings.EXCLUIR),
-            content: Text(MyStrings.MSG_EXCLUIR_POST_PERFIL),
+            content: Text(MyTexts.MSG_EXCLUIR_POST_PERFIL),
             actions: [
               FlatButton(
                 child: Text(MyStrings.CANCELAR),
@@ -426,14 +417,16 @@ class MyWidgetState extends State<FragmentPerfil> {
               FlatButton(
                 child: Text(MyStrings.SIM),
                 onPressed: () async {
+                  _progressBar(true);
                   Navigator.pop(context);
                   bool result = await item.excluir();
                   setState(() {
                     if (result) {
-                      data.remove(item);
+                      _data.remove(item);
                       getFirebase.user().postPerfil.remove(item.id);
                     }
                   });
+                  _progressBar(false);
                 },
               ),
             ],
@@ -449,6 +442,12 @@ class MyWidgetState extends State<FragmentPerfil> {
 
   _onNewPost() {
     Navigator.of(context).pushNamed(NewPostPage.tag);
+  }
+
+  _progressBar(bool ativar) {
+    setState(() {
+      progressBarValue = ativar ? null : 0;
+    });
   }
 
   //endregion

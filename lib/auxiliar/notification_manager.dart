@@ -3,7 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/model/data.dart';
+import 'package:protips/model/data_hora.dart';
+import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/notificacao.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/token.dart';
@@ -12,6 +13,8 @@ import 'package:protips/res/resources.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationManager {
+
+  //region Variaveis
   static const String TAG = 'NotificationManager';
 
   BuildContext context;
@@ -23,6 +26,8 @@ class NotificationManager {
 
   String _currentToken = '';
   User _user;
+
+  //endregion
 
   void init() async {
     pref = await SharedPreferences.getInstance();
@@ -105,43 +110,42 @@ class NotificationManager {
     if (_user == null)
       _user = getFirebase.user();
     return _user;
-}
-
-  // ignore: unnecessary_getters_setters
-  String get currentToken => _currentToken;
-  // ignore: unnecessary_getters_setters
-  set currentToken(String value) {
-    _currentToken = value;
   }
 
-  Future<bool> sendPost(Post post, User destino) async {
+  String get currentToken => _currentToken ?? '';
+  set currentToken(String value) {_currentToken = value;}
+
+  //region sends
+
+  Future<bool> sendPost(Post item, User destino) async {
     try {
       await destino.validarTokens();
       Log.d(TAG, 'sendPost', 'destino', destino.dados.nome);
       for (String token in destino.tokens.keys) {
-        String body = MyStrings.ESPORTE + ': ' + post.esporte;
-        body += '\n'+ MyStrings.ODD_ATUAL + ': ' + post.oddAtual;
+        String body = MyStrings.ESPORTE + ': ' + item.esporte;
+        body += '\n'+ MyStrings.ODD_ATUAL + ': ' + item.oddAtual;
 
-        if (post.campeonato.isNotEmpty)
-          body += '\n'+ MyStrings.CAMPEONATO + ': ' + post.campeonato;
+        if (item.campeonato.isNotEmpty)
+          body += '\n'+ MyStrings.CAMPEONATO + ': ' + item.campeonato;
 
-        if (post.oddMinima.isNotEmpty && post.oddMaxima.isNotEmpty)
-          body += '\n'+ MyStrings.ODD + ': ' + post.oddMinima + ' - ' + post.oddMaxima;
+        if (item.oddMinima.isNotEmpty && item.oddMaxima.isNotEmpty)
+          body += '\n'+ MyStrings.ODD + ': ' + item.oddMinima + ' - ' + item.oddMaxima;
 
-        if (post.horarioMinimo.isNotEmpty && post.horarioMaximo.isNotEmpty)
-          body += '\n'+ MyStrings.HORARIO + ': ' + post.horarioMinimo + ' - ' + post.horarioMaximo;
+        if (item.horarioMinimo.isNotEmpty && item.horarioMaximo.isNotEmpty)
+          body += '\n'+ MyStrings.HORARIO + ': ' + item.horarioMinimo + ' - ' + item.horarioMaximo;
 
         PushNotification notificacao = PushNotification();
         notificacao.de = user.dados.id;
         notificacao.title = MyTexts.NOVO_TIP + ': ' + user.dados.nome;
         notificacao.body = body;
-        notificacao.timestamp = post.data;
+        notificacao.timestamp = item.data;
         notificacao.token = token;
         notificacao.action = NotificationActions.NOVO_TIP;
         notificacao.enviar();
       }
       return true;
     } catch(e) {
+      Log.e(TAG, 'sendPost', e);
       return false;
     }
   }
@@ -156,7 +160,7 @@ class NotificationManager {
         PushNotification notificacao = new PushNotification();
         notificacao.title = titulo;
         notificacao.body = texto;
-        notificacao.timestamp = Data.now();
+        notificacao.timestamp = DataHora.now();
         notificacao.de = getFirebase.fUser().uid;
         notificacao.action = NotificationActions.SOLICITACAO_FILIAL;
         notificacao.token = token;
@@ -164,6 +168,7 @@ class NotificationManager {
       }
       return true;
     } catch (e) {
+      Log.e(TAG, 'sendSolicitacao', e);
       return false;
     }
   }
@@ -178,21 +183,75 @@ class NotificationManager {
         PushNotification notificacao = new PushNotification();
         notificacao.title = titulo;
         notificacao.body = texto;
-        notificacao.timestamp = Data.now();
+        notificacao.timestamp = DataHora.now();
         notificacao.de = getFirebase.fUser().uid;
-        notificacao.action = NotificationActions.SOLICITACAO_ACEIRA;
+        notificacao.action = NotificationActions.SOLICITACAO_ACEITA;
         notificacao.token = token;
         notificacao.enviar();
       }
       return true;
     } catch (e) {
+      Log.e(TAG, 'sendSolicitacaoAceita', e);
       return false;
     }
   }
 
+  Future<bool> sendSolicitacaoTipsterAceita(User destino) async {
+    try {
+      await destino.validarTokens();
+      for (String token in destino.tokens.keys) {
+        String titulo = MyTexts.SOLICITACAO_ACEITA;
+        String texto = 'Parabéns. Agora você é um Tipster na ProTips';
+
+        PushNotification notificacao = new PushNotification();
+        notificacao.title = titulo;
+        notificacao.body = texto;
+        notificacao.timestamp = DataHora.now();
+        notificacao.de = getFirebase.fUser().uid;
+        notificacao.action = NotificationActions.SOLICITACAO_ACEITA;
+        notificacao.token = token;
+        notificacao.enviar();
+      }
+      return true;
+    } catch (e) {
+      Log.e(TAG, 'sendSolicitacaoTipsterAceita', e);
+      return false;
+    }
+  }
+
+  Future<bool> sendDenuncia(Denuncia item) async {
+    try {
+      User destino = await getUsers.get(item.idUser);
+      if (destino == null)
+        return false;
+      await destino.validarTokens();
+      Log.d(TAG, 'sendDenuncia', 'destino', destino.dados.nome);
+      for (String token in destino.tokens.keys) {
+        String body = MyStrings.MOTIVO + ': ' + item.texto;
+
+        PushNotification notificacao = PushNotification();
+        notificacao.de = user.dados.id;
+        notificacao.title = MyStrings.ATENCAO.toUpperCase() + ' ' + MyTexts.VC_FOI_DENUNCIADO;
+        notificacao.body = body;
+        notificacao.timestamp = item.data;
+        notificacao.token = token;
+        notificacao.action = NotificationActions.DENUNCIA;
+        notificacao.enviar();
+      }
+      return true;
+    } catch(e) {
+      Log.e(TAG, 'sendDenuncia', e);
+      return false;
+    }
+  }
+
+  //endregion
+
+  //region Token
+
   Token _createToken(String token) {
     Token item = Token();
-    item.data = Data.now();
+    item.data = DataHora.now();
     item.value = token;
     item.device = Import.getDeviceName();
     return item;
@@ -210,19 +269,26 @@ class NotificationManager {
     _saveTokem(token);
   }
 
-
-  //======================
+  //endregion
 
   Future _onSelectNotification (String payload) async {
-//    if (context != null)
-//      Navigator.of(context).pushNamed(MainPage.tag);
+    if (payload != null && context != null) {
+      Log.d(TAG, 'onSelectNotification', payload);
+      switch(payload) {
+        case NotificationActions.NOVO_TIP:
+//        Navigator.of(context).pushNamed(PostPage.tag, arguments: await getPosts.baixar(postKey, userId));
+          break;
+        case NotificationActions.ATUALIZACAO:
+          break;
+      }
+    }
   }
 
   _showNotification(PushNotification notification) async {
     var android = AndroidNotificationDetails('channelId', 'channelName', 'channelDescription');
     var iOS = IOSNotificationDetails();
     var platform = NotificationDetails(android, iOS);
-    await flutterLocalNotificationsPlugin.show(0, notification.title, notification.body, platform);
+    await flutterLocalNotificationsPlugin.show(0, notification.title, notification.body, platform, payload: notification.action);
   }
 
 }

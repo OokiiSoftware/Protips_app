@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:protips/model/post.dart';
+import 'package:protips/model/user_dados.dart';
 
 class SharedPreferencesKey {
   static const String EMAIL = "email";
   static const String ULTIMO_TOKEM = "ultimo_tokem";
+  static const String ULTIMO_TUTORIAL_OK = "01";
 }
 
 class FirebaseChild {
@@ -23,6 +26,7 @@ class FirebaseChild {
 
   static const String TAGS = 'tags';
   static const String LOGS = 'logs';
+  static const String DENUNCIAS = 'denuncias';
 
   static const String SOLICITACAO_NOVO_TIPSTER = "solicitacao_novo_tipster";
   static const String SEGUIDORES = "seguidores";
@@ -65,9 +69,12 @@ class MyStrings {
   static const String company_email = 'okisoftware@gmail.com';
   static const String company_name = 'ŌkīSoftware';
 
+  static const String ATENCAO = "Atenção";
+  static const String MOTIVO = "Motivo";
   static const String VERSAO = "Versão";
   static const String CONTATOS = "contatos";
-  static const String DESENVOLVIDO_POR = "desenvolvido por";
+  static const String ITEM = "ITEM";
+  static const String VALOR = "VALOR";
   static const String POR = "por";
   static const String EXCLUIR = "Excluir";
   static const String BAIXANDO = "Baixando";
@@ -75,34 +82,20 @@ class MyStrings {
   static const String EXISTE = "Existe";
   static const String SIM = "Sim";
   static const String NAO = "Não";
-  static const String MSG_EXCLUIR_POST_PERFIL = "Excluir este post permanentemente?";
-  static const String VERIF_ATUALIZACAO = 'Verificando atualização';
-  static const String BAIXAR_ATUALIZACAO = 'Baixar atualização';
   static const String AGUARDE = 'Aguarde..';
-  static const String solicitacao_tipster = 'Solicitação para ser um Tipster';
-  static const String solicitacao_tipster_mensagem = 'Entre em contato\nEmail:';
-  static const String solicitacao_filiado_mensagem = 'Não quero mais sem um Tipster';
-  static const String solicitacao_filiado = 'Solicitação para ser um Filiado';
 
   static const String SOLICITAR = 'Solicitar';
   static const String OK = 'OK';
-
-  static const String EM_ANDAMENTO = 'Em Andamento';
 
   static const String TIPSTER = 'Tipster';
   static const String TIPSTERS = 'Tipsters';
   static const String FILIADO = 'Filiado';
   static const String FILIADOS = 'Filiados';
-  static const String ABRIR_IMAGEM = 'Abrir Imagem';
   static const String CONCLUIR = 'Concluir';
   static const String CANCELAR = 'Cancelar';
-  static const String SEGUNDO_PLANO = 'Segundo Plano';
   static const String POSTAR = 'Postar';
   static const String TITULO = 'Titulo';
   static const String LEGENDA = 'Legenda';
-  static const String CANCELAR_SOLICITACAO = 'Cancelar solicitação';
-
-  static const String ANEXAR_IMAGEM = 'Anexar Imagem';
   static const String ODD_MINIMA = 'Odd Mínima';
   static const String ODD_MAXIMA = 'Odd Máxima';
   static const String ODD_ATUAL = 'Odd Atual';
@@ -113,18 +106,11 @@ class MyStrings {
   static const String ODD = 'Odd';
   static const String HORARIO = 'Horário';
   static const String ZERO_HORA = '00:00';
-  static const String HORARIO_MINIMO = 'Horario Mínimo';
-  static const String HORARIO_MAXIMO = 'Horario Máximo';
-  static const String HORARIO_MINIMO_ENTRADA = 'Horario Mínimo para entrada';
-  static const String HORARIO_MAXIMO_ENTRADA = 'Horario Máximo para entrada';
   static const String ESPORTE = 'Esporte';
   static const String LINHA = 'Linha';
   static const String LINK = 'Link';
   static const String CAMPEONATO = 'Campeonato';
-  static const String TIP_PUBLICO = 'Tip Público';
-
   static const String SALVAR = 'Salvar';
-
   static const String NOME = 'Nome';
   static const String TIP_NAME = 'TipName';
   static const String EMAIL = 'Email';
@@ -133,16 +119,7 @@ class MyStrings {
   static const String ESTADO = 'Estado';
   static const String PRIVACIDADE = 'Privacidade';
   static const String DESCRICAO = 'Descrição';
-  static const String SOU_UM = 'Sou um';
   static const String PESQUISAR = 'Pesquisar';
-  static const String QUERO_SER_TIPSTER = 'Quero ser um Tipster';
-  static const String QUERO_SER_FILIADO = 'Quero ser um Filiado';
-
-  static const String IDADE_MINIMA = 'Idade mínima é 18 anos';
-  static const String LIMPAR_TUDO = 'Limpar tudo';
-
-//  static const String MSG_USUARIO_SALVO = 'Dados Salvos';
-//  static const String MSG_USUARIO_SALVO_ERRO = 'Erro ao salvar os dados';
 }
 
 class MyColors {
@@ -169,6 +146,34 @@ class MyTexts {
   static const SOLICITACAO_FILIAL = 'Solicitação de Filialdo';
   static const SOLICITACAO_ACEITA = 'Solicitação Aceita';
   static const NOVO_TIP = 'Novo Tip';
+
+  static const String VC_FOI_DENUNCIADO = "você foi denunciado";
+  static const String MSG_EXCLUIR_POST_PERFIL = "Excluir este post permanentemente?";
+  static const String VERIF_ATUALIZACAO = 'Verificando atualização';
+  static const String BAIXAR_ATUALIZACAO = 'Baixar atualização';
+  static const String solicitacao_tipster = 'Solicitação para ser um Tipster';
+  static const String solicitacao_tipster_mensagem = 'Entre em contato\nEmail:';
+  static const String solicitacao_filiado_mensagem = 'Não quero mais sem um Tipster';
+  static const String solicitacao_filiado = 'Solicitação para ser um Filiado';
+  static const String EM_ANDAMENTO = 'Em Andamento';
+
+  static const String DESENVOLVIDO_POR = "desenvolvido por";
+  static const String ABRIR_IMAGEM = 'Abrir Imagem';
+  static const String SEGUNDO_PLANO = 'Segundo Plano';
+  static const String CANCELAR_SOLICITACAO = 'Cancelar solicitação';
+  static const String ANEXAR_IMAGEM = 'Anexar Imagem';
+  static const String HORARIO_MINIMO = 'Horario Mínimo';
+  static const String HORARIO_MAXIMO = 'Horario Máximo';
+  static const String HORARIO_MINIMO_ENTRADA = 'Horario Mínimo para entrada';
+  static const String HORARIO_MAXIMO_ENTRADA = 'Horario Máximo para entrada';
+  static const String TIP_PUBLICO = 'Tip Público';
+
+  static const String SOU_UM = 'Sou um';
+  static const String QUERO_SER_TIPSTER = 'Quero ser um Tipster';
+  static const String QUERO_SER_FILIADO = 'Quero ser um Filiado';
+
+  static const String IDADE_MINIMA = 'Idade mínima é 18 anos';
+  static const String LIMPAR_TUDO = 'Limpar tudo';
 }
 
 class MyMenus {
@@ -178,6 +183,7 @@ class MyMenus {
   static const String MEUS_POSTS = 'Meus Posts';
   static const String LOGOUT = 'Sair';
   static const String SOBRE = 'Sobre';
+  static const String TUTORIAL = 'Tutorial';
 
   static const ABRIR_LINK = 'Abrir link';
   static const ABRIR_WHATSAPP = 'Abrir WhatsApp';
@@ -208,6 +214,7 @@ class MyIcons {
   static const String ic_launcher = 'assets/icons/ic_launcher.png';
   static const String ic_google = 'assets/icons/ic_google.png';
   static const String ic_person = 'assets/icons/ic_person.png';
+  static const String ic_person_light = 'assets/icons/ic_person_light.png';
 
   static const String ic_cash = 'assets/icons/ic_cash.png';
   static const String ic_download = 'assets/icons/ic_download.png';
@@ -226,6 +233,34 @@ class MyIcons {
   static const String ic_pesquisa_svg = 'assets/icons/ic_pesquisa.svg';
   static const String ic_positivo = 'assets/icons/ic_positivo.png';
   static const String ic_image_broken = 'assets/icons/ic_image_broken.png';
+
+  static const String img_tutorial = 'assets/icons/img_tutorial.png';
+
+  static Widget fotoUser(UserDados item, double iconSize, {BoxFit fit}) {
+    bool fotoLocal = item.fotoLocalExist;
+    if (fotoLocal) {
+      return fotoUserFile(item.fotoToFile, iconSize, fit: fit);
+    } else {
+      return fotoUserNetwork(item.foto, iconSize, fit: fit);
+    }
+  }
+  static Widget fotoPost(Post item, [double iconSize]) {
+    bool fotoLocal = item.fotoLocalExist;
+    if (fotoLocal) {
+      return fotoPostFile(item.fotoToFile, iconSize);
+    } else {
+      return fotoPostNetwork(item.foto, iconSize);
+    }
+  }
+
+  static Widget fotoUserFile(File file, double iconSize, {BoxFit fit}) => Image.file(file, fit: fit, width: iconSize, height: iconSize, errorBuilder: (c, u, e) => MyIcons.icPersonOnError(iconSize));
+  static Widget fotoUserNetwork(String url, double iconSize, {BoxFit fit}) => Image.network(url, fit: fit, width: iconSize, height: iconSize, errorBuilder: (c, u, e) => MyIcons.icPersonOnError(iconSize));
+
+  static Widget fotoPostFile(File file, [double iconSize]) => Image.file(file, width: iconSize, height: iconSize, errorBuilder: (c, u, e) => MyIcons.icPostOnError());
+  static Widget fotoPostNetwork(String url, [double iconSize]) => Image.network(url, width: iconSize, height: iconSize, errorBuilder: (c, u, e) => MyIcons.icPostOnError());
+
+  static Widget icPersonOnError(double iconSize) => Image.asset(MyIcons.ic_person_light, width: iconSize, height: iconSize);
+  static Widget icPostOnError([double iconSize]) => Image.asset(MyIcons.ic_image_broken, width: iconSize, height: iconSize);
 }
 
 class MyTheme {
@@ -250,19 +285,28 @@ class Titles {
   static const PROTIPS = 'PROTIPS';
   static const TIPSTERS = 'TIPSTERS';
   static const PERFIL = 'PERFIL';
+  static const GERENCIA = 'GERENCIA';
   static const POST_TIP = 'POSTAR TIP';
   static const NOTIFICACOES = 'NOTIFICAÇÕES';
   static const RECUPERAR_SENHA = 'Recuperar Senha';
+  static const DENUNCIA_USER = 'DENUNCIAR USUÁRIO';
+  static const DENUNCIA_POST = 'DENUNCIAR POST';
 
   static const String MAIN = 'PROTIPS';
   static const String ABOUT = 'SOBRE NÓS';
 
 
+  static const gerencia_page = [
+    'SOLICITAÇÕES', 'LISTA DE ERROS', 'DENUNCIAS',
+  ];
   static const main_page = [
-    'PRO TIPS', 'TIPSTERS', 'PERFIL', 'NOTIFICAÇÕES'
+    'PRO TIPS', 'TIPSTERS', 'PERFIL'
   ];
   static const nav_titles_main = [
     'Início', 'Encontre', 'Perfil', 'Notificações'
+  ];
+  static const nav_titles_gerencia = [
+    'Solicitações', 'Logs', 'Denuncias'
   ];
 
 }

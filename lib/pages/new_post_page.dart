@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/model/data.dart';
+import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/pages/crop_page.dart';
 import 'package:protips/res/resources.dart';
@@ -23,6 +23,7 @@ class MyWidgetState extends State<NewPostPage> {
 
   bool _isPublico = false;
   bool _isPostando = false;
+  bool _isBloqueadoPorDenuncias;
   double _progressBarValue = 0;
   File _foto;
 
@@ -74,12 +75,16 @@ class MyWidgetState extends State<NewPostPage> {
       _oddMinima.text = _currentPost.oddMinima;
       _oddAtual.text = _currentPost.oddAtual;
       _unidades.text = _currentPost.unidade;
-      _horarioMaximo.text = _currentPost.horarioMaximo;
-      _horarioMinimo.text = _currentPost.horarioMinimo;
+      _currentHorarioMaximo = _currentPost.horarioMaximo;
+      _currentHorarioMinino = _currentPost.horarioMinimo;
       _esporte.text = _currentPost.esporte;
       _linha.text = _currentPost.linha;
       _link.text = _currentPost.link;
       _campeonato.text = _currentPost.campeonato;
+    }
+    _isBloqueadoPorDenuncias = getFirebase.user().denuncias.length >= 5;
+    if (_isBloqueadoPorDenuncias) {
+      _isPostando = true;//o botão ficará indisponível
     }
   }
 
@@ -89,13 +94,6 @@ class MyWidgetState extends State<NewPostPage> {
     _horarioMaximo.text = _currentHorarioMaximo;
     _horarioMinimo.text = _currentHorarioMinino;
 
-//    fabPostar = FloatingActionButton.extended(
-//      label: Text(MyStrings.POSTAR),
-//      backgroundColor: MyTheme.accent(),
-//      onPressed: () {
-//        _postManager();
-//      },
-//    );
     _progressBar = LinearProgressIndicator(value: _progressBarValue);
     return WillPopScope(
       onWillPop: () async {
@@ -107,7 +105,7 @@ class MyWidgetState extends State<NewPostPage> {
           title: Text(Titles.POST_TIP),
           actions: [
             Tooltip(
-              message: MyStrings.LIMPAR_TUDO,
+              message: MyTexts.LIMPAR_TUDO,
               child: IconButton(
                 icon: Icon(Icons.refresh),
                 onPressed: () async {
@@ -135,14 +133,13 @@ class MyWidgetState extends State<NewPostPage> {
         ),
         body: Stack(
           children: [
-            _progressBar,
             SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Column(children: [
                 //Titulo
                 _CustomTextField(_titulo, TextInputType.name, MyStrings.TITULO, inputAction: TextInputAction.done, valueIsEmpty: _tituloIsEmpty, onTap: () {setState(() {_tituloIsEmpty = false;});}),
                 //Anexo
-                _CustomTextField(_anexo, TextInputType.name, MyStrings.ANEXAR_IMAGEM, readOnly: true, valueIsEmpty: _anexoIsEmpty, onTap: () async {
+                _CustomTextField(_anexo, TextInputType.name, MyTexts.ANEXAR_IMAGEM, readOnly: true, valueIsEmpty: _anexoIsEmpty, onTap: () async {
                   var file = await Navigator.of(context).pushNamed(CropImagePage.tag);
                   if(file != null && file is File && await file.exists()) {
                     _foto = file;
@@ -173,7 +170,7 @@ class MyWidgetState extends State<NewPostPage> {
                 //Horarios
                 Row(children: [
                   //Minimo
-                  Expanded(child: _CustomTextField(_horarioMinimo, TextInputType.number, MyStrings.HORARIO_MINIMO, readOnly: true, onTap: () async {
+                  Expanded(child: _CustomTextField(_horarioMinimo, TextInputType.number, MyTexts.HORARIO_MINIMO, readOnly: true, onTap: () async {
                     var result = await _setHorario(_currentHorarioMinino);
                     if (result != null) {
                       setState(() {
@@ -183,7 +180,7 @@ class MyWidgetState extends State<NewPostPage> {
                   })),
                   rowSpacing,
                   //Maximo
-                  Expanded(child: _CustomTextField(_horarioMaximo, TextInputType.number, MyStrings.HORARIO_MAXIMO, readOnly: true, onTap: () async {
+                  Expanded(child: _CustomTextField(_horarioMaximo, TextInputType.number, MyTexts.HORARIO_MAXIMO, readOnly: true, onTap: () async {
                     var result = await _setHorario(_currentHorarioMaximo);
                     if (result != null) {
                       setState(() {
@@ -198,9 +195,9 @@ class MyWidgetState extends State<NewPostPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       //Minimo
-                      Expanded(child: Text(MyStrings.HORARIO_MINIMO_ENTRADA, textAlign: TextAlign.center)),
+                      Expanded(child: Text(MyTexts.HORARIO_MINIMO_ENTRADA, textAlign: TextAlign.center)),
                       //Maximo
-                      Expanded(child: Text(MyStrings.HORARIO_MAXIMO_ENTRADA, textAlign: TextAlign.center)),
+                      Expanded(child: Text(MyTexts.HORARIO_MAXIMO_ENTRADA, textAlign: TextAlign.center)),
                     ]),
                 //Esporte / Linha
                 Row(children: [
@@ -215,7 +212,7 @@ class MyWidgetState extends State<NewPostPage> {
                   Expanded(child: _CustomTextField(_campeonato, TextInputType.name, MyStrings.CAMPEONATO)),
                   rowSpacing,
                   Expanded(child: CheckboxListTile(
-                      title: Text(MyStrings.TIP_PUBLICO),
+                      title: Text(MyTexts.TIP_PUBLICO),
                       value: _isPublico,
                       controlAffinity: ListTileControlAffinity.leading,
                       onChanged: (bool value) {
@@ -228,6 +225,7 @@ class MyWidgetState extends State<NewPostPage> {
                 Divider(height: 70),
               ]),
             ),
+            _progressBar,
           ],
         ),
         floatingActionButton:  FloatingActionButton.extended(
@@ -235,7 +233,7 @@ class MyWidgetState extends State<NewPostPage> {
           backgroundColor: !_isPostando ? MyTheme.accent() : MyTheme.tintColor2(),
           onPressed: !_isPostando ? () {
             _postManager();
-          } : null,
+          } : _isBloqueadoPorDenuncias ? () {Log.toast('Você tem muitas denúncias.\nEntre em contato com o Admin', isError: true);} : null,
         ),
       ),
     );
@@ -287,13 +285,13 @@ class MyWidgetState extends State<NewPostPage> {
     );
   }
 
-  Future<TimeOfDay> _setHorario(String currentItem) async {
+  Future<TimeOfDay> _setHorario(String currentItemData) async {
     DateTime atual;
     try {
-      Log.e(TAG, 'setHorario currentItem', currentItem);
-      atual = DateTime.parse(currentItem);
+      Log.d(TAG, 'setHorario currentItemData', currentItemData);
+      atual = DateTime(1, 1, 1, DataHora.toHour(currentItemData), DataHora.toMinute(currentItemData));
     } catch(e) {
-      Log.e(TAG, 'setHorario', e);
+      Log.e(TAG, 'setHorario', e, currentItemData);
       atual = DateTime.now();
     }
     TimeOfDay result = await showTimePicker(
@@ -338,8 +336,8 @@ class MyWidgetState extends State<NewPostPage> {
     item.titulo = _titulo.text;
     item.descricao = _descricao.text;
     item.link = _link.text;
-    item.publico = _isPublico;
-    item.data = Data.now();
+    item.isPublico = _isPublico;
+    item.data = DataHora.now();
     item.foto = _foto?.path;
     return item;
   }
@@ -373,7 +371,7 @@ class MyWidgetState extends State<NewPostPage> {
       });
       return true;
     }catch(e) {
-      Log.e(TAG, '_criarTip', e);
+      Log.e(TAG, '_criarTip', e, false);
       return false;
     }
   }

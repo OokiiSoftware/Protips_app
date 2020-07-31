@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/import.dart';
 import 'package:protips/pages/about_page.dart';
 import 'package:protips/pages/cadastro_page.dart';
 import 'package:protips/pages/crop_page.dart';
+import 'package:protips/pages/denuncia_page.dart';
+import 'package:protips/pages/gerencia_page.dart';
 import 'package:protips/pages/main_page.dart';
 import 'package:protips/pages/login_page.dart';
 import 'package:protips/pages/meu_perfil_page.dart';
@@ -10,6 +13,7 @@ import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/pages/new_post_page.dart';
 import 'package:protips/pages/post_page.dart';
 import 'package:protips/pages/recuperar_senha_page.dart';
+import 'package:protips/pages/tutorial_page.dart';
 import 'package:protips/res/resources.dart';
 
 void main() => runApp(Main());
@@ -24,7 +28,10 @@ class Main extends StatelessWidget {
     PostPage.tag: (context) => PostPage(),
     PerfilPage.tag: (context) => PerfilPage(),
     NewPostPage.tag: (context) => NewPostPage(),
+    TutorialPage.tag: (context) => TutorialPage(),
+    GerenciaPage.tag: (context) => GerenciaPage(),
     CadastroPage.tag: (context) => CadastroPage(),
+    DenunciaPage.tag: (context) => DenunciaPage(),
     MeuPerfilPage.tag: (context) => MeuPerfilPage(),
     CropImagePage.tag: (context) => CropImagePage(),
     NotificacoesPage.tag: (context) => NotificacoesPage(),

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/user.dart';
@@ -28,7 +27,7 @@ class MyWidgetState extends State<FragmentPesquisa> {
   void initState() {
     super.initState();
     if(_data.length == 0) {
-      _data.addAll(getTipster.users);
+      _data.addAll(getTipster.data);
       _changeOrdem(_ordemCurrent, _ordemAsc);
     }
   }
@@ -64,18 +63,14 @@ class MyWidgetState extends State<FragmentPesquisa> {
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        child: ListView.builder(
-            itemCount: _data.length,
-            itemBuilder:  (BuildContext context, int index) {
-              final item = _data[index];
-              return _itemLayout(item);
-            }
-            ),
-//        child: SingleChildScrollView(
-//          child: Container(
-//            child: _itemLayout(),
-//          ),
-//        ),
+        child: ListView(children: [_itemLayout()]),
+//        child: ListView.builder(
+//            itemCount: _data.length,
+//            itemBuilder:  (BuildContext context, int index) {
+//              final item = _data[index];
+//              return _itemLayout(item);
+//            }
+//            ),
       ),
     );
   }
@@ -85,10 +80,8 @@ class MyWidgetState extends State<FragmentPesquisa> {
   //region Metodos
 
   void _changeOrdem(String value, bool asc) {
-    setState(() {
-      _ordemCurrent = value;
-      _ordemAsc = asc;
-    });
+    _ordemCurrent = value;
+    _ordemAsc = asc;
     switch(value) {
       case 'Ranking':
         _data.sort((a, b) => asc ? a.media().compareTo(b.media()) : b.media().compareTo(a.media()));
@@ -106,23 +99,20 @@ class MyWidgetState extends State<FragmentPesquisa> {
         _data.sort((a, b) => asc ? a.postes.length.compareTo(b.postes.length) : b.postes.length.compareTo(a.postes.length));
         break;
     }
+    setState(() {});
   }
 
-  Widget _itemLayout(User item) {
-    double fotoUserSize = 50;
-    bool fotoLocalExist = item.dados.fotoLocalExist;
+  Widget _itemLayout(/*User item*/) {
 
-    return ListTile(
+    /*return ListTile(
         leading: ClipRRect(
             borderRadius: BorderRadius.circular(50),
             child: fotoLocalExist ?
-            Image.file(File(item.dados.fotoLocal), width: fotoUserSize,
-                height: fotoUserSize) :
+            Image.file(item.dados.fotoToFile, width: fotoUserSize, height: fotoUserSize) :
             Image.network(
                 item.dados.foto, width: fotoUserSize, height: fotoUserSize,
                 errorBuilder: (c, u, e) =>
-                    Image.asset(MyIcons.ic_person, width: fotoUserSize,
-                        height: fotoUserSize)
+                    Image.asset(MyIcons.ic_person_light, width: fotoUserSize, height: fotoUserSize)
             )
         ),
         title: Text(item.dados.nome),
@@ -130,10 +120,10 @@ class MyWidgetState extends State<FragmentPesquisa> {
         onTap: () {
           Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
         }
-    );
+    );*/
 
     //ExpansionPanelList
-    /*return ExpansionPanelList(
+    return ExpansionPanelList(
       expansionCallback: (int index, bool isExpanded) {
         setState(() {
           _data[index].isExpanded = !isExpanded;
@@ -142,43 +132,43 @@ class MyWidgetState extends State<FragmentPesquisa> {
       children: _data.map<ExpansionPanel>((User item) {
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
+            double fotoUserSize = 50;
+
             return ListTile(
               leading: ClipRRect(
                   borderRadius: BorderRadius.circular(50),
-                  child: Image.network(
-                      item.dados.foto,
-                      errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
-                  )
+                  child: MyIcons.fotoUser(item.dados, fotoUserSize)
               ),
               title: Text(item.dados.nome),
               subtitle: Text(item.dados.descricao),
+              onTap: () {
+                setState(() {
+                  item.isExpanded = !item.isExpanded;
+                });
+              },
             );
           },
           body: ListTile(
-              title: Text(item.dados.tipname),
+              title: Text('Visitar '+ item.dados.tipname),
               subtitle: Text(
                   'Green: ' + item.bomCount().toString() +
                       '| Red: ' + item.ruimCount().toString() +
                   '| Posts: ' + item.postes.length.toString()
               ),
-              trailing: Image.asset(MyIcons.ic_enter, width: 30, color: MyTheme.textColorInvert()),
               onTap: () {
-                if (item.dados.id == getFirebase.fUser().uid)
-                  Navigator.of(context).pushNamed(MeuPerfilPage.tag);
-                else
-                  Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
+                Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
               }),
           isExpanded: item.isExpanded,
         );
       }).toList(),
-    );*/
+    );
   }
 
   Future<void> _onRefresh() async {
     await getUsers.baixar();
     _data.clear();
     setState(() {
-      _data.addAll(getTipster.users);
+      _data.addAll(getTipster.data);
       _changeOrdem(_ordemCurrent, _ordemAsc);
     });
   }

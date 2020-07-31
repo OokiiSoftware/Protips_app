@@ -17,7 +17,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   //region Variaveis
   static const String TAG = 'NotificacoesPage';
 
-  List<Notificacao> data = List<Notificacao>();
+  List<Notificacao> _data = List<Notificacao>();
   User user;
   //endregion
 
@@ -27,8 +27,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   void initState() {
     super.initState();
     user = getFirebase.user();
-    if (user.seguidoresPendentes.length > 0)
-      _addSeguidoresPendentes();
+    _addSeguidoresPendentes();
   }
 
   @override
@@ -37,10 +36,11 @@ class MyWidgetState extends State<NotificacoesPage> {
       appBar: AppBar(
         title: Text(Titles.NOTIFICACOES),
       ),
-      body: SingleChildScrollView(
-          child: Container(
-            child: _buildPanel(),
-          )
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: ListView(children: [
+          _itemLayout()
+        ]),
       ),
     );
   }
@@ -49,35 +49,37 @@ class MyWidgetState extends State<NotificacoesPage> {
 
   //region Metodos
 
-  Widget _buildPanel() {
+  Widget _itemLayout() {
     return ExpansionPanelList(
       expansionCallback: (int index, bool isExpanded) {
         setState(() {
-          data[index].isExpanded = !isExpanded;
+          _data[index].isExpanded = !isExpanded;
         });
       },
-      children: data.map<ExpansionPanel>((Notificacao item) {
+      children: _data.map<ExpansionPanel>((Notificacao item) {
         bool fotoLocal = item.isFotoLocal;
         double fotoUserSize = 50;
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
-              leading: ClipRRect(
+              leading: item.hasFoto ? ClipRRect(
                   borderRadius: BorderRadius.circular(50),
                   child: fotoLocal ?
-                  Image.file(File(item.foto), width: fotoUserSize, height: fotoUserSize) :
-                  Image.network(item.foto, width: fotoUserSize, height: fotoUserSize,
-                      errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoUserSize, height: fotoUserSize)
-                  )
-              ),
+                  MyIcons.fotoUserFile(File(item.foto), fotoUserSize) :
+                  MyIcons.fotoUserNetwork(item.foto, fotoUserSize)
+              ) : Container(),
               title: Text(item.titulo),
               subtitle: Text(item.subtitulo),
+              onTap: () {
+                setState(() {
+                  item.isExpanded = !item.isExpanded;
+                });
+              },
             );
           },
           body: ListTile(
               title: Text(item.eTitulo),
-              subtitle: Text(item.eSubtitulo),
-              trailing: Image.asset(MyIcons.ic_enter, width: 30, color: MyTheme.textColorInvert()),
+              subtitle: item.eSubtitulo,
               onTap: item.onTap,
             onLongPress: item.onLongPress,
           ),
@@ -87,31 +89,53 @@ class MyWidgetState extends State<NotificacoesPage> {
     );
   }
 
-  _addSeguidoresPendentes() async {
-    for (String key in user.seguidoresPendentes.values) {
-      User item = await getUsers.get(key);
-      if (item== null)
-        continue;
-      String id = randomString(10);
-      String subtitulo = 'Solicitação de Filial';
-      String titulo = item.dados.nome;
-      String eTitulo = 'Clique para aceitar ou recurar esta solicitação';
-      String eSubtitulo = 'Clique e segure para remover esta notificação';
-      String foto = item.dados.fotoLocalExist ? item.dados.fotoLocal : item.dados.foto;
-      Notificacao n = Notificacao(id: id, titulo: titulo, subtitulo: subtitulo, isFotoLocal: item.dados.fotoLocalExist,
-          eTitulo: eTitulo, eSubtitulo: eSubtitulo, foto: foto, onTap: () {
-        Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
-      },
-      onLongPress: () {
-        setState(() {
-          data.removeWhere((element) => element.id == id);
-        });
-      });
+  Future<void> _onRefresh() async {
+    user = getFirebase.user();
+    _data.clear();
+    await _addSeguidoresPendentes();
+    setState(() {});
+  }
 
-      setState(() {
-        data.add(n);
-      });
-    }
+  _addSeguidoresPendentes() async {
+    if (user.seguidoresPendentes.length > 0)
+      for (String key in user.seguidoresPendentes.values) {
+        User item = await getUsers.get(key);
+        if (item== null)
+          continue;
+        String id = randomString(10);
+        String subtitulo = 'Solicitação de Filial';
+        String titulo = item.dados.nome;
+        String eTitulo = 'Ver perfil';
+        Widget eSubtitulo = Row(children: [
+          FlatButton(
+            child: Text('Recusar'.toUpperCase()),
+            onPressed: () async {
+              if (await user.removeSolicitacao(item.dados.id))
+                setState(() {
+                  _data.removeWhere((x) => x.id == id);
+                });
+            },
+          ),
+          FlatButton(
+            child: Text('Aceitar'.toUpperCase()),
+            onPressed: () async {
+              if (await user.aceitarSeguidor(item))
+                setState(() {
+                  _data.removeWhere((x) => x.id == id);
+                });
+            },
+          ),
+        ]);
+        String foto = item.dados.fotoLocalExist ? item.dados.fotoToFile.path : item.dados.foto;
+        Notificacao n = Notificacao(id: id, titulo: titulo, subtitulo: subtitulo, isFotoLocal: item.dados.fotoLocalExist,
+            eTitulo: eTitulo, eSubtitulo: eSubtitulo, foto: foto, onTap: () {
+          Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
+        });
+
+        setState(() {
+          _data.add(n);
+        });
+      }
   }
 
   //endregion

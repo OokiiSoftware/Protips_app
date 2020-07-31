@@ -36,7 +36,6 @@ class PostPerfil {
     return items;
   }
 
-
   Map<String, dynamic> toJson() => {
     "id": id,
     "foto": foto,
@@ -57,7 +56,7 @@ class PostPerfil {
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES_PERFIL)
-        .child(data.substring(0, data.indexOf('.')))
+        .child(data)
         .set(toJson())
         .then((value) => true)
         .catchError((e) => false);

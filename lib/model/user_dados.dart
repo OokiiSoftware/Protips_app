@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/res/resources.dart';
 
-import 'data.dart';
+import 'data_hora.dart';
 import 'endereco.dart';
 
 class UserDados {
@@ -27,13 +27,13 @@ class UserDados {
   bool _isPrivado;
   bool _isTipster;
   bool _isBloqueado;
-  Data _nascimento;
+  DataHora _nascimento;
   Endereco _endereco;
   //endregion
 
   UserDados() {
     endereco = new Endereco();
-    nascimento = new Data();
+    nascimento = new DataHora();
   }
 
   UserDados.fromJson(Map<dynamic, dynamic> map) {
@@ -47,8 +47,8 @@ class UserDados {
     isPrivado = map['isPrivado'];
     isBloqueado = map['isBloqueado'];
     isTipster = map['isTipster'];
-    endereco = Endereco.from(map['endereco']);
-    nascimento = Data.from(map['nascimento']);
+    endereco = Endereco.fromJson(map['endereco']);
+    nascimento = DataHora.from(map['nascimento']);
   }
 
   Map<String, dynamic> toJson() => {
@@ -62,7 +62,7 @@ class UserDados {
     "telefone": telefone,
     "isBloqueado": isBloqueado,
     "descricao": descricao,
-    "endereco": endereco.toMap(),
+    "endereco": endereco.toJson(),
     "nascimento": nascimento.toMap(),
   };
 
@@ -177,9 +177,9 @@ class UserDados {
     _isPrivado = value;
   }
 
-  Data get nascimento => _nascimento ?? Data();
+  DataHora get nascimento => _nascimento ?? DataHora();
 
-  set nascimento(Data value) {
+  set nascimento(DataHora value) {
     _nascimento = value;
   }
 
@@ -203,8 +203,12 @@ class UserDados {
 
 
   bool get fotoLocalExist {
-    File file = File(fotoLocal);
-    return file.existsSync() ;
+    File file = File(getUsers.localPath + '/' + fotoLocal);
+    return file.existsSync();
+  }
+
+  File get fotoToFile {
+    return File(getUsers.localPath + '/' + fotoLocal);
   }
 
   String get fotoLocal {

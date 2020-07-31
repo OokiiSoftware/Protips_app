@@ -43,6 +43,7 @@ class MyWidgetState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    Log.setToast = context;
     //region Variaveis
     var backgorundColor = MyTheme.primaryLight();
     var iconColor = MyTheme.primaryDark();
@@ -84,161 +85,143 @@ class MyWidgetState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: backgorundColor,
-      body: Container(
+      body: Tooltip(
+        showDuration: Duration(microseconds: 1),
+        message: 'Tela de Login',
         child: SingleChildScrollView(
           padding: EdgeInsets.all(50),
           child: Column(children: [
             divider,
             //Top (Logo)
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                //Icone
-                Align(
-                  child: Image.asset(MyIcons.ic_launcher,
-                    width: 130,
-                    height: 130,
-                  ),
+            //Icone
+            Image.asset(MyIcons.ic_launcher, width: 130, height: 130),
+            //Texto Bem Vindo
+            Padding(
+              child: Text('BEM VINDO AO PROTIPS',
+                style: TextStyle(
+                  color: MyTheme.textColor(),
+                  fontSize: 18,
                 ),
-                //Texto Bem Vindo
-                Align(
-                  child: Padding(
-                    child: Text('BEM VINDO AO PROTIPS',
-                      style: TextStyle(
-                        color: MyTheme.textColor(),
-                        fontSize: 18,
-                      ),
-                    ),
-                    padding: EdgeInsets.only(top: 30),
-                  ),
-                ),
-                //ProgressBar
-                Align(
-                  child: Padding(
-                    child: progressBar,
-                    padding: EdgeInsets.only(top: 5),
-                  ),
-                ),
-              ],
+              ),
+              padding: EdgeInsets.only(top: 30),
+            ),
+            //ProgressBar
+            Padding(
+              child: progressBar,
+              padding: EdgeInsets.only(top: 5),
             ),
             divider,
             //Corpo
-            Column(
-              children: <Widget>[
-                // Email
-                Container(
-                  height: itemHeight,
-                  padding: itemPadding,
-                  decoration: emailNaoEncontrado || emailInvalido
-                      ? itemDecorationError
-                      : itemDecoration,
-                  child: TextFormField(
-                    controller: cEmail,
-                    textInputAction: TextInputAction.next,
-                    keyboardType: TextInputType.emailAddress,
-                    style: itemTextStyle,
-                    decoration: InputDecoration(
-                      contentPadding: itemContentPadding,
-                      enabledBorder: itemBorder,
-                      focusedBorder: itemBorder,
-                      labelStyle: itemLabeErrorlStyle,
-                      hintStyle: itemHintStyle,
-                      labelText: emailNaoEncontrado
-                          ? 'Email não Registrado'
-                          : emailInvalido ? 'Email inválido' : null,
-                      hintText: 'Email',
-                      icon: Icon(Icons.person, color: emailInvalido || emailNaoEncontrado ? iconColorError : iconColor),
-                    ),
-                    onTap: () {
-                      setState(() {
-                        emailNaoEncontrado = false;
-                        emailInvalido = false;
-                      });
-                    },
-                  ),
+            // Email
+            Container(
+              height: itemHeight,
+              padding: itemPadding,
+              decoration: emailNaoEncontrado || emailInvalido
+                  ? itemDecorationError
+                  : itemDecoration,
+              child: TextFormField(
+                controller: cEmail,
+                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.emailAddress,
+                style: itemTextStyle,
+                decoration: InputDecoration(
+                  contentPadding: itemContentPadding,
+                  enabledBorder: itemBorder,
+                  focusedBorder: itemBorder,
+                  labelStyle: itemLabeErrorlStyle,
+                  hintStyle: itemHintStyle,
+                  labelText: emailNaoEncontrado
+                      ? 'Email não Registrado'
+                      : emailInvalido ? 'Email inválido' : null,
+                  hintText: 'Email',
+                  icon: Icon(Icons.person, color: emailInvalido || emailNaoEncontrado ? iconColorError : iconColor),
                 ),
-                // Senha
-                Container(
-                  height: itemHeight,
-                  margin: EdgeInsets.only(top: 20),
-                  padding: itemPadding,
-                  decoration: senhaIncorreta
-                      ? itemDecorationError
-                      : itemDecoration,
-                  child: TextField(
-                    controller: cSenha,
-                    obscureText: true,
-                    style: itemTextStyle,
-                    textInputAction: TextInputAction.go,
-                    decoration: InputDecoration(
-                      contentPadding: itemContentPadding,
-                      enabledBorder: itemBorder,
-                      focusedBorder: itemBorder,
-                      labelStyle: itemLabeErrorlStyle,
-                      hintStyle: itemHintStyle,
-                      labelText: senhaIncorreta ? 'Senha incorreta' : null,
-                      hintText: 'Senha',
-                      icon: Icon(Icons.https, color: senhaIncorreta ? iconColorError : iconColor),
-                    ),
-                    onSubmitted: (s) {
-                      onLoginButtonPressed();
-                    },
-                    onTap: () {
-                      setState(() {
-                        senhaIncorreta = false;
-                      });
-                    },
-                  ),
+                onTap: () {
+                  setState(() {
+                    emailNaoEncontrado = false;
+                    emailInvalido = false;
+                  });
+                },
+              ),
+            ),
+            // Senha
+            Container(
+              height: itemHeight,
+              margin: EdgeInsets.only(top: 20),
+              padding: itemPadding,
+              decoration: senhaIncorreta
+                  ? itemDecorationError
+                  : itemDecoration,
+              child: TextField(
+                controller: cSenha,
+                obscureText: true,
+                style: itemTextStyle,
+                textInputAction: TextInputAction.go,
+                decoration: InputDecoration(
+                  contentPadding: itemContentPadding,
+                  enabledBorder: itemBorder,
+                  focusedBorder: itemBorder,
+                  labelStyle: itemLabeErrorlStyle,
+                  hintStyle: itemHintStyle,
+                  labelText: senhaIncorreta ? 'Senha incorreta' : null,
+                  hintText: 'Senha',
+                  icon: Icon(Icons.https, color: senhaIncorreta ? iconColorError : iconColor),
                 ),
-                //Button Recuperar Senha
-                Container(
-                  alignment: Alignment.centerRight,
+                onSubmitted: (s) {
+                  onLoginButtonPressed();
+                },
+                onTap: () {
+                  setState(() {
+                    senhaIncorreta = false;
+                  });
+                },
+              ),
+            ),
+            //Button Recuperar Senha
+            Container(
+              alignment: Alignment.centerRight,
+              child: FlatButton(
+                child: Text(
+                    'Recuperar Senha',
+                    style: itemTextStyle
+                ),
+                onPressed: onRecuperarSenhaButtonPressed,
+              ),
+            ),
+            //Button Login
+            Container(
+                width: widthScreen,
+                height: itemHeight,
+                margin: EdgeInsets.only(top: 10),
+                decoration: BoxDecoration(
+                    color: MyTheme.tintColor(),
+                    borderRadius: BorderRadius.all(Radius.circular(60))
+                ),
+                child: ButtonTheme(
+                  minWidth: double.infinity,
+                  height: itemHeight,
                   child: FlatButton(
-                    child: Text(
-                        'Recuperar Senha',
-                        style: itemTextStyle
-                    ),
-                    onPressed: onRecuperarSenhaButtonPressed,
-                  ),
-                ),
-                //Button Login
-                Container(
-                    width: widthScreen,
-                    height: itemHeight,
-                    margin: EdgeInsets.only(top: 10),
-                    decoration: BoxDecoration(
-                        color: MyTheme.tintColor(),
-                        borderRadius: BorderRadius.all(Radius.circular(60))
-                    ),
-                    child: ButtonTheme(
-                      minWidth: double.infinity,
-                      height: itemHeight,
-                      child: FlatButton(
-                        child: Text('Login'.toUpperCase(),
-                          style: TextStyle(
-                              color: MyTheme.primary(),
-                              fontSize: 20
-                          ),
-                        ),
-                        onPressed: onLoginButtonPressed,
+                    child: Text('Login'.toUpperCase(),
+                      style: TextStyle(
+                          color: MyTheme.primary(),
+                          fontSize: 20
                       ),
-                    )
-                ),
-              ],
+                    ),
+                    onPressed: onLoginButtonPressed,
+                  ),
+                )
             ),
             //Rodape
-            Column(children: [
-              FlatButton(
-                child: Text('Cadastre-se', style: itemTextStyle),
-                onPressed: onCadastroButtonPressed,
-              ),
-              Text('OU', style: itemTextStyle),
-              divider,
-              FlatButton(
-                child: Image.asset(MyIcons.ic_google, width: 40, height: 40),
-                onPressed: onLoginWithGoogleButtonPressed,
-              ),
-            ]),
+            FlatButton(
+              child: Text('Cadastre-se', style: itemTextStyle),
+              onPressed: onCadastroButtonPressed,
+            ),
+            Text('OU', style: itemTextStyle),
+            divider,
+            Tooltip(message: 'Login com Google', child: FlatButton(
+              child: Image.asset(MyIcons.ic_google, width: 40, height: 40),
+              onPressed: onLoginWithGoogleButtonPressed,
+            )),
           ]),
         ),
       ),
@@ -270,23 +253,22 @@ class MyWidgetState extends State<LoginPage> {
       Navigator.pushReplacementNamed(context, MainPage.tag);
       Log.d(TAG, 'Login com Email', 'OK');
     } catch(e) {
+      bool sendError = true;
       progressBarValue = 0;
-      Log.e(TAG, 'Login com Email Fail', e);
       if (e.toString().contains('ERROR_WRONG_PASSWORD')) {
-        setState(() {
-          senhaIncorreta = true;
-        });
+        senhaIncorreta = true;
+        sendError = false;
       }
       if (e.toString().contains('ERROR_USER_NOT_FOUND')) {
-        setState(() {
-          emailNaoEncontrado = true;
-        });
+        emailNaoEncontrado = true;
+        sendError = false;
       }
       if (e.toString().contains('ERROR_INVALID_EMAIL')) {
-        setState(() {
-          emailInvalido = true;
-        });
+        emailInvalido = true;
+        sendError = false;
       }
+      setState(() {});
+      Log.e(TAG, 'Login com Email Fail', e, sendError);
     }
   }
 
@@ -298,7 +280,7 @@ class MyWidgetState extends State<LoginPage> {
       Navigator.pushReplacementNamed(context, MainPage.tag);
     } catch (e) {
       Log.e(TAG, 'Login com Google Fail', e);
-      Log.toast(context, 'Login with Google fails');
+      Log.toast('Login with Google fails');
     }
   }
 

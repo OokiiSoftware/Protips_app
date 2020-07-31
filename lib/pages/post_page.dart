@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
@@ -20,7 +18,6 @@ class MyWidgetState extends State<PostPage> {
   static const String TAG = 'PostPage';
 
   double progressBarValue = 0;
-  bool canOpenPerfil;
 
   Post _post;
   LinearProgressIndicator progressBar;
@@ -36,13 +33,10 @@ class MyWidgetState extends State<PostPage> {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, String> itemMap = ModalRoute.of(context).settings.arguments;
-    String itemkey = itemMap['itemKey'];
-    String canOpen = itemMap['canOpenPerfil'];
-    canOpenPerfil = canOpen == 'true';
-    _post = getPosts.get(itemkey);
-    if (_post == null)
-      Navigator.pop(context);
+    var item = ModalRoute.of(context).settings.arguments;
+    if (item == null || !(item is Post))
+      Navigator.of(context);
+    _post = item;
     return Scaffold(
       appBar: AppBar(title: Text(Titles.MAIN)),
       body: SingleChildScrollView(
@@ -57,12 +51,10 @@ class MyWidgetState extends State<PostPage> {
 
   Widget itemLayout(Post item) {
     User user = getTipster.get(item.idTipster);
+    double fotoUserSize = 40;
     bool isMyPost = item.idTipster == getFirebase.fUser().uid;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
-
-    bool fotoLocalExist = item.fotoLocalExist;
-    bool fotoLocalUserExist = user.dados.fotoLocalExist;
 
     return Container(
         alignment: Alignment.center,
@@ -81,14 +73,12 @@ class MyWidgetState extends State<PostPage> {
                       Image.asset(MyIcons.ic_person, color: Colors.black) :
                       ClipRRect(
                           borderRadius: BorderRadius.circular(50),
-                          child: fotoLocalUserExist ?
-                          Image.file(File(user.dados.fotoLocal)) :
-                          Image.network(
-                              user.dados.foto,
-                              width: 40,
-                              height: 40,
-                              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
-                          )
+                          child: MyIcons.fotoUser(user.dados, fotoUserSize)
+//                          Image.file(user.dados.fotoToFile, width: fotoUserSize, height: fotoUserSize) :
+//                          Image.network(
+//                              user.dados.foto, width: fotoUserSize, height: fotoUserSize,
+//                              errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person, width: fotoUserSize, height: fotoUserSize)
+//                          )
                       )
                   ),
                   //Dados
@@ -122,12 +112,12 @@ class MyWidgetState extends State<PostPage> {
                 ],
               ),
             ),
-            onTap: canOpenPerfil ? () {
+            onTap: () {
               if (user.dados.id == getFirebase.fUser().uid)
                 Navigator.of(context).pushNamed(MeuPerfilPage.tag);
               else
                 Navigator.of(context).pushNamed(PerfilPage.tag, arguments: user);
-            } : null,
+            },
           ),
           Divider(
             color: MyTheme.accent(),
@@ -142,12 +132,7 @@ class MyWidgetState extends State<PostPage> {
           ),
           //Foto
           Container(
-              child: fotoLocalExist ?
-              Image.file(File(item.fotoLocal)) :
-              Image.network(
-                  item.foto,
-                  errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_image_broken)
-              )
+              child: MyIcons.fotoPost(item)
           ),
           divider,
           //descricao

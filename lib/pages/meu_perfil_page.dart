@@ -8,7 +8,7 @@ import 'package:image_crop/image_crop.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/input_formatter.dart';
-import 'package:protips/model/data.dart';
+import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
 import 'package:protips/pages/crop_page.dart';
@@ -77,7 +77,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
     _dropDownPrivacidade = Import.getDropDownMenuItems(Arrays.privacidade);
     _currentEstado = _dropDownEstados[8].value;//8 = Maranhão
     _currentPrivacidade = _dropDownPrivacidade[0].value;//0 = Publico
-    souUm = !user.solicitacaoEmAndamento() ? user.dados.isTipster ? MyStrings.TIPSTER : MyStrings.FILIADO : MyStrings.EM_ANDAMENTO;
+    souUm = !user.solicitacaoEmAndamento() ? user.dados.isTipster ? MyStrings.TIPSTER : MyStrings.FILIADO : MyTexts.EM_ANDAMENTO;
 
     dateNascimentoValue = user.dados.nascimento.toString();
     isPrimeiroLogin = user.dados.tipname.isEmpty;
@@ -118,9 +118,11 @@ class MyWidgetState extends State<MeuPerfilPage> {
 
     //region Container que contem os textField
     var silverPadding = EdgeInsets.only(top: 15, bottom: 15);
-    var itemPadding = EdgeInsets.only(left: itemPaddingValue, right: itemPaddingValue);
+    var itemPadding = EdgeInsets.only(
+        left: itemPaddingValue, right: itemPaddingValue);
 
-    var itemMargin = EdgeInsets.only(left: containerPadding, right: containerPadding);
+    var itemMargin = EdgeInsets.only(
+        left: containerPadding, right: containerPadding);
     var itemDecoration = BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(5)),
         color: MyTheme.tintColor(),
@@ -129,7 +131,6 @@ class MyWidgetState extends State<MeuPerfilPage> {
     //endregion
 
     progressBar = LinearProgressIndicator(value: progressBarValue);
-    bool fotoLocalExist = user.dados.fotoLocalExist;
 
     _souUm.text = souUm;
     _nascimento.text = dateNascimentoValue;
@@ -143,7 +144,8 @@ class MyWidgetState extends State<MeuPerfilPage> {
             SliverAppBar(
               pinned: true,
               expandedHeight: widthScreen,
-              title: Text(Titles.MEU_PERFIL, style: TextStyle(color: MyTheme.textColor(), fontWeight: FontWeight.bold)),
+              title: Text(Titles.MEU_PERFIL, style: TextStyle(
+                  color: MyTheme.textColor(), fontWeight: FontWeight.bold)),
               //Foto ◢◤
               flexibleSpace: FlexibleSpaceBar(
                   stretchModes: <StretchMode>[
@@ -151,63 +153,59 @@ class MyWidgetState extends State<MeuPerfilPage> {
                     StretchMode.blurBackground,
                     StretchMode.fadeTitle,
                   ],
-                //Foto
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    GestureDetector(
-                      child: _fotoLocal == null ?
-                fotoLocalExist ?
-                Image.file(File(user.dados.fotoLocal)) :
-                      _fotoWeb.isEmpty ?
-                      Image.asset(MyIcons.ic_person) :
-                      Image.network(
-                          _fotoWeb,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, u, e) => Image.asset(MyIcons.ic_person)
-                      ) :
+                  //Foto
+                background: GestureDetector(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _fotoLocal == null ?
+                          MyIcons.fotoUser(user.dados, null, fit: BoxFit.cover) :
                       Image.file(_fotoLocal, fit: BoxFit.cover),
-                      onTap: _openCropImage,
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomRight,
-                          end: Alignment.center,
-                          colors: <Color>[
-                            Color(0x30000000),
-                            Color(0x00000000),
-                          ],
+
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomRight,
+                            end: Alignment.center,
+                            colors: <Color>[
+                              Color(0x30000000),
+                              Color(0x00000000),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.center,
-                          colors: <Color>[
-                            Color(0x30000000),
-                            Color(0x00000000),
-                          ],
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.center,
+                            colors: <Color>[
+                              Color(0x30000000),
+                              Color(0x00000000),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                //Botão salvar
-                title: Align(
-                  alignment: Alignment.bottomRight,
-                  child: Container(
-                    child: FlatButton(
-                      child: Text(MyStrings.SALVAR, style: TextStyle(fontWeight: FontWeight.bold)),
-                      textColor: MyTheme.textColor(),
-                      onPressed: () {
-                        salvarUserManager(context);
-                      },
-                    ),
+                    ],
                   ),
-                )
+                  onTap: () {
+                    _openCropImage();
+                  },
+                ),
+                  //Botão salvar
+                  title: Align(
+                    alignment: Alignment.bottomRight,
+                    child: Container(
+                      child: FlatButton(
+                        child: Text(MyStrings.SALVAR,
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        textColor: MyTheme.textColor(),
+                        onPressed: () {
+                          salvarUserManager(context);
+                        },
+                      ),
+                    ),
+                  )
               ),
             ),
             //ProgressBar
@@ -229,27 +227,37 @@ class MyWidgetState extends State<MeuPerfilPage> {
                 mainAxisSpacing: 8,
                 children: [
                   //Nome
-                  CustomTextField(_nome, TextInputType.name, MyStrings.NOME, valueIsEmpty: _nomeIsEmpyt, onTap: () {
-                    setState(() {
-                      _nomeIsEmpyt = false;
-                    });
-                  }),
+                  CustomTextField(_nome, TextInputType.name, MyStrings.NOME,
+                      valueIsEmpty: _nomeIsEmpyt, onTap: () {
+                        setState(() {
+                          _nomeIsEmpyt = false;
+                        });
+                      }),
                   //Tipname
-                  CustomTextField(_tipName, TextInputType.name, MyStrings.TIP_NAME, readOnly: !isPrimeiroLogin, valueIsEmpty: _tipNameIsEmpyt, tipNameExiste: _tipNameExixte, onTap: () {
-                    setState(() {
-                      _tipNameIsEmpyt = false;
-                      _tipNameExixte = false;
-                    });
-                  }),
+                  CustomTextField(
+                      _tipName, TextInputType.name, MyStrings.TIP_NAME,
+                      readOnly: !isPrimeiroLogin,
+                      valueIsEmpty: _tipNameIsEmpyt,
+                      tipNameExiste: _tipNameExixte,
+                      onTap: () {
+                        setState(() {
+                          _tipNameIsEmpyt = false;
+                          _tipNameExixte = false;
+                        });
+                      }),
                   //Email
                   CustomTextField(_email, TextInputType.emailAddress, MyStrings.EMAIL, readOnly: true),
                   //Telefone
                   CustomTextField(_telefone, TextInputType.phone, MyStrings.TELEFONE),
                   //Nascimento
-                  CustomTextField(_nascimento, TextInputType.datetime, MyStrings.NASCIMENTO, dataIdadeMinima: _nascimentoIdadeMinima, readOnly: true, onTap: () {
-                    _nascimentoIdadeMinima = false;
-                    _selectDate(context);
-                  }),
+                  CustomTextField(
+                      _nascimento, TextInputType.datetime, MyStrings.NASCIMENTO,
+                      dataIdadeMinima: _nascimentoIdadeMinima,
+                      readOnly: true,
+                      onTap: () {
+                        _nascimentoIdadeMinima = false;
+                        _selectDate(context);
+                      }),
                   //Estado
                   CustomDropdownButton(_dropDownEstados, _currentEstado, MyStrings.ESTADO),
                   //Privacidade
@@ -265,25 +273,34 @@ class MyWidgetState extends State<MeuPerfilPage> {
                   //Descrição
                   CustomTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO),
                   //Sou Um
-                  CustomTextField(_souUm, TextInputType.name, MyStrings.SOU_UM, readOnly: true),
+                  CustomTextField(_souUm, TextInputType.name, MyTexts.SOU_UM, readOnly: true),
 
+                  if (user.denuncias.length > 0)
+                    Container(
+                      alignment: Alignment.center,
+                      margin: EdgeInsets.fromLTRB(containerPadding, 0, containerPadding, _containerPaddingTop),
+                      decoration: itemDecoration,
+                      child: Text('Você tem ${user.denuncias.length} denúncias',
+                          style: TextStyle(color: Colors.red)),
+                    ),
                   //Button Sotilitar Ser Tipster
-                 if (!isPrimeiroLogin)
-                   Container(
-                    margin: EdgeInsets.fromLTRB(containerPadding, 0, containerPadding, _containerPaddingTop),
-                    decoration: itemDecoration,
-                    child: ButtonTheme(
-                      child: FlatButton(
-                        child: Text(
-                            !user.solicitacaoEmAndamento() ? user.dados.isTipster ?
-                            MyStrings.QUERO_SER_FILIADO.toUpperCase() :
-                            MyStrings.QUERO_SER_TIPSTER.toUpperCase() :
-                            MyStrings.CANCELAR_SOLICITACAO.toUpperCase()
+                  if (!isPrimeiroLogin)
+                    Container(
+                      margin: EdgeInsets.fromLTRB(containerPadding, 0, containerPadding, _containerPaddingTop),
+                      decoration: itemDecoration,
+                      child: ButtonTheme(
+                        child: FlatButton(
+                          child: Text(
+                              !user.solicitacaoEmAndamento() ? user.dados
+                                  .isTipster ?
+                              MyTexts.QUERO_SER_FILIADO.toUpperCase() :
+                              MyTexts.QUERO_SER_TIPSTER.toUpperCase() :
+                              MyTexts.CANCELAR_SOLICITACAO.toUpperCase()
+                          ),
+                          onPressed: _solicitarAlterarCategoria,
                         ),
-                        onPressed: _solicitarAlterarCategoria,
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -328,7 +345,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
         style: itemTextStyle,
         readOnly: readOnly,
         inputFormatters: [
-          if (isPhone) WhitelistingTextInputFormatter.digitsOnly,
+          if (isPhone) FilteringTextInputFormatter.digitsOnly,
           if (isPhone) _mobileFormatter,
         ],
         decoration: InputDecoration(
@@ -336,7 +353,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
           enabledBorder: itemlBorder,
           focusedBorder: itemlBorder,
           labelStyle: (valueIsEmpty??false) || (tipNameExiste??false) || (dataIdadeMinima??false) ? itemPrefixStyleErro : itemPrefixStyle,
-          labelText: tipNameExiste == null ? (dataIdadeMinima ?? false ? prefixText + ' ' + MyStrings.IDADE_MINIMA : prefixText) : (tipNameExiste ? prefixText + ' ' + MyStrings.EXISTE : prefixText),
+          labelText: tipNameExiste == null ? (dataIdadeMinima ?? false ? prefixText + ' ' + MyTexts.IDADE_MINIMA : prefixText) : (tipNameExiste ? prefixText + ' ' + MyStrings.EXISTE : prefixText),
         ),
         onTap: onTap,
       ),
@@ -403,7 +420,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
         }
       }
       String text = resultOK ? MyTexts.PERFIL_USER_SALVO : MyErros.PERFIL_USER_SALVO;
-      Log.toast(context, text, isError: !resultOK);
+      Log.toast(text, isError: !resultOK);
       Log.d(TAG, 'Salvar', text);
     }
 
@@ -420,7 +437,7 @@ class MyWidgetState extends State<MeuPerfilPage> {
   }
 
   UserDados _criarUser() {
-    Data data = Data();
+    DataHora data = DataHora();
     data.setData(_nascimento.text);
 
     UserDados dados = UserDados();
@@ -524,8 +541,8 @@ class MyWidgetState extends State<MeuPerfilPage> {
 
 
   _solicitarSerFiliado() {
-    String title = MyStrings.solicitacao_filiado;
-    String mensagem = MyStrings.solicitacao_filiado_mensagem;
+    String title = MyTexts.solicitacao_filiado;
+    String mensagem = MyTexts.solicitacao_filiado_mensagem;
 
     String okButton = MyStrings.OK;
     String cancelButton = MyStrings.CANCELAR;
@@ -569,13 +586,13 @@ class MyWidgetState extends State<MeuPerfilPage> {
   }
 
   void _solicitarSerTipster(final bool solicitei) {
-    String title = MyStrings.solicitacao_tipster;
-    String mensagem = MyStrings.solicitacao_tipster_mensagem;
+    String title = MyTexts.solicitacao_tipster;
+    String mensagem = MyTexts.solicitacao_tipster_mensagem;
     String whatsapp = MyStrings.app_whatsapp;
     String email = MyStrings.app_email;
 
     String okButton = solicitei ? MyStrings.OK : MyStrings.SOLICITAR;
-    String cancelButton = solicitei ? MyStrings.CANCELAR_SOLICITACAO : MyStrings.CANCELAR;
+    String cancelButton = solicitei ? MyTexts.CANCELAR_SOLICITACAO : MyStrings.CANCELAR;
 
     showDialog(
         context: context,

@@ -86,7 +86,7 @@ class _MyAppState extends State<CropImagePage> {
       children: [
         FlatButton(
           child: Text(
-            MyStrings.ABRIR_IMAGEM,
+            MyTexts.ABRIR_IMAGEM,
             style: Theme.of(context).textTheme.button.copyWith(color: MyTheme.textColor()),
           ),
           onPressed: _openImage,
