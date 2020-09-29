@@ -9,6 +9,7 @@ import 'package:protips/model/notificacao.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/token.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/pages/gerencia_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -106,20 +107,31 @@ class NotificationManager {
     Log.d(TAG, 'fcm', 'tokem', tokem);
   }
 
+  //region get set
+
   User get user {
     if (_user == null)
-      _user = getFirebase.user();
+      _user = getFirebase.user;
     return _user;
   }
 
   String get currentToken => _currentToken ?? '';
   set currentToken(String value) {_currentToken = value;}
 
+  //endregion
+
   //region sends
 
   Future<bool> sendPost(Post item, User destino) async {
     try {
+      if (!item.isPublico) {
+        var pagamento = await destino.pagamento(user.dados.id, DataHora.onlyDate);
+        Log.d(TAG, 'sendPost', 'pagamento', pagamento);
+        if (pagamento == null) return sendCobranca(destino);
+      }
+
       await destino.validarTokens();
+
       Log.d(TAG, 'sendPost', 'destino', destino.dados.nome);
       for (String token in destino.tokens.keys) {
         String body = MyStrings.ESPORTE + ': ' + item.esporte;
@@ -150,48 +162,71 @@ class NotificationManager {
     }
   }
 
-  Future<bool> sendSolicitacao(User destino) async {
+  Future<bool> sendCobranca(User destino) async {
     try {
       await destino.validarTokens();
       for (String token in destino.tokens.keys) {
-        String titulo = MyTexts.SOLICITACAO_FILIAL;
-        String texto = getFirebase.user().dados.nome;
+        String titulo = '${MyTexts.NOVO_TIP}: ${user.dados.nome}';
+        String texto = MyTexts.REALIZAR_PAGAMENTO;
 
         PushNotification notificacao = new PushNotification();
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = getFirebase.fUser().uid;
+        notificacao.de = user.dados.id;
+        notificacao.action = NotificationActions.REALIZAR_PAGAMENTO;
+        notificacao.token = token;
+        notificacao.enviar();
+      }
+      return true;
+    } catch (e) {
+      Log.e(TAG, 'sendCobranca', e);
+      return false;
+    }
+  }
+
+  Future<bool> sendSolicitacaoSeguidor(User destino) async {
+    try {
+      await destino.validarTokens();
+      for (String token in destino.tokens.keys) {
+        String titulo = MyTexts.SOLICITACAO_FILIADO;
+        String texto = user.dados.nome;
+
+        PushNotification notificacao = new PushNotification();
+        notificacao.title = titulo;
+        notificacao.body = texto;
+        notificacao.timestamp = DataHora.now();
+        notificacao.de = user.dados.id;
         notificacao.action = NotificationActions.SOLICITACAO_FILIAL;
         notificacao.token = token;
         notificacao.enviar();
       }
       return true;
     } catch (e) {
-      Log.e(TAG, 'sendSolicitacao', e);
+      Log.e(TAG, 'sendSolicitacaoSeguidor', e);
       return false;
     }
   }
 
-  Future<bool> sendSolicitacaoAceita(User destino) async {
+  Future<bool> sendSolicitacaoAceitaSeguidor(User destino) async {
     try {
       await destino.validarTokens();
       for (String token in destino.tokens.keys) {
         String titulo = MyTexts.SOLICITACAO_ACEITA;
-        String texto = getFirebase.user().dados.nome;
+        String texto = user.dados.nome;
 
         PushNotification notificacao = new PushNotification();
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = getFirebase.fUser().uid;
+        notificacao.de = user.dados.id;
         notificacao.action = NotificationActions.SOLICITACAO_ACEITA;
         notificacao.token = token;
         notificacao.enviar();
       }
       return true;
     } catch (e) {
-      Log.e(TAG, 'sendSolicitacaoAceita', e);
+      Log.e(TAG, 'sendSolicitacaoAceitaSeguidor', e);
       return false;
     }
   }
@@ -207,7 +242,7 @@ class NotificationManager {
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = getFirebase.fUser().uid;
+        notificacao.de = user.dados.id;
         notificacao.action = NotificationActions.SOLICITACAO_ACEITA;
         notificacao.token = token;
         notificacao.enviar();
@@ -215,6 +250,29 @@ class NotificationManager {
       return true;
     } catch (e) {
       Log.e(TAG, 'sendSolicitacaoTipsterAceita', e);
+      return false;
+    }
+  }
+
+  Future<bool> sendSolicitacaoTipster(User destino) async {
+    try {
+      await destino.validarTokens();
+      for (String token in destino.tokens.keys) {
+        String titulo = MyTexts.SOLICITACAO_TIPSTER;
+        String texto = user.dados.nome + ' | ' + user.dados.tipname;
+
+        PushNotification notificacao = new PushNotification();
+        notificacao.title = titulo;
+        notificacao.body = texto;
+        notificacao.timestamp = DataHora.now();
+        notificacao.de = user.dados.id;
+        notificacao.action = NotificationActions.SOLICITACAO_TIPSTER;
+        notificacao.token = token;
+        notificacao.enviar();
+      }
+      return true;
+    } catch (e) {
+      Log.e(TAG, 'sendSolicitacaoTipster', e);
       return false;
     }
   }
@@ -245,6 +303,29 @@ class NotificationManager {
     }
   }
 
+  Future<bool> sendPagamento(User destino) async {
+    try {
+      await destino.validarTokens();
+      for (String token in destino.tokens.keys) {
+        String titulo = MyTexts.PAGAMENTO_REALIZADO;
+        String texto = user.dados.nome + ' | ' + user.dados.tipname;
+
+        PushNotification notificacao = new PushNotification();
+        notificacao.title = titulo;
+        notificacao.body = texto;
+        notificacao.timestamp = DataHora.now();
+        notificacao.de = user.dados.id;
+        notificacao.action = NotificationActions.PAGAMENTO_REALIZADO;
+        notificacao.token = token;
+        notificacao.enviar();
+      }
+      return true;
+    } catch (e) {
+      Log.e(TAG, 'sendPagamento', e);
+      return false;
+    }
+  }
+
   //endregion
 
   //region Token
@@ -253,7 +334,7 @@ class NotificationManager {
     Token item = Token();
     item.data = DataHora.now();
     item.value = token;
-    item.device = Import.getDeviceName();
+    item.device = Device.name;
     return item;
   }
 
@@ -280,16 +361,22 @@ class NotificationManager {
           break;
         case NotificationActions.ATUALIZACAO:
           break;
+        case NotificationActions.SOLICITACAO_TIPSTER:
+          Navigate.to(context, GerenciaPage());
+          break;
       }
     }
   }
 
   _showNotification(PushNotification notification) async {
-    var android = AndroidNotificationDetails('channelId', 'channelName', 'channelDescription');
-    var iOS = IOSNotificationDetails();
-    var platform = NotificationDetails(android, iOS);
-    await flutterLocalNotificationsPlugin.show(0, notification.title, notification.body, platform, payload: notification.action);
+    try {
+      var android = AndroidNotificationDetails('channelId', 'channelName', 'channelDescription');
+      var iOS = IOSNotificationDetails();
+      var platform = NotificationDetails(android, iOS);
+      await flutterLocalNotificationsPlugin.show(0, notification.title, notification.body, platform, payload: notification.action);
+    } catch (e) {
+      Log.e(TAG, 'showNotification', e);
+    }
   }
 
 }
-//fgE0FyogCM8:APA91bFXdj8NuY8kZQukuezgHsPNVhyCmABwlvP53AAGtFggEcgu9Sw6bx4_ChznnuKZ3s9E74bHwtseu6Qu2CAa-uJzH-iqK_fCPOzFdaSIdSfHWDDKuRZsZeCpGio4dxZKEr6laV4t

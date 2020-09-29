@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/notificacao.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:random_string/random_string.dart';
 
 class NotificacoesPage extends StatefulWidget {
-  static const String tag = 'NotificacoesPage';
+//  static const String tag = 'NotificacoesPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -26,7 +26,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   @override
   void initState() {
     super.initState();
-    user = getFirebase.user();
+    user = getFirebase.user;
     _addSeguidoresPendentes();
   }
 
@@ -58,15 +58,14 @@ class MyWidgetState extends State<NotificacoesPage> {
       },
       children: _data.map<ExpansionPanel>((Notificacao item) {
         bool fotoLocal = item.isFotoLocal;
-        double fotoUserSize = 50;
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
-              leading: item.hasFoto ? ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
+              leading: item.hasFoto ? MyLayouts.iconFormatUser(
+                  radius: 50,
                   child: fotoLocal ?
-                  MyIcons.fotoUserFile(File(item.foto), fotoUserSize) :
-                  MyIcons.fotoUserNetwork(item.foto, fotoUserSize)
+                  MyLayouts.fotoUserFile(File(item.foto)) :
+                  MyLayouts.fotoUserNetwork(item.foto)
               ) : Container(),
               title: Text(item.titulo),
               subtitle: Text(item.subtitulo),
@@ -90,7 +89,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   }
 
   Future<void> _onRefresh() async {
-    user = getFirebase.user();
+    user = getFirebase.user;
     _data.clear();
     await _addSeguidoresPendentes();
     setState(() {});
@@ -129,7 +128,7 @@ class MyWidgetState extends State<NotificacoesPage> {
         String foto = item.dados.fotoLocalExist ? item.dados.fotoToFile.path : item.dados.foto;
         Notificacao n = Notificacao(id: id, titulo: titulo, subtitulo: subtitulo, isFotoLocal: item.dados.fotoLocalExist,
             eTitulo: eTitulo, eSubtitulo: eSubtitulo, foto: foto, onTap: () {
-          Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
+              Navigate.to(context, PerfilTipsterPage(item));
         });
 
         setState(() {

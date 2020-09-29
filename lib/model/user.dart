@@ -8,6 +8,7 @@ import 'package:protips/res/resources.dart';
 
 class UserTag {
   static const String SOLICITACAO_SER_TIPSTER = 'solicitacao_tipster';
+  static const String PRECO_PADRAO = 'default';
 }
 
 class User {
@@ -23,6 +24,7 @@ class User {
   Map<dynamic, dynamic> _seguidores;
   Map<dynamic, dynamic> _seguidoresPendentes;
   Map<dynamic, dynamic> _denuncias;
+  Map<dynamic, dynamic> _comprasIDs;
   Map<dynamic, dynamic> _tags;
 
   Map<String, Post> _postes;
@@ -42,6 +44,7 @@ class User {
     denuncias = Map();
     seguidores = Map();
     postPerfil = Map();
+    comprasIDs = Map();
     seguidoresPendentes = Map();
     dados = UserDados();
   }
@@ -63,6 +66,7 @@ class User {
     denuncias = Map();
     seguidores = Map();
     postPerfil = Map();
+    comprasIDs = Map();
     seguidoresPendentes = Map();
 
     tags.addAll(user.tags);
@@ -70,6 +74,7 @@ class User {
     seguindo.addAll(user.seguindo);
     seguidores.addAll(user.seguidores);
     postPerfil.addAll(user.postPerfil);
+    comprasIDs.addAll(user.comprasIDs);
     seguidoresPendentes.addAll(user.seguidoresPendentes);
 
     dados.id = _dados.id;
@@ -85,18 +90,40 @@ class User {
     dados.isBloqueado = _dados.isBloqueado;
     dados.descricao = _dados.descricao;
     dados.nascimento = _dados.nascimento;
+    dados.diaPagamento = _dados.diaPagamento;
+    dados.precoPadrao = _dados.precoPadrao;
   }
 
   User.fromJson(Map<dynamic, dynamic> map) {
-    dados = UserDados.fromJson(map['dados']);
-    seguidoresPendentes = map['seguidoresPendentes'];
-    postPerfil = PostPerfil.fromJsonList(map['post_perfil']);
-    postes = Post.fromJsonList(map['postes']);
-    seguidores = map['seguidores'];
-    seguindo = map['seguindo'];
-    tokens = Token.fromJsonList(map['tokens']);
-    denuncias = Denuncia.fromJsonList(map['denuncias']);
-    tags = map['tags'];
+    if (_valueNotNull(map['dados']))
+      dados = UserDados.fromJson(map['dados']);
+
+    if (_valueNotNull(map['seguidoresPendentes']))
+      seguidoresPendentes = map['seguidoresPendentes'];
+
+    if (_valueNotNull(map['post_perfil']))
+      postPerfil = PostPerfil.fromJsonList(map['post_perfil']);
+
+    if (_valueNotNull(map['postes']))
+      postes = Post.fromJsonList(map['postes']);
+
+    if (_valueNotNull(map['seguidores']))
+      seguidores = map['seguidores'];
+
+    if (_valueNotNull(map['seguindo']))
+      seguindo = map['seguindo'];
+
+    if (_valueNotNull(map['tokens']))
+      tokens = Token.fromJsonList(map['tokens']);
+
+    if (_valueNotNull(map['denuncias']))
+      denuncias = Denuncia.fromJsonList(map['denuncias']);
+
+    if (_valueNotNull(map['tags']))
+      tags = map['tags'];
+
+    if (_valueNotNull(map['comprasIDs']))
+      comprasIDs = map['comprasIDs'];
   }
 
   Map<String, dynamic> toJson() => {
@@ -108,15 +135,20 @@ class User {
     "postes": postes,
     "tokens": tokens,
     "denuncias": denuncias,
-    "post_perfil": postPerfil
+    "post_perfil": postPerfil,
+    "comprasIDs": comprasIDs,
   };
 
   //endregion
 
+  bool _valueNotNull(dynamic value) {
+    return value != null;
+  }
+
   //region Metodos
 
   Future<bool> salvar() async {
-    var reference = getFirebase.databaseReference();
+    var reference = getFirebase.databaseReference;
     var result = await reference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
@@ -170,7 +202,7 @@ class User {
   }
 
   Future<bool> excluir() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .remove()
@@ -185,7 +217,7 @@ class User {
   }
 
   Future<bool> bloquear(bool valor) async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.DADOS)
@@ -206,7 +238,7 @@ class User {
     if (token == null)
       return false;
     Log.d(TAG, 'salvarToken', token.device);
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.TOKENS)
@@ -215,7 +247,7 @@ class User {
         .then((value) => true)
         .catchError((e) => false);
 
-    await getFirebase.databaseReference()
+    await getFirebase.databaseReference
         .child(FirebaseChild.TOKENS)
         .child(token.value)
         .set(dados.id)
@@ -232,7 +264,7 @@ class User {
     if (token == null)
       return false;
     //Remove do meu usuario
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.TOKENS)
@@ -242,7 +274,7 @@ class User {
         .catchError((e) => false);
 
     //remove da lista geral de tokens
-    await getFirebase.databaseReference()
+    await getFirebase.databaseReference
         .child(FirebaseChild.TOKENS)
         .child(token)
         .remove()
@@ -259,7 +291,7 @@ class User {
     try {
       List<String> tokensAntigos = [];
       for (String token in tokens.keys) {
-        var result = await getFirebase.databaseReference()
+        var result = await getFirebase.databaseReference
             .child(FirebaseChild.TOKENS)
             .child(token)
             .once()
@@ -286,7 +318,7 @@ class User {
   //region Tipster
 
   Future<bool> solicitarSerTipster() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER)
         .child(dados.id)
         .set(dados.tipname)
@@ -299,7 +331,10 @@ class User {
 
       await habilitarTipster(true);
       dados.isTipster = true;
-//      bloquear();
+
+      var admins = await getFirebase.admins;
+      for (User item in admins)
+        getFirebase.notificationManager.sendSolicitacaoTipster(item);
     }
 
     Log.d(TAG, 'solicitarSerTipster', result);
@@ -308,14 +343,14 @@ class User {
 
   Future<bool> solicitarSerTipsterAprovar() async {
     if (await solicitarSerTipsterCancelar(true)) {
-      getFirebase.notificationManager.sendSolicitacaoAceita(this);
+      getFirebase.notificationManager.sendSolicitacaoTipsterAceita(this);
       return await bloquear(false);
     }
     return false;
   }
 
   Future<bool> habilitarTipster(bool valor) async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.DADOS)
@@ -334,7 +369,7 @@ class User {
   }
 
   Future<bool> solicitarSerTipsterCancelar([bool _habilitarTipster = false]) async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER)
         .child(dados.id)
         .remove()
@@ -344,8 +379,7 @@ class User {
     if (!result)
       return result;
 
-    String tag = UserTag.SOLICITACAO_SER_TIPSTER;
-    await removeTag(tag);
+    await removeTag(UserTag.SOLICITACAO_SER_TIPSTER);
 
     await habilitarTipster(_habilitarTipster);
 //    await desbloquear();
@@ -359,13 +393,15 @@ class User {
     return tags.containsKey(UserTag.SOLICITACAO_SER_TIPSTER);
   }
 
+  bool get isMyTipster => seguidores.containsKey(getFirebase.fUser.uid);
+
   //endregion
 
-  //region Filial
+  //region Filiado
 
   Future<bool> addSolicitacao(User user) async {
     String userId = user.dados.id;
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.SEGUIDORES_PENDENTES)
@@ -374,7 +410,7 @@ class User {
         .then((value) => true)
         .catchError((e) => false);
 
-    await getFirebase.notificationManager.sendSolicitacao(this);
+    await getFirebase.notificationManager.sendSolicitacaoSeguidor(this);
     if (result)
       seguidoresPendentes[userId] = userId;
     Log.d(TAG, 'addSolicitacao', result);
@@ -382,7 +418,7 @@ class User {
   }
 
   Future<bool> removeSolicitacao(String userId) async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.SEGUIDORES_PENDENTES)
@@ -397,7 +433,7 @@ class User {
   }
 
   Future<bool> addSeguindo(String userId) async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.SEGUINDO)
@@ -411,7 +447,7 @@ class User {
   }
 
   Future<bool> removeSeguindo(String userId) async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.SEGUINDO)
@@ -428,19 +464,19 @@ class User {
 
   Future<bool> aceitarSeguidor(User user) async {
     String userId = user.dados.id;
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.SEGUIDORES)
         .child(userId)
-        .set(userId)
+        .set(UserTag.PRECO_PADRAO)
         .then((value) => true)
         .catchError((e) => false);
 
-    await getFirebase.notificationManager.sendSolicitacaoAceita(user);
+    await getFirebase.notificationManager.sendSolicitacaoAceitaSeguidor(user);
     if (result) {
-      user.addSeguindo(getFirebase.fUser().uid);
-      seguidores[userId] = userId;
+      user.addSeguindo(getFirebase.fUser.uid);
+      seguidores[userId] = 0;
       await removeSolicitacao(userId);
     }
     Log.d(TAG, 'aceitarSeguidor', result);
@@ -450,7 +486,7 @@ class User {
   Future<bool> removeSeguidor(User punter) async {
     await punter.removeSeguindo(dados.id);
     String userId = punter.dados.id;
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.SEGUIDORES)
@@ -465,15 +501,76 @@ class User {
     return result;
   }
 
+  Future<bool> updateMensalidadeFiliado(String userId, String value) async {
+    var result = await getFirebase.databaseReference
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.SEGUIDORES)
+        .child(userId)
+        .set(value)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      seguidores[userId] = value;
+    Log.d(TAG, 'updateMensalidade', result, userId, value);
+    return result;
+  }
+
+  Future<int> pagamento(String tipsterID, String data) async {
+    try {
+      var snapshot = await getFirebase.databaseReference
+          .child(FirebaseChild.PAGAMENTOS)
+          .child(tipsterID)
+          .child(data)
+          .child(dados.id)
+          .once();
+      return snapshot.value;
+    } catch (e) {
+      Log.e(TAG, 'pagamento', e);
+      return null;
+    }
+  }
+
   //endregion
 
-  //region Diversos
+  //region add & remove
+
+  Future<bool> addCreditCard(String id) async {
+    var result = await getFirebase.databaseReference
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.COMPRAS_IDS)
+        .child(id)
+        .set(true)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      comprasIDs[id] = true;
+    Log.d(TAG, 'addCreditCard', result);
+    return result;
+  }
+
+  Future<bool> removeCreditCard(String id) async {
+    var result = await getFirebase.databaseReference
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.COMPRAS_IDS)
+        .child(id)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      comprasIDs.remove(id);
+    Log.d(TAG, 'removeCreditCard', result);
+    return result;
+  }
+
 
   Future<bool> addTag(String tag) async {
-    if (tags.containsKey(tag))
-      return null;
-
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.TAGS)
@@ -489,10 +586,7 @@ class User {
   }
 
   Future<bool> removeTag(String tag) async {
-    if (!tags.containsKey(tag))
-      return null;
-
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.TAGS)
@@ -507,11 +601,12 @@ class User {
     return result;
   }
 
+
   Future<bool> removeDenuncia(String key) async {
     if (!denuncias.containsKey(key))
       return true;
 
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
         .child(FirebaseChild.DENUNCIAS)
@@ -530,14 +625,14 @@ class User {
 
   //region greem red
 
-  int bomCount() {
+  int get bomCount {
     int count = 0;
     for (Post p in postes.values) {
       count += p.bom.length;
     }
     return count;
   }
-  int ruimCount()  {
+  int get ruimCount {
     int count = 0;
     for (Post p in postes.values) {
       count += p.ruim.length;
@@ -655,6 +750,17 @@ class User {
 
   set dados(UserDados value) {
     _dados = value;
+  }
+
+
+  Map<dynamic, dynamic> get comprasIDs {
+    if (_comprasIDs == null)
+      _comprasIDs = Map();
+    return _comprasIDs;
+  }
+
+  set comprasIDs(Map<dynamic, dynamic> value) {
+    _comprasIDs = value;
   }
 
   Map<dynamic, dynamic> get tags {

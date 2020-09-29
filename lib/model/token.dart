@@ -20,7 +20,7 @@ class Token {
   Token.fromToken(IdTokenResult t) {
     data = t.authTime.toString();
     provider = t.signInProvider;
-    device = Import.getDeviceName();
+    device = Device.name;
     value = t.token;
   }
 
@@ -66,6 +66,6 @@ class Token {
     _provider = value;
   }
 
-  //endregion
+//endregion
 
 }

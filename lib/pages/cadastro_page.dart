@@ -1,11 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/res/resources.dart';
 
 class CadastroPage extends StatefulWidget{
-  static const String tag = 'CadastroPage';
+//  static const String tag = 'CadastroPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -16,6 +17,7 @@ class MyWidgetState extends State<CadastroPage> {
   bool nomeVazio = false;
   bool emailVazio = false;
   bool emailInvalido = false;
+  bool emailUsado = false;
   bool senhaVazio = false;
   bool senhaFraca = false;
   bool confSenhaVazio = false;
@@ -25,10 +27,15 @@ class MyWidgetState extends State<CadastroPage> {
   TextEditingController cEmail = TextEditingController();
   TextEditingController cSenha = TextEditingController();
   TextEditingController cConfirmSenha = TextEditingController();
+
+  bool isLoading = false;
   //endregion
+
+  //region overrides
 
   @override
   Widget build(BuildContext context) {
+    //region Variaveis
     double itemHeight = 45;
 
     var itemContentPadding = EdgeInsets.fromLTRB(12, 0, 12, 0);
@@ -47,12 +54,19 @@ class MyWidgetState extends State<CadastroPage> {
 
     var divider = Divider(height: 50, color: MyTheme.primary());
 
+    final textAction = TextInputAction.next;
+//    final focusEmail = FocusNode();
+//    final focusSenha = FocusNode();
+//    final focusConfSenha = FocusNode();
+
+    //endregion
+
     return Scaffold(
       body: SingleChildScrollView(
           padding: EdgeInsets.all(50),
         child: Column(
           children: [
-            Image.asset(MyIcons.ic_person, width: 100, height: 100),
+            Image.asset(MyAssets.ic_person, width: 100, height: 100),
             // Texto
             Padding(
               child: Text('PUNTER | TIPSTER',
@@ -71,6 +85,7 @@ class MyWidgetState extends State<CadastroPage> {
               child: TextField(
                 controller: cNome,
                 keyboardType: TextInputType.name,
+                textInputAction: textAction,
                 style: textfiedTextStyle,
                 decoration: InputDecoration(
                   contentPadding: itemContentPadding,
@@ -91,21 +106,23 @@ class MyWidgetState extends State<CadastroPage> {
               height: itemHeight,
               margin: EdgeInsets.only(top: 20),
               padding: textfiedPadding,
-              child: TextFormField(
+              child: TextField(
                 controller: cEmail,
+                textInputAction: textAction,
                 keyboardType: TextInputType.emailAddress,
                 style: textfiedTextStyle,
                 decoration: InputDecoration(
                   contentPadding: itemContentPadding,
-                  enabledBorder: emailVazio || emailInvalido ? textfiedlBorderError : textfiedlBorder,
-                  focusedBorder: emailVazio || emailInvalido ? textfiedlBorderError : textfiedlBorder,
-                  suffixText: emailInvalido ? 'email inválido' : null,
+                  enabledBorder: emailVazio || emailInvalido || emailUsado ? textfiedlBorderError : textfiedlBorder,
+                  focusedBorder: emailVazio || emailInvalido || emailUsado ? textfiedlBorderError : textfiedlBorder,
+                  suffixText: emailInvalido ? 'email inválido' : emailUsado ? 'email já cadastrado' : null,
                   labelStyle: textfiedLabelStyle,
                   labelText: 'Seu Email',
                 ),
                 onTap: () {
                   setState(() {
                     emailVazio = false;
+                    emailUsado = false;
                     emailInvalido = false;
                   });
                 },
@@ -118,6 +135,7 @@ class MyWidgetState extends State<CadastroPage> {
               padding: textfiedPadding,
               child: TextField(
                 controller: cSenha,
+                textInputAction: textAction,
                 obscureText: true,
                 style: textfiedTextStyle,
                 decoration: InputDecoration(
@@ -143,6 +161,7 @@ class MyWidgetState extends State<CadastroPage> {
               padding: textfiedPadding,
               child: TextField(
                 controller: cConfirmSenha,
+                textInputAction: TextInputAction.done,
                 obscureText: true,
                 style: textfiedTextStyle,
                 decoration: InputDecoration(
@@ -153,6 +172,9 @@ class MyWidgetState extends State<CadastroPage> {
                   suffixText: senhasDiferentes ? 'Senha diferente' : null,
                   labelText: 'Confirmar Senha',
                 ),
+                onSubmitted: (v) {
+                  _onCadastroButtonPressed();
+                },
                 onTap: () {
                   setState(() {
                     confSenhaVazio = false;
@@ -165,17 +187,22 @@ class MyWidgetState extends State<CadastroPage> {
             //Rodape
             FloatingActionButton(
               child: Icon(Icons.forward, color: MyTheme.tintColor()),
-              backgroundColor: MyTheme.accent(),
-              onPressed: onCadastroButtonPressed,
+              backgroundColor: isLoading ? MyTheme.tintColor2() : MyTheme.accent(),
+              onPressed: isLoading ? null : _onCadastroButtonPressed,
             )
           ],
         )
       ),
       backgroundColor: MyTheme.primary(),
+      floatingActionButton: isLoading ? CircularProgressIndicator() : Container(),
     );
   }
 
-  void onCadastroButtonPressed() async {
+  //endregion
+
+  //region Metodos
+
+  void _onCadastroButtonPressed() async {
     String email = cEmail.text.trim();
     String senha = cSenha.text;
     String confSenha = cConfirmSenha.text;
@@ -185,32 +212,32 @@ class MyWidgetState extends State<CadastroPage> {
     setState(() {
       if (nome.isEmpty) {
         retornar = nomeVazio = true;
-        return;
       }
       if (email.isEmpty) {
         retornar = emailVazio = true;
-        return;
       }
       if (senha.isEmpty) {
         retornar = senhaVazio = true;
-        return;
       }
       if (confSenha.isEmpty) {
         retornar = confSenhaVazio = true;
-        return;
       }
       if (senha != confSenha) {
         retornar = senhasDiferentes = true;
-        return;
       }
     });
-    if (retornar)
+    if (retornar) {
+      HapticFeedback.lightImpact();
       return;
+    }
+
+    _setInLoading(true);
 
     try {
       await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: senha);
       Navigator.pop(context);
     } catch (e) {
+      HapticFeedback.lightImpact();
       bool sendError = true;
       if (e.toString().contains('ERROR_INVALID_EMAIL')) {
         emailVazio = true;
@@ -220,8 +247,26 @@ class MyWidgetState extends State<CadastroPage> {
         senhaFraca = true;
         sendError = false;
       }
+      if (e.toString().contains('ERROR_EMAIL_ALREADY_IN_USE')) {
+        emailUsado = true;
+        sendError = false;
+      }
+      if (e.toString().contains('ERROR_TOO_MANY_REQUESTS')) {
+        sendError = false;
+        Log.toast('Bloqueamos os pedidos deste dispositivo devido a atividades incomuns. Tente mais tarde.', isError: true);
+      }
       setState(() {});
+      _setInLoading(false);
       Log.e(TAG, 'Cadastro', e, sendError);
     }
   }
+
+  _setInLoading(bool b) {
+    setState(() {
+      isLoading = b;
+    });
+  }
+
+  //endregion
+
 }

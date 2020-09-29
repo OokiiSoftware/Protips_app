@@ -40,6 +40,8 @@ class NotificationActions {
   static const String SOLICITACAO_TIPSTER = 'SOLICITACAO_TIPSTER';
   static const String SOLICITACAO_FILIAL = 'SOLICITACAO_FILIAL';
   static const String SOLICITACAO_ACEITA = 'SOLICITACAO_ACEITA';
+  static const String PAGAMENTO_REALIZADO = 'PAGAMENTO_REALIZADO';
+  static const String REALIZAR_PAGAMENTO = 'REALIZAR_PAGAMENTO';
   static const String ATUALIZACAO = 'ATUALIZACAO';
   static const String DENUNCIA = 'DENUNCIA';
 }
@@ -79,7 +81,7 @@ class PushNotification {
   }
 
   Future<bool> enviar() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.NOTIFICATIONS)
         .child(token)
         .child(timestamp)
@@ -92,7 +94,7 @@ class PushNotification {
   }
 
   Future<bool> delete() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.NOTIFICATIONS)
 //        .child(para)
         .child(de)

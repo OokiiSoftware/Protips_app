@@ -52,7 +52,7 @@ class PostPerfil {
     if (!result)
       return false;
 
-    result = await getFirebase.databaseReference()
+    result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES_PERFIL)
@@ -62,13 +62,13 @@ class PostPerfil {
         .catchError((e) => false);
 
     if (result)
-      getFirebase.user().postPerfil[id] = this;
+      getFirebase.user.postPerfil[id] = this;
     Log.d(TAG, 'Postar', result);
     return result;
   }
 
   Future<bool> excluir() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES_PERFIL)
@@ -77,13 +77,13 @@ class PostPerfil {
         .then((value) => true)
         .catchError((e) => false);
     if (result) {
-      await getFirebase.storage()
+      await getFirebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES_PERFIL)
           .child(idTipster)
           .child(id + '.jpg').delete();
 
-      getFirebase.user().postPerfil.remove(id);
+      getFirebase.user.postPerfil.remove(id);
     }
     Log.d(TAG, 'excluir', result);
     return result;
@@ -100,7 +100,7 @@ class PostPerfil {
     Log.d(TAG, 'uploadPhoto', 'file path: ' + file.path);
 
     try {
-      final StorageReference ref = getFirebase.storage()
+      final StorageReference ref = getFirebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES_PERFIL)
           .child(idTipster)

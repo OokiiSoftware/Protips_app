@@ -2,24 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/res/resources.dart';
 
-import 'meu_perfil_page.dart';
-
 class PostPage extends StatefulWidget {
-  static const String tag = 'PostPage';
+  final Post post;
+  PostPage(this.post);
   @override
-  State<StatefulWidget> createState() => MyWidgetState();
+  State<StatefulWidget> createState() => MyWidgetState(post);
 }
 class MyWidgetState extends State<PostPage> {
 
+  MyWidgetState(this.post);
   //region Variaveis
   static const String TAG = 'PostPage';
 
   double progressBarValue = 0;
 
-  Post _post;
+  Post post;
   LinearProgressIndicator progressBar;
   //endregion
 
@@ -36,11 +37,11 @@ class MyWidgetState extends State<PostPage> {
     var item = ModalRoute.of(context).settings.arguments;
     if (item == null || !(item is Post))
       Navigator.of(context);
-    _post = item;
+    post = item;
     return Scaffold(
       appBar: AppBar(title: Text(Titles.MAIN)),
       body: SingleChildScrollView(
-        child: itemLayout(_post),
+        child: itemLayout(post),
       ),
     );
   }
@@ -52,7 +53,7 @@ class MyWidgetState extends State<PostPage> {
   Widget itemLayout(Post item) {
     User user = getTipster.get(item.idTipster);
     double fotoUserSize = 40;
-    bool isMyPost = item.idTipster == getFirebase.fUser().uid;
+    bool isMyPost = item.idTipster == getFirebase.fUser.uid;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
 
@@ -70,10 +71,10 @@ class MyWidgetState extends State<PostPage> {
                   Padding(
                       padding: EdgeInsets.all(10),
                       child: item == null ?
-                      Image.asset(MyIcons.ic_person, color: Colors.black) :
+                      Image.asset(MyAssets.ic_person, color: Colors.black) :
                       ClipRRect(
                           borderRadius: BorderRadius.circular(50),
-                          child: MyIcons.fotoUser(user.dados, fotoUserSize)
+                          child: MyLayouts.fotoUser(user.dados, iconSize: fotoUserSize)
 //                          Image.file(user.dados.fotoToFile, width: fotoUserSize, height: fotoUserSize) :
 //                          Image.network(
 //                              user.dados.foto, width: fotoUserSize, height: fotoUserSize,
@@ -113,10 +114,10 @@ class MyWidgetState extends State<PostPage> {
               ),
             ),
             onTap: () {
-              if (user.dados.id == getFirebase.fUser().uid)
-                Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+              if (user.dados.id == getFirebase.fUser.uid)
+                Navigate.to(context, PerfilPage());
               else
-                Navigator.of(context).pushNamed(PerfilPage.tag, arguments: user);
+                Navigate.to(context, PerfilTipsterPage(user));
             },
           ),
           Divider(
@@ -132,7 +133,7 @@ class MyWidgetState extends State<PostPage> {
           ),
           //Foto
           Container(
-              child: MyIcons.fotoPost(item)
+              child: MyLayouts.fotoPost(item)
           ),
           divider,
           //descricao

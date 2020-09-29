@@ -2,13 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/model/data_hora.dart';
+import 'package:protips/model/endereco.dart';
 import 'package:protips/res/resources.dart';
-
-import 'data_hora.dart';
-import 'endereco.dart';
 
 class UserDados {
 
@@ -29,6 +26,8 @@ class UserDados {
   bool _isBloqueado;
   DataHora _nascimento;
   Endereco _endereco;
+  int _diaPagamento;
+  String _precoPadrao;
   //endregion
 
   UserDados() {
@@ -42,11 +41,13 @@ class UserDados {
     email = map['email'];
     tipname = map['tipname'];
     descricao = map['descricao'];
+    precoPadrao = map['precoPadrao'];
     foto = map['foto'];
     telefone = map['telefone'];
+    isTipster = map['isTipster'];
     isPrivado = map['isPrivado'];
     isBloqueado = map['isBloqueado'];
-    isTipster = map['isTipster'];
+    diaPagamento = map['diaPagamento'];
     endereco = Endereco.fromJson(map['endereco']);
     nascimento = DataHora.from(map['nascimento']);
   }
@@ -57,18 +58,20 @@ class UserDados {
     "nome": nome,
     "email": email,
     "tipname": tipname,
+    "telefone": telefone,
+    "descricao": descricao,
+    "precoPadrao": precoPadrao,
     "isPrivado": isPrivado,
     "isTipster": isTipster,
-    "telefone": telefone,
     "isBloqueado": isBloqueado,
-    "descricao": descricao,
+    "diaPagamento": diaPagamento,
     "endereco": endereco.toJson(),
     "nascimento": nascimento.toMap(),
   };
 
   //region Metodos
 
-  Future<bool> salvar(BuildContext context) async {
+  Future<bool> salvar() async {
     Log.d(TAG, 'salvar', 'Iniciando');
     bool uploadOK = await _uploadPerfilPhoto();
     if (uploadOK != null && !uploadOK)
@@ -77,7 +80,7 @@ class UserDados {
       if (!await _userUpdateInfo())
         return false;
 
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(id)
         .child(FirebaseChild.DADOS)
@@ -99,11 +102,10 @@ class UserDados {
       return null;
     }
 
-    Log.d(TAG, 'uploadUserPhoto', 'Iniciando');
-    Log.d(TAG, 'uploadUserPhoto', 'file path: ' + file.path);
+    Log.d(TAG, 'uploadUserPhoto', 'Iniciando', file.path);
 
     try {
-      final StorageReference ref = getFirebase.storage()
+      final StorageReference ref = getFirebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.PERFIL)
           .child(id + '.jpg');
@@ -112,7 +114,9 @@ class UserDados {
       var taskSnapshot = await uploadTask.onComplete;
       var fileUrl = await taskSnapshot.ref.getDownloadURL();
 
-      file.delete();
+//      _fotoLocal = path.basename(file.path);
+      if (fotoLocalExist) await fotoToFile.delete();
+//      await file.rename('${getUsers.localPath}/$fotoLocal');
       Log.d(TAG, 'uploadUserPhoto OK', fileUrl);
       foto = fileUrl;
       return true;
@@ -137,7 +141,7 @@ class UserDados {
     }
     try {
       if (i > 0)
-        await getFirebase.fUser().updateProfile(userUpdateInfo);
+        await getFirebase.fUser.updateProfile(userUpdateInfo);
       Log.d(TAG, 'uploadUserInfo', 'OK');
       return true;
     } catch (e) {
@@ -147,7 +151,7 @@ class UserDados {
   }
 
   Future<bool> addIdentificador() async {
-    return await getFirebase.databaseReference()
+    return await getFirebase.databaseReference
         .child(FirebaseChild.IDENTIFICADOR)
         .child(tipname)
         .set(id)
@@ -255,6 +259,19 @@ class UserDados {
 
   set id(String value) {
     _id = value;
+  }
+
+
+  String get precoPadrao => _precoPadrao ?? '';
+
+  set precoPadrao(String value) {
+    _precoPadrao = value;
+  }
+
+  int get diaPagamento => _diaPagamento ?? 1;
+
+  set diaPagamento(int value) {
+    _diaPagamento = value;
   }
 
   //endregion

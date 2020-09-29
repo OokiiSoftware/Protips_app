@@ -2,21 +2,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/error.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/res/resources.dart';
 
 class FragmentErros extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
-class MyWidgetState extends State<FragmentErros> {
+class MyWidgetState extends State<FragmentErros> with AutomaticKeepAliveClientMixin<FragmentErros> {
 
   //region Variaveis
   static const String TAG = 'FragmentErros';
 
   List<Error> _data = new List<Error>();
-
+  bool isAtualizando = false;
   //endregion
 
   //region overrides
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -28,12 +32,19 @@ class MyWidgetState extends State<FragmentErros> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: ListView(children: [
           Container(child: _itemLayout())
         ]),
+      ),
+      floatingActionButton: isAtualizando ? CircularProgressIndicator() :
+      FloatingActionButton(
+        tooltip: 'Deletar Tudo',
+        child: Icon(Icons.delete_forever),
+        onPressed: _deleteAll,
       ),
     );
   }
@@ -54,7 +65,7 @@ class MyWidgetState extends State<FragmentErros> {
           return ExpansionPanel(
             headerBuilder: (BuildContext context, bool isExpanded) {
               return ListTile(
-                title: Text(item.classe + ' (' + item.quantidade.toString() + ')' ),
+                title: Text(item.classe + ' (' + (item.similares.length + 1).toString() + ')' ),
                 subtitle: Text(item.metodo),
                 onTap: () {
                   setState(() {
@@ -67,12 +78,13 @@ class MyWidgetState extends State<FragmentErros> {
               title: Text(item.data),
               subtitle: Text(item.valor),
               onLongPress: () async {
-                if (await item.delete()) {
+                _setAtualizando(true);
+                if (await item.deleteAll()) {
                   getErros.remove(item.data);
-                  setState(() {
-                    _data.remove(item);
-                  });
+                  _data.remove(item);
                 }
+                setState(() {});
+                _setAtualizando(false);
               },
             ),
             isExpanded: item.isExpanded,
@@ -84,11 +96,41 @@ class MyWidgetState extends State<FragmentErros> {
     }
   }
 
+  Future<void> _deleteAll() async {
+    var result = await MyLayouts.dialogCancelOK(context, title: 'Excluir todos os dados?');
+    if (result.isOk)
+    try {
+      _setAtualizando(true);
+      var result = await getFirebase.databaseReference
+          .child(FirebaseChild.LOGS)
+          .remove()
+          .then((value) => true)
+          .catchError((ex) => false);
+      if (result) {
+        setState(() {
+          _data.clear();
+        });
+        Log.toast('Sucesso');
+      }
+      else
+        Log.toast('Erro', isError: true);
+    } catch(e) {
+      //Todo \(ºvº)/
+    }
+    _setAtualizando(false);
+  }
+
   Future<void> _onRefresh() async {
     await getErros.baixar();
     _data.clear();
     setState(() {
       _data.addAll(getErros.data);
+    });
+  }
+
+  void _setAtualizando(bool b) {
+    setState(() {
+      isAtualizando = b;
     });
   }
 

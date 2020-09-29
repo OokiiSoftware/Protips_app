@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
 
 class Post {
@@ -96,7 +95,7 @@ class Post {
     if (!result)
       return false;
 
-    result = await getFirebase.databaseReference()
+    result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -109,11 +108,10 @@ class Post {
         });
 
     if (result)
-      for (String key in getFirebase.user().seguidores.values) {
-        User user = await getUsers.get(key);
-        if (user != null)
-          await getFirebase.notificationManager.sendPost(this, user);
-      }
+      EventListener.onPostSend(this);
+    else
+      EventListener.onPostSendFail();
+
     Log.d(TAG, 'postar', result);
     return result;
   }
@@ -121,7 +119,7 @@ class Post {
   Future<bool> addBom(String userId) async {
     if (bom.containsValue(userId))
       return true;
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -142,7 +140,7 @@ class Post {
   Future<bool> addRuim(String userId) async {
     if (ruim.containsValue(userId))
       return true;
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -163,7 +161,7 @@ class Post {
   Future<bool> removeBom(String userId) async {
     if (!bom.containsValue(userId))
     return null;
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -182,7 +180,7 @@ class Post {
   Future<bool> removeRuim(String userId) async {
     if (!ruim.containsValue(userId))
       return true;
-     var result = await getFirebase.databaseReference()
+     var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -199,7 +197,7 @@ class Post {
   }
 
   Future<bool> excluir() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -208,10 +206,9 @@ class Post {
         .then((value) => true)
         .catchError((e) => false);
 
-    if (!result)
-      return false;
+    if (!result) return false;
 
-    result = await getFirebase.storage()
+    result = await getFirebase.storage
         .child(FirebaseChild.USUARIO)
         .child(FirebaseChild.POSTES)
         .child(idTipster)
@@ -220,7 +217,7 @@ class Post {
         .then((value) => true)
         .catchError((e) => false);
 
-    getFirebase.user().postes.remove(id);
+    EventListener.onPostDelete(this);
 
     return result ?? false;
   }
@@ -236,7 +233,7 @@ class Post {
     Log.d(TAG, 'uploadPhoto', 'file path: ' + file.path);
 
     try {
-      final StorageReference ref = getFirebase.storage()
+      final StorageReference ref = getFirebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES)
           .child(idTipster)
@@ -254,6 +251,9 @@ class Post {
       return false;
     }
   }
+
+  /// Retorna TRUE se o post pertece ao usuário logado
+  bool get isMyPost => idTipster == getFirebase.fUser.uid;
 
   //endregion
 

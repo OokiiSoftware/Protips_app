@@ -5,16 +5,21 @@ import 'package:protips/auxiliar/import.dart';
 import 'package:protips/res/resources.dart';
 
 class RecuperarSenhaPage extends StatefulWidget {
-  static const String tag = 'RecuperarSenhaPage';
+  final String args;
+  RecuperarSenhaPage(this.args);
   @override
-  State<StatefulWidget> createState() => MyWidgetState();
+  State<StatefulWidget> createState() => MyWidgetState(args);
 }
 class MyWidgetState extends State<RecuperarSenhaPage> {
+
+  MyWidgetState(this.email);
+
   static const String TAG = 'RecuperarSenhaPage';
 
   TextEditingController cEmail = TextEditingController();
 
   String log = '';
+  String email;
   bool reload = false;
   bool emailNaoEncontrado = false;
   bool emailInvalido = false;
@@ -56,10 +61,6 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
     progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: MyTheme.primaryLight());
 
     if (!reload) {
-      String email = ModalRoute.of(context).settings.arguments;
-      if (email == null || email.isEmpty)
-        email = '';
-
       cEmail.text = email;
     }
 
@@ -79,7 +80,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
               children: <Widget>[
                 //Icone
                 Align(
-                  child: Image.asset(MyIcons.ic_launcher,
+                  child: Image.asset(MyAssets.ic_launcher,
                     width: 130,
                     height: 130,
                   ),

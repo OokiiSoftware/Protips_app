@@ -14,11 +14,11 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_api_availability/google_api_availability.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:package_info/package_info.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/error.dart';
 import 'package:protips/model/post.dart';
-import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
 import 'file:///C:/Users/jhona/Documents/GitHub/protips_app/lib/auxiliar/device_info.dart';
@@ -27,18 +27,65 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'notification_manager.dart';
 
-class Import {
-  static const String TAG = 'Import';
-  static const double APP_VERSION = 1.2;
+class Aplication {
+  static const String TAG = 'Aplication';
+
+  static int appVersionInDatabase = 0;
+  static PackageInfo packageInfo;
+  static SharedPreferences sharedPref;
+
+  static Future<void> init(BuildContext context) async {
+    Log.setToast = context;
+    packageInfo = await PackageInfo.fromPlatform();
+    Device._deviceData = await DeviceInfo.getDeviceInfo();
+    sharedPref = await SharedPreferences.getInstance();
+    getFirebase.initNotificationManager(context);
+  }
+
+  static Future<String> buscarAtualizacao() async {
+    Log.d(TAG, 'buscarAtualizacao', 'Iniciando');
+    int _value = await getFirebase.databaseReference
+        .child(FirebaseChild.VERSAO)
+        .once()
+        .then((value) => value.value)
+        .catchError((e) {
+      Log.e(TAG, 'buscarAtualizacao', e);
+      return -1;
+    });
+    String url;
+
+    Log.d(TAG, 'buscarAtualizacao', 'Web Version', _value, 'Local Version', packageInfo.buildNumber);
+    appVersionInDatabase = _value;
+    int appVersion = int.parse(packageInfo.buildNumber);
+
+    if (_value > appVersion) {
+      url = 'https://play.google.com/store/apps/details?id=com.ookiisoftware.protips';
+//      String folder = Platform.isAndroid ? FirebaseChild.APK : FirebaseChild.IOS;
+//      String ext = Platform.isAndroid ? '.apk' : '';
+//      String fileName = MyStrings.APP_NAME + '_' + _value.toString() + ext;
+//      Log.d(TAG, 'buscarAtualizacao', 'fileName', fileName);
+//      try {
+//        url = await getFirebase.storage()
+//            .child(FirebaseChild.APP)
+//            .child(folder)
+//            .child(fileName)
+//            .getDownloadURL();
+//      } catch(e) {
+//        Log.e(TAG, 'buscarAtualizacao', e);
+//      }
+    }
+
+    return url;
+  }
+
+  static bool get isRelease => bool.fromEnvironment('dart.vm.product');
+}
+
+class Device {
   static Map<String, dynamic> _deviceData;
 
-  static String getDeviceName() {
-    return (Platform.isAndroid ? _deviceData['model'] : _deviceData['name']) ?? '';
-  }
-
-  static Future<void> readDeviceInfo() async {
-    _deviceData = await DeviceInfo.getDeviceInfo();
-  }
+  static String get name =>
+      (Platform.isAndroid ? _deviceData['model'] : _deviceData['name']) ?? '';
 
   static Future<bool> checkGoogleServices([bool showDialog = false]) async {
     GooglePlayServicesAvailability playStoreAvailability;
@@ -50,6 +97,19 @@ class Import {
     }
     return playStoreAvailability.value == GooglePlayServicesAvailability.success.value;
   }
+}
+
+class Navigate {
+  static dynamic to(BuildContext context, StatefulWidget widget) async {
+    return await Navigator.of(context).push(MaterialPageRoute(builder: (context) => widget));
+  }
+  static toReplacement(BuildContext context, StatefulWidget widget) {
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => widget));
+  }
+}
+
+class Import {
+  static const String TAG = 'Import';
 
   static List<DropdownMenuItem<String>> getDropDownMenuItems(List list) {
     List<DropdownMenuItem<String>> items = new List();
@@ -60,56 +120,6 @@ class Import {
       ));
     }
     return items;
-  }
-
-  static Future<void> showPopup(BuildContext context, PostPerfil item) async {
-    showDialog(
-        context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: MyTheme.transparentColor(),
-          content: GestureDetector(
-            child: MyIcons.fotoPostNetwork(item.foto),
-            onTapUp: (value) {
-              Navigator.pop(context);
-            },
-          ),
-        );
-      }
-    );
-  }
-
-  static Future<String> buscarAtualizacao() async {
-    Log.d(TAG, 'buscarAtualizacao', 'Iniciando');
-    double _value = await getFirebase.databaseReference()
-        .child(FirebaseChild.VERSAO)
-        .once()
-        .then((value) => value.value)
-        .catchError((e) {
-      Log.e(TAG, 'buscarAtualizacao', e);
-      return -1.0;
-    });
-    String url;
-
-    Log.d(TAG, 'buscarAtualizacao', 'Versão', _value);
-    if (_value > 0 && _value > APP_VERSION) {
-//      url = 'https://play.google.com/store/apps/details?id=com.ookiisoftware.protips';
-      String folder = Platform.isAndroid ? FirebaseChild.APK : FirebaseChild.IOS;
-      String ext = Platform.isAndroid ? '.apk' : '';
-      String fileName = MyStrings.APP_NAME + '_' + _value.toString() + ext;
-      Log.d(TAG, 'buscarAtualizacao', 'fileName', fileName);
-      try {
-        url = await getFirebase.storage()
-            .child(FirebaseChild.APP)
-            .child(folder)
-            .child(fileName)
-            .getDownloadURL();
-      } catch(e) {
-        Log.e(TAG, 'buscarAtualizacao', e);
-      }
-    }
-
-    return url;
   }
 
   static void openUrl(String url, [BuildContext context]) async {
@@ -161,15 +171,26 @@ class Import {
   }
 }
 
-/*class Cript {
-  static String encript(String value) {
-//    return md5.convert(utf8.encode(value)).toString();
-    return value;
+class EventListener {
+  static onPostSend(Post item) async {
+    getPosts.add(item);
+    for (String key in getFirebase.user.seguidores.keys) {
+      User user = await getUsers.get(key);
+      if (user != null)
+        getFirebase.notificationManager.sendPost(item, user);
+    }
+    Log.toast('TIP Postado');
   }
-  static String dencript(String value) {
-    return value;
+
+  static onPostSendFail() async {
+    Log.toast('Ocorreu um erro ao enviar sua TIP');
   }
-}*/
+
+  static onPostDelete(Post item) {
+    getFirebase.user.postes.remove(item.id);
+    Log.toast('TIP Excluido');
+  }
+}
 
 enum FirebaseInitResult {
   ok, userNull, fUserNull, none
@@ -191,6 +212,7 @@ class getFirebase {
 
   static User _user;
   static bool _isAdmin;
+  static Map<String, bool> _admins = Map();// <id, isEnabled>
   //endregion
 
   //region Firebase App
@@ -200,14 +222,14 @@ class getFirebase {
       var iosOptions = FirebaseOptions(
         googleAppID: '1:721419790842:ios:ac0829d013db5cad509c43',
         gcmSenderID: '',
-        storageBucket: map()['storageBucket'],
-        databaseURL: map()['databaseURL'],
+        storageBucket: _dataUrl['storageBucket'],
+        databaseURL: _dataUrl['databaseURL'],
       );
       var androidOptions = FirebaseOptions(
         googleAppID: '1:721419790842:android:84815debd1879d3d509c43',
         apiKey: 'AIzaSyClZ-JCdZwUKQqVamI3C6LwRVWBmEP3x2A',
-        storageBucket: map()['storageBucket'],
-        databaseURL: map()['databaseURL'],
+        storageBucket: _dataUrl['storageBucket'],
+        databaseURL: _dataUrl['databaseURL'],
       );
 
       _firebaseApp = await FirebaseApp.configure(
@@ -219,11 +241,11 @@ class getFirebase {
     return _firebaseApp;
   }
 
-  static StorageReference storage() => _storage.ref();
+  static StorageReference get storage => _storage.ref();
 
-  static FirebaseAuth auth() => _auth;
+  static FirebaseAuth get auth => _auth;
 
-  static DatabaseReference databaseReference() => _databaseReference;
+  static DatabaseReference get databaseReference => _databaseReference;
 
   static Future<FirebaseUser> googleAuth() async {
     final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
@@ -248,7 +270,9 @@ class getFirebase {
 
     const firebaseUser_Null = 'firebaseUser Null';
     try {
-      await Import.readDeviceInfo();
+      await OfflineData.createPerfilDirectory();
+      await OfflineData.createPostDirectory();
+      await OfflineData.readDirectorys();
       await app();
 
       _firebaseUser = await _auth.currentUser();
@@ -269,7 +293,7 @@ class getFirebase {
   }
   
   static void initAdmin() async {
-    databaseReference().child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER).onValue.listen((event) async {
+    databaseReference.child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER).onValue.listen((event) async {
       Map<dynamic, dynamic> map = event.snapshot.value;
       if (map != null)
         for(String key in map.keys) {
@@ -285,11 +309,14 @@ class getFirebase {
 
   static void _checkAdmin() async {
     try {
-      var snapshot = await getFirebase.databaseReference()
-          .child(FirebaseChild.ADMINISTRADORES).child(fUser().uid).once();
-      var b = snapshot.value;
-      if (b != null && b is bool)
-        _isAdmin = b;
+      var snapshot = await getFirebase.databaseReference
+          .child(FirebaseChild.ADMINISTRADORES)/*.child(fUser().uid)*/.once();
+      Map<dynamic, dynamic> map = snapshot.value;
+      for (dynamic d in map.keys) {
+        _admins[d] = map[d];
+      }
+      if (_admins.containsKey(fUser.uid))
+        _isAdmin = map[fUser.uid] ?? false;
       if (isAdmin)
         initAdmin();
     } catch (e) {
@@ -313,7 +340,7 @@ class getFirebase {
     _user = null;
   }
 
-  static Map map() => {
+  static Map get _dataUrl => {
     'databaseURL': 'https://protips-oki.firebaseio.com',
     'storageBucket': 'gs://protips-oki.appspot.com'
   };
@@ -324,17 +351,25 @@ class getFirebase {
 
   static NotificationManager get notificationManager => _fcm;
 
+  static Future<List<User>> get admins async {
+    List<User> list = [];
+    for(String uid in _admins.keys)
+      if (_admins[uid])
+        list.add(await getUsers.get(uid));
+    return list;
+  }
+
   //endregion
 
   //region Usuario
 
-  static User user() {
+  static User get user {
     if (_user == null)
       _user = new User();
     return _user;
   }
 
-  static FirebaseUser fUser() => _firebaseUser;
+  static FirebaseUser get fUser => _firebaseUser;
 
   static void setUltinoEmail(String email) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
@@ -351,9 +386,9 @@ class getFirebase {
   }
 
   static observMyFirebaseData() {
-    getFirebase.databaseReference()
+    databaseReference
         .child(FirebaseChild.USUARIO)
-        .child(getFirebase.fUser().uid)
+        .child(fUser.uid)
         .onValue.listen((event) {
       try {
         User user = User.fromJson(event.snapshot.value);
@@ -395,9 +430,9 @@ class OfflineData {
 
   static Future<void> readDirectorys() async {
     String directory = await OfflineData._getDirectoryPath();
-    getUsers.localPath = directory + '/' + FirebaseChild.USUARIO;
-    getPosts.localPath = directory + '/' + FirebaseChild.POSTES;
-    appTempPath = directory + '/' + FirebaseChild.APP;
+    getUsers.localPath = '$directory/${FirebaseChild.USUARIO}';
+    getPosts.localPath = '$directory/${FirebaseChild.POSTES}';
+    appTempPath = '$directory/${FirebaseChild.APP}';
   }
 
   static Future<bool> saveOfflineData() async {
@@ -415,8 +450,10 @@ class OfflineData {
   static Future<bool> readOfflineData() async {
     try {
       File _pathUsers = _getUserFile(await _getDirectoryPath());
-      String data = await _pathUsers.readAsString();
-      getUsers.dd(jsonDecode(data));
+      if (await _pathUsers.exists()) {
+        String data = await _pathUsers.readAsString();
+        getUsers.dd(jsonDecode(data));
+      }
       Log.d(TAG, 'readOfflineData', 'OK');
       return true;
     } catch(e) {
@@ -465,13 +502,14 @@ class OfflineData {
 
   static Future<void> createPerfilDirectory() async {
     Directory directory = await _getDirectory();
-    Directory dir = Directory(directory.path + '/' + FirebaseChild.USUARIO);
-    if (!dir.existsSync())
+    Directory dir = Directory('${directory.path}/${FirebaseChild.USUARIO}');
+    if (!await dir.exists()) {
       await dir.create();
+    }
   }
   static Future<void> createPostDirectory() async {
     Directory directory = await _getDirectory();
-    Directory dir = Directory(directory.path + '/' + FirebaseChild.POSTES);
+    Directory dir = Directory('${directory.path}/${FirebaseChild.POSTES}');
     if (!dir.existsSync())
       await dir.create();
   }
@@ -482,6 +520,7 @@ class OfflineData {
 
     try {
       String _path = '$path/$fileName';
+      String _pathTemp = '$path/temp';
       File file = File(_path);
       if (await file.exists()) {
         if (override) {
@@ -491,7 +530,10 @@ class OfflineData {
         }
       }
       Log.d(TAG, 'downloadFile', 'Iniciando');
-      await _dio.download(url, _path, onReceiveProgress: onProgress, cancelToken: cancelToken);
+      await _dio.download(url, _pathTemp, onReceiveProgress: onProgress, deleteOnError: true, cancelToken: cancelToken);
+      File file2 = File(_pathTemp);
+      if(await file2.exists())
+        file2.rename(_path);
       Log.d(TAG, 'downloadFile', 'OK');
       return true;
     } catch(e) {
@@ -528,7 +570,7 @@ class getUsers {
 
   static void add(User item) {
     _data[item.dados.id] = item;
-    if(item.dados.id == getFirebase.user().dados.id)
+    if(item.dados.id == getFirebase.user.dados.id)
       getFirebase.setUser(item);
   }
   static void addAll(Map<String, User> items) {
@@ -544,21 +586,23 @@ class getUsers {
 
   static Future<void> baixar() async {
     try {
-      var snapshot = await getFirebase.databaseReference().child(FirebaseChild.USUARIO).once();
+      var snapshot = await getFirebase.databaseReference.child(FirebaseChild.USUARIO).once();
       Map<dynamic, dynamic> map = snapshot.value;
       dd(map);
       Log.d(TAG, 'baixa', 'OK');
     } catch (e) {
       Log.e(TAG, 'baixa', e);
     }
+    saveFotosPerfilLocal();
   }
 
   static Future<User> baixarUser(String uid) async {
     try {
-      var snapshot = await getFirebase.databaseReference()
+      var snapshot = await getFirebase.databaseReference
           .child(FirebaseChild.USUARIO).child(uid).once();
-      User user = User.fromJson(snapshot.value);
-      return user;
+      if (snapshot.value == null)
+        return null;
+      return User.fromJson(snapshot.value);
     } catch (e) {
       Log.e(TAG, 'baixarUser', e);
       return null;
@@ -566,8 +610,7 @@ class getUsers {
   }
 
   static void dd(Map<dynamic, dynamic> map) {
-    if (map == null)
-      return;
+    if (map == null) return;
 
     reset();
     getPosts.reset();
@@ -576,18 +619,18 @@ class getUsers {
     for (String key in map.keys) {
       try {
         User item = User.fromJson(map[key]);
-        bool addTipster = item.dados.isTipster && !item.dados.isBloqueado &&
-            !item.solicitacaoEmAndamento();
+        bool addTipster = item.dados.isTipster && !item.dados.isBloqueado && !item.solicitacaoEmAndamento();
 
         if (addTipster) {
           //Adiciona os Posts de quem eu sigo e meu Postes
-          if (getFirebase.user().seguindo.containsKey(key) || key == getFirebase.fUser().uid) {
-            getPosts.addAll(item.postes);
+          if (getFirebase.user.seguindo.containsKey(key) || key == getFirebase.fUser.uid) {
+            getPosts.addAll(item.postes.values.toList());
           } else {
-            for (Post post in item.postes.values) {
-              if (post.isPublico)
-                getPosts.add(post);
-            }
+            // for (Post post in item.postes.values) {
+            //   if (post.isPublico)
+            //     getPosts.add(post);
+            // }
+            getPosts.addAll(item.postes.values.where((e) => e.isPublico).toList());
           }
           getTipster.add(item);
         }
@@ -600,10 +643,9 @@ class getUsers {
   }
 
   static Future<void> saveFotosPerfilLocal() async {
-    await OfflineData.createPerfilDirectory();
     //Salva minha foto
-    await OfflineData.downloadFile(getFirebase.user().dados.foto, localPath, getFirebase.user().dados.fotoLocal, override: true);
-    //Salva foto de meus tipsters
+    await OfflineData.downloadFile(getFirebase.user.dados.foto, localPath, getFirebase.user.dados.fotoLocal, override: true);
+    //Salva foto dos tipsters
     for (User item in getTipster.data) {
       try {
         await OfflineData.downloadFile(item.dados.foto, localPath, item.dados.fotoLocal, override: true);
@@ -682,7 +724,7 @@ class getErros {
   static Error get(String key) => _data[key];
 
   static Future<void> baixar() async {
-    Map<dynamic, dynamic> result = await getFirebase.databaseReference().child(FirebaseChild.LOGS)
+    Map<dynamic, dynamic> result = await getFirebase.databaseReference.child(FirebaseChild.LOGS)
         .once().then((value) => value.value).catchError((ex) => null);
     if (result != null) {
       reset();
@@ -691,7 +733,7 @@ class getErros {
           Error e = Error.fromJson(item);
           var e2 = _findSimilar(e);
           if(e2 != null)
-            get(e2.data).quantidade++;
+            e2.similares.add(e.data);
           else
             add(e);
         } catch(e) {
@@ -734,7 +776,7 @@ class getDenuncias {
   static Denuncia get(String key) => _data[key];
 
   static Future<void> baixar() async {
-    Map<dynamic, dynamic> result = await getFirebase.databaseReference().child(FirebaseChild.DENUNCIAS)
+    Map<dynamic, dynamic> result = await getFirebase.databaseReference.child(FirebaseChild.DENUNCIAS)
         .once().then((value) => value.value).catchError((ex) => null);
     if (result != null) {
       reset();
@@ -743,7 +785,7 @@ class getDenuncias {
           Denuncia e = Denuncia.fromJson(item);
           var e2 = _findSimilar(e);
           if(e2 != null)
-            get(e2.data).quantidade++;
+            e2.quantidade++;
           else
             add(e);
         } catch(e) {
@@ -774,12 +816,24 @@ class getPosts {
 
   static Map<String, Post> _data = new Map();
 
-  static List<Post> get data => _data.values.toList()..sort((a, b) => b.data.compareTo(a.data));
+  static Future<List<Post>> data(String data) async {
+    var list = _data.values.where((e) => e.data.contains(data)).toList()..sort((a, b) => b.data.compareTo(a.data));
+    var result = List<Post>();
+    for (var item in list) {
+      if (item.isMyPost)
+        result.add(item);
+      else{
+        var pagamento = await loadPagamento(item.idTipster, data.substring(0, data.length-3));
+        if (pagamento != null) result.add(item);
+      }
+    }
+    return result;
+  }
   static Post get(String key) => _data[key];
 
   static Future<Post> baixar(String postKey, String userId) async {
     if (_data[postKey] == null) {
-      var result = await getFirebase.databaseReference().child(FirebaseChild.USUARIO)
+      var result = await getFirebase.databaseReference.child(FirebaseChild.USUARIO)
       .child(userId).child(FirebaseChild.POSTES).child(postKey).once().then((value) => value.value);
       if (result != null) {
         Post item = Post.fromJson(result);
@@ -795,8 +849,9 @@ class getPosts {
   static void add(Post item) {
     _data[item.id] = item;
   }
-  static void addAll(Map<String, Post> items) {
-    _data.addAll(items);
+  static void addAll(List<Post> items) {
+    for (var item in items)
+      add(item);
   }
   static void remove(String key) {
     _data.remove(key);
@@ -823,6 +878,16 @@ class getPosts {
     Log.d(TAG, 'saveLocalFotos', 'OK');
   }
 
+  static Future<String> loadPagamento(String tipsterID, String data) async {
+    var snapshot = await getFirebase.databaseReference
+        .child(FirebaseChild.PAGAMENTOS)
+        .child(tipsterID)
+        .child(data)
+        .child(getFirebase.fUser.uid)
+        .once();
+
+    return snapshot.value;
+  }
 }
 
 class Log {
@@ -871,7 +936,7 @@ class Log {
     if (value1 != null) msg += ': ' + value1.toString();
     if (value2 != null) msg += ': ' + value2.toString();
     if (value3 != null) msg += ': ' + value3.toString();
-    print(tag + ": E/: " + metodo + msg);
+    print(tag + ": E/: " + metodo + ': ' + msg);
 //    _saveLog(tag + msg);
     if (send)
       _sendError(tag, metodo, msg);
@@ -886,7 +951,7 @@ class Log {
 //  }
   
   static _sendError(String tag, String metodo, String value) {
-    String id = getFirebase.fUser()?.uid ?? 'deslogado';
+    String id = getFirebase.fUser?.uid ?? 'deslogado';
 
     Error e = Error();
     e.data = DataHora.now();

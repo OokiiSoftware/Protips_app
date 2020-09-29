@@ -50,7 +50,7 @@ class Denuncia {
 
 
   Future<bool> salvar() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.DENUNCIAS)
         .child(data)
         .set(toJson())
@@ -61,7 +61,7 @@ class Denuncia {
   }
 
   Future<bool> delete() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.DENUNCIAS)
         .child(data)
         .remove()
@@ -72,7 +72,7 @@ class Denuncia {
   }
 
   Future<bool> aprovar() async {
-    var result = await getFirebase.databaseReference()
+    var result = await getFirebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idUser)
         .child(FirebaseChild.DENUNCIAS)

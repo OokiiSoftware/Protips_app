@@ -6,16 +6,26 @@ import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
 
+// ignore: must_be_immutable
 class DenunciaPage extends StatefulWidget {
-  static const String tag = 'DenunciaPage';
+  User user;
+  Post post;
+  // ignore: non_constant_identifier_names
+  DenunciaPage.User(this.user);
+  // ignore: non_constant_identifier_names
+  DenunciaPage.Post(this.post);
+
   @override
-  State<StatefulWidget> createState() => MyWidgetState();
+  State<StatefulWidget> createState() => MyWidgetState(user, post);
 }
 class MyWidgetState extends State<DenunciaPage> {
+
+  MyWidgetState(this.user, this.post);
+
   static const String TAG = 'DenunciaPage';
 
-  User _user;
-  Post _post;
+  User user;
+  Post post;
   bool _isUser = false;
   bool _isEnviando = false;
   bool _dadosEmpty = false;
@@ -35,7 +45,7 @@ class MyWidgetState extends State<DenunciaPage> {
         padding: EdgeInsets.symmetric(horizontal: 30),
         child: Column(children: [
           LinearProgressIndicator(value: progressBarValue),
-          _isUser ? _itemLayoutUser(_user) : _itemLayoutPost(_post),
+          _isUser ? _itemLayoutUser(user) : _itemLayoutPost(post),
 
           TextField(
             controller: cAssunto,
@@ -71,9 +81,9 @@ class MyWidgetState extends State<DenunciaPage> {
     double fotoSize = 50;
 
     return ListTile(
-        leading: ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: MyIcons.fotoUser(item.dados, fotoSize)
+        leading: MyLayouts.iconFormatUser(
+            radius: 50,
+            child: MyLayouts.fotoUser(item.dados)
         ),
         title: Text(item.dados.nome),
         subtitle: Text(item.dados.descricao),
@@ -84,7 +94,7 @@ class MyWidgetState extends State<DenunciaPage> {
     double fotoSize = 50;
 
     return ListTile(
-      leading: MyIcons.fotoPost(item, fotoSize),
+      leading: MyLayouts.fotoPost(item),
       title: Text(item.titulo),
       subtitle: Text(item.descricao),
     );
@@ -109,9 +119,9 @@ class MyWidgetState extends State<DenunciaPage> {
     d.texto = cTexto.text;
     d.data = DataHora.now();
     d.isUser = _isUser;
-    d.idUser = _isUser ? _user.dados.id : _post.idTipster;
-    d.itemKey = _post?.data;//data é o key de um post
-    d.idDenunciante = getFirebase.fUser().uid;
+    d.idUser = _isUser ? user.dados.id : post.idTipster;
+    d.itemKey = post?.data;//data é o key de um post
+    d.idDenunciante = getFirebase.fUser.uid;
     return d;
   }
 
@@ -137,18 +147,11 @@ class MyWidgetState extends State<DenunciaPage> {
     });
   }
 
-  _readArgs(BuildContext context) {
-    var item = ModalRoute.of(context).settings.arguments;
-    if (item == null) {
+  void _readArgs(BuildContext context) {
+    if (user == null && post == null) {
       Navigator.pop(context);
       return;
     }
-    if (item is User) {
-      _user = item;
-      _isUser = true;
-    } else if (item is Post)
-      _post = item;
-    else
-      Navigator.pop(context);
+    _isUser = user != null;
   }
 }

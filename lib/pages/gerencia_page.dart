@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:protips/pages/config_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/sub_pages/fragment_g_denuncias.dart';
 import 'package:protips/sub_pages/fragment_g_erros.dart';
 import 'package:protips/sub_pages/fragment_g_solicitacoes.dart';
 
 class GerenciaPage extends StatefulWidget {
-  static const String tag = 'GerenciaPage';
+//  static const String tag = 'GerenciaPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -25,7 +26,7 @@ class MyWidgetState extends State<GerenciaPage> with SingleTickerProviderStateMi
   @override
   void initState() {
     super.initState();
-    _widgetOptions = [FragmentSolicitacoes(), FragmentErros(), FragmentDenunciasG()];
+    _widgetOptions = [FragmentSolicitacoes(), FragmentDenunciasG(), FragmentErros(), ConfigPage(isAdmin: true)];
 
     _tabController = TabController(length: _widgetOptions.length, initialIndex: currentIndex, vsync: this);
     _tabController.addListener(() {
@@ -68,7 +69,14 @@ class MyWidgetState extends State<GerenciaPage> with SingleTickerProviderStateMi
                       iconMargin: EdgeInsets.all(0),
                       text: Titles.nav_titles_gerencia[2],
                   )
-              )
+              ),
+              Container(
+                  height: navHeight,
+                  child: Tab(
+                    iconMargin: EdgeInsets.all(0),
+                    text: Titles.nav_titles_gerencia[3],
+                  )
+              ),
             ]),
       ),
     );

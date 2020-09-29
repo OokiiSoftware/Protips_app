@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/pages/cadastro_page.dart';
 import 'package:protips/pages/main_page.dart';
@@ -9,7 +10,7 @@ import 'package:protips/res/resources.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class LoginPage extends StatefulWidget{
-  static const String tag = 'LoginPage';
+//  static const String tag = 'LoginPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -25,7 +26,7 @@ class MyWidgetState extends State<LoginPage> {
   TextEditingController cEmail = TextEditingController();
 
   double progressBarValue = 0;
-  LinearProgressIndicator progressBar;
+//  LinearProgressIndicator progressBar;
 
   DatabaseReference reference;
 
@@ -79,7 +80,7 @@ class MyWidgetState extends State<LoginPage> {
 
     var divider = Divider(height: 20, color: backgorundColor);
 
-    progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: backgorundColor);
+    var progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: backgorundColor);
 
     //endregion
 
@@ -94,7 +95,8 @@ class MyWidgetState extends State<LoginPage> {
             divider,
             //Top (Logo)
             //Icone
-            Image.asset(MyIcons.ic_launcher, width: 130, height: 130),
+            Image.asset(MyAssets.ic_launcher, width: 130, height: 130),
+
             //Texto Bem Vindo
             Padding(
               child: Text('BEM VINDO AO PROTIPS',
@@ -219,7 +221,7 @@ class MyWidgetState extends State<LoginPage> {
             Text('OU', style: itemTextStyle),
             divider,
             Tooltip(message: 'Login com Google', child: FlatButton(
-              child: Image.asset(MyIcons.ic_google, width: 40, height: 40),
+              child: Image.asset(MyAssets.ic_google, width: 40, height: 40),
               onPressed: onLoginWithGoogleButtonPressed,
             )),
           ]),
@@ -233,7 +235,7 @@ class MyWidgetState extends State<LoginPage> {
   //region Metodos
 
   void onRecuperarSenhaButtonPressed() {
-    Navigator.of(context).pushNamed(RecuperarSenhaPage.tag, arguments: cEmail.text.trim());
+    Navigate.to(context, RecuperarSenhaPage(cEmail.text.trim()));
   }
 
   void onLoginButtonPressed() async {
@@ -250,7 +252,7 @@ class MyWidgetState extends State<LoginPage> {
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: senha);
       getFirebase.setUltinoEmail(email);
-      Navigator.pushReplacementNamed(context, MainPage.tag);
+      Navigate.toReplacement(context, MainPage());
       Log.d(TAG, 'Login com Email', 'OK');
     } catch(e) {
       bool sendError = true;
@@ -267,6 +269,7 @@ class MyWidgetState extends State<LoginPage> {
         emailInvalido = true;
         sendError = false;
       }
+      HapticFeedback.lightImpact();
       setState(() {});
       Log.e(TAG, 'Login com Email Fail', e, sendError);
     }
@@ -277,7 +280,7 @@ class MyWidgetState extends State<LoginPage> {
       Log.d(TAG, 'Login com Google');
       await getFirebase.googleAuth();
       Log.d(TAG, 'Login com Google', 'OK');
-      Navigator.pushReplacementNamed(context, MainPage.tag);
+      Navigate.toReplacement(context, MainPage());
     } catch (e) {
       Log.e(TAG, 'Login com Google Fail', e);
       Log.toast('Login with Google fails');
@@ -286,7 +289,7 @@ class MyWidgetState extends State<LoginPage> {
 
 
   _checkGoogleServices() async {
-    if (! await Import.checkGoogleServices(true)) {
+    if (! await Device.checkGoogleServices(true)) {
       Log.d(TAG, 'checkGoogleServices', 'False');
       Navigator.pop(context);
     }
@@ -298,7 +301,7 @@ class MyWidgetState extends State<LoginPage> {
   }
 
   void onCadastroButtonPressed() {
-    Navigator.of(context).pushNamed(CadastroPage.tag);
+    Navigate.to(context, CadastroPage());
   }
 
   //endregion

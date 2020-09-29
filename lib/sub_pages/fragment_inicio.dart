@@ -4,7 +4,7 @@ import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/denuncia_page.dart';
-import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/res/resources.dart';
 
 // ignore: must_be_immutable
@@ -14,7 +14,7 @@ class FragmentInicio extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => MyWidgetState(user: user);
 }
-class MyWidgetState extends State<FragmentInicio> {
+class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientMixin<FragmentInicio> {
 
   MyWidgetState({this.user});
 
@@ -25,12 +25,18 @@ class MyWidgetState extends State<FragmentInicio> {
   List<Post> data;
   bool canOpenPerfil = false;
 
-  double progressBarValue = 0;
-  CircularProgressIndicator progressBar;
+  bool _inProgress = false;
+//  double progressBarValue = 0;
+//  CircularProgressIndicator progressBar;
+
+  DateTime _dateTime;
 
   //endregion
 
   //region overrides
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -38,23 +44,39 @@ class MyWidgetState extends State<FragmentInicio> {
     data = List<Post>();
     canOpenPerfil = user == null;
     _preencherLista();
-    progressBar = CircularProgressIndicator(value: progressBarValue);
+//    progressBar = CircularProgressIndicator(value: progressBarValue);
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: ListView.builder(
             itemCount: data.length,
+            padding: EdgeInsets.only(bottom: 70),
             itemBuilder: (BuildContext context, int index) {
               final item = data[index];
               return itemLayout(item);
             }
         ),
       ),
-      floatingActionButton: progressBar,
+      floatingActionButton: _inProgress ? CircularProgressIndicator() :
+      user == null ?
+      FloatingActionButton.extended(
+          label: Stack(
+              alignment: Alignment.center,
+            children: [
+              Icon(Icons.calendar_today),
+              Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(_dateTime.day.toString()),
+              )
+            ],
+          ),
+          onPressed: _onFloatingAtionPressed
+      ) : null,
     );
   }
 
@@ -65,12 +87,15 @@ class MyWidgetState extends State<FragmentInicio> {
   Widget itemLayout(Post item) {
     //region Variaveis
     User user = getTipster.get(item.idTipster);
-    String meuId = getFirebase.fUser().uid;
+    String meuId = getFirebase.fUser.uid;
     bool isMyPost = item.idTipster == meuId;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
 
     double fotoUserSize = 40;
+
+    bool moreGreens = item.bom.length > item.ruim.length;
+    bool moreReds = item.ruim.length > item.bom.length;
 
     //endregion
 
@@ -80,7 +105,7 @@ class MyWidgetState extends State<FragmentInicio> {
           //header
           GestureDetector(
             child: Container(
-              color: MyTheme.tintColor2(),
+              color: moreGreens ? Colors.green[200] : (moreReds ? Colors.red[200] : MyTheme.tintColor2()),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -88,10 +113,10 @@ class MyWidgetState extends State<FragmentInicio> {
                   Padding(
                       padding: EdgeInsets.all(10),
                       child: item == null ?
-                      Image.asset(MyIcons.ic_person, color: Colors.black) :
+                      Image.asset(MyAssets.ic_person, color: Colors.black) :
                       ClipRRect(
                           borderRadius: BorderRadius.circular(50),
-                          child: MyIcons.fotoUser(user.dados, fotoUserSize)
+                          child: MyLayouts.fotoUser(user.dados, iconSize: fotoUserSize)
                       )
                   ),
                   //Dados
@@ -107,7 +132,7 @@ class MyWidgetState extends State<FragmentInicio> {
                   //Menu
                   PopupMenuButton<String>(
                       onSelected: (String result) {
-                        onMenuItemPostCliked(result, item);
+                        _onMenuItemPostCliked(result, item);
                       },
                       itemBuilder: (BuildContext context) {
                         var list = List<String>();
@@ -129,7 +154,7 @@ class MyWidgetState extends State<FragmentInicio> {
             ),
             onTap: () {
               if (canOpenPerfil)
-                Navigator.of(context).pushNamed(PerfilPage.tag, arguments: user);
+                Navigate.to(context, PerfilTipsterPage(user));
             },
           ),
           Divider(
@@ -145,7 +170,7 @@ class MyWidgetState extends State<FragmentInicio> {
           ),
           //Foto
           Container(
-              child: MyIcons.fotoPost(item)
+              child: MyLayouts.fotoPost(item)
           ),
           divider,
           //descricao
@@ -159,10 +184,8 @@ class MyWidgetState extends State<FragmentInicio> {
               headingRowHeight: 20,
               dataRowHeight: 20,
               columns: [
-                DataColumn(label: Text(
-                    MyStrings.ESPORTE.toUpperCase() + ': ' + item.esporte)),
-                DataColumn(label: Text(
-                    MyStrings.LINHA.toUpperCase() + ': ' + item.linha)),
+                DataColumn(label: Text(MyStrings.ESPORTE.toUpperCase() + ': ' + item.esporte)),
+                DataColumn(label: Text(MyStrings.LINHA.toUpperCase() + ': ' + item.linha)),
               ], rows: [
             DataRow(cells: [
               DataCell(Text(
@@ -196,34 +219,35 @@ class MyWidgetState extends State<FragmentInicio> {
                 ]),
             ]),
           //Green | Red Buttons
-          if (item.idTipster == meuId)
+          if (isMyPost)
             Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Text('\tEste Tip teve: '),
                   Tooltip(message: 'Green', child: FlatButton(
-                    child: Image.asset(MyIcons.ic_positivo, width: 30),
-                    color: item.bom.containsKey(meuId) ? Colors.black12 : Colors
-                        .white,
+                    child: Image.asset(MyAssets.ic_positivo, width: 30),
+                    color: item.bom.containsKey(meuId) ? Colors.black12 : Colors.white,
                     onPressed: () async {
+                      _setInProgress(true);
                       if (item.bom.containsKey(meuId))
                         await item.removeBom(meuId);
                       else
                         await item.addBom(meuId);
+                      _setInProgress(false);
                       setState(() {});
                     },
                   )),
                   Tooltip(message: 'Red', child: FlatButton(
-                    child: Image.asset(MyIcons.ic_negativo, width: 30),
+                    child: Image.asset(MyAssets.ic_negativo, width: 30),
                     color: item.ruim.containsKey(meuId)
-                        ? Colors.black12
-                        : Colors
-                        .white,
+                        ? Colors.black12 : Colors.white,
                     onPressed: () async {
+                      _setInProgress(true);
                       if (item.ruim.containsKey(meuId))
                         await item.removeRuim(meuId);
                       else
                         await item.addRuim(meuId);
+                      _setInProgress(false);
                       setState(() {});
                     },
                   )),
@@ -288,22 +312,43 @@ class MyWidgetState extends State<FragmentInicio> {
     );
   }
 
-  onMenuItemPostCliked(String value, Post post) {
+  Future<void> _onRefresh() async {
+    await getUsers.baixar();
+    _preencherLista();
+    setState(() {});
+  }
+
+  _onMenuItemPostCliked(String value, Post post) {
     switch(value) {
       case MyMenus.ABRIR_LINK:
         Import.openUrl(post.link, context);
         break;
       case MyMenus.EXCLUIR:
-        onDelete(post);
+        _onDelete(post);
         break;
       case MyMenus.DENUNCIAR:
-        Navigator.of(context).pushNamed(DenunciaPage.tag, arguments: post);
+        Navigate.to(context, DenunciaPage.Post(post));
         break;
     }
   }
 
-  onDelete(Post item) async {
-    progressBarValue = 0;
+  _onFloatingAtionPressed() async {
+    var lastDate = DateTime.now();
+    final DateTime picked = await showDatePicker(
+        context: context,
+        initialDate: _dateTime,
+        firstDate: DateTime(1950),
+        lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day)
+    );
+    if (picked != null) {
+      _dateTime = picked;
+      _preencherLista();
+      setState(() {});
+    }
+  }
+
+  _onDelete(Post item) async {
+    _setInProgress(false);
     String titulo = MyStrings.EXCLUIR;
     showDialog(
       context: context,
@@ -321,7 +366,7 @@ class MyWidgetState extends State<FragmentInicio> {
               Navigator.pop(context);
               setState(() {
                 titulo = MyStrings.EXCLUIR;
-                progressBarValue = null;
+                _setInProgress(true);
               });
               if (await item.excluir()) {
                 setState(() {
@@ -331,7 +376,7 @@ class MyWidgetState extends State<FragmentInicio> {
               } else {
                 setState(() {
                   titulo = MyStrings.EXCLUIR + ': ' + MyErros.ERRO_GENERICO;
-                  progressBarValue = 0;
+                  _setInProgress(false);
                 });
               }
               },
@@ -341,25 +386,48 @@ class MyWidgetState extends State<FragmentInicio> {
     );
   }
 
-  Future<void> _onRefresh() async {
-    await getUsers.baixar();
-    _preencherLista();
-    setState(() {});
+  _setInProgress(bool b) {
+    setState(() {
+      _inProgress = b;
+    });
   }
 
-  _preencherLista() {
+  _preencherLista() async {
     data.clear();
     List<Post> list = [];
-    if (user == null)
-      list.addAll(getPosts.data);
+    _setInProgress(true);
+    if (user == null) {
+      if (_dateTime == null) _dateTime = DateTime.now();
+
+      String data = _dateTime.toString();
+      data = data.substring(0, data.indexOf(' '));
+      list.addAll(await getPosts.data(data));
+    }
     else {
-      String meuId = getFirebase.fUser().uid;
-      if (getFirebase.isAdmin || user.dados.id == meuId || user.seguidores.containsKey(meuId))
-        list.addAll(user.postes.values.toList());
+      String meuId = getFirebase.fUser.uid;
+      if (user.seguidores.containsKey(meuId)) {
+        String dataPagamentoTemp = '';
+        bool inserir = false;
+        for (var item in user.postes.values) {
+          String data = item.data.substring(0, item.data.indexOf(' ')-3);
+          if (dataPagamentoTemp != data) {
+            var pagamento = await getPosts.loadPagamento(user.dados.id, data);
+            inserir = pagamento != null;
+          }
+          if (inserir)
+            list.add(item);
+        }
+      }
+      else if (getFirebase.isAdmin || user.dados.id == meuId) {
+        list.addAll(user.postes.values);
+      }
       else
         list.addAll(user.postes.values.where((e) => e.isPublico).toList());
     }
-    data.addAll(list..sort((a, b) => b.data.compareTo(a.data)));
+    setState(() {
+      data.addAll(list..sort((a, b) => b.data.compareTo(a.data)));
+    });
+    _setInProgress(false);
   }
 
   //endregion

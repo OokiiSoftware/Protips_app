@@ -1,7 +1,7 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
@@ -11,7 +11,6 @@ import 'package:path/path.dart' as path;
 import 'package:random_string/random_string.dart';
 
 class NewPostPage extends StatefulWidget {
-  static const String tag = 'NewPostPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -82,7 +81,7 @@ class MyWidgetState extends State<NewPostPage> {
       _link.text = _currentPost.link;
       _campeonato.text = _currentPost.campeonato;
     }
-    _isBloqueadoPorDenuncias = getFirebase.user().denuncias.length >= 5;
+    _isBloqueadoPorDenuncias = getFirebase.user.denuncias.length >= 5;
     if (_isBloqueadoPorDenuncias) {
       _isPostando = true;//o botão ficará indisponível
     }
@@ -140,7 +139,7 @@ class MyWidgetState extends State<NewPostPage> {
                 _CustomTextField(_titulo, TextInputType.name, MyStrings.TITULO, inputAction: TextInputAction.done, valueIsEmpty: _tituloIsEmpty, onTap: () {setState(() {_tituloIsEmpty = false;});}),
                 //Anexo
                 _CustomTextField(_anexo, TextInputType.name, MyTexts.ANEXAR_IMAGEM, readOnly: true, valueIsEmpty: _anexoIsEmpty, onTap: () async {
-                  var file = await Navigator.of(context).pushNamed(CropImagePage.tag);
+                  var file = await Navigate.to(context, CropImagePage());
                   if(file != null && file is File && await file.exists()) {
                     _foto = file;
                     setState(() {
@@ -309,7 +308,6 @@ class MyWidgetState extends State<NewPostPage> {
         _isPostando = true;
       });
       if (await item.postar()) {
-        getPosts.add(item);
         if (_foto != null && _foto.existsSync())
           await _foto.delete();
         Navigator.pop(context);
@@ -332,7 +330,7 @@ class MyWidgetState extends State<NewPostPage> {
     item.oddMinima = _oddMinima.text;
     item.oddAtual = _oddAtual.text;
     item.unidade = _unidades.text;
-    item.idTipster = getFirebase.fUser().uid;
+    item.idTipster = getFirebase.fUser.uid;
     item.titulo = _titulo.text;
     item.descricao = _descricao.text;
     item.link = _link.text;
@@ -343,39 +341,63 @@ class MyWidgetState extends State<NewPostPage> {
   }
   bool _verificar(Post item) {
     try{
+      bool noError = true;
       setState(() {
         if (item.titulo.isEmpty) {
           _tituloIsEmpty = true;
-          throw Exception('titulo.isEmpty');
+          noError = false;
         }
         if (item.foto.isEmpty) {
           _anexoIsEmpty = true;
-          throw Exception('foto.isEmpty');
+          noError = false;
         }
         if (item.oddAtual.isEmpty) {
           _oddAtualIsEmpty = true;
-          throw Exception('odd_atual.isEmpty');
+          noError = false;
         }
         if (item.unidade.isEmpty) {
           _unidadesIsEmpty = true;
-          throw Exception('unidade.isEmpty');
+          noError = false;
         }
         if (item.esporte.isEmpty) {
           _esporteIsEmpty = true;
-          throw Exception('esporte.isEmpty');
+          noError = false;
         }
         if (item.link.isEmpty) {
           _linkIsEmpty = true;
-          throw Exception('link.isEmpty');
+          noError = false;
         }
       });
-      return true;
-    }catch(e) {
+      return noError;
+    } catch(e) {
       Log.e(TAG, '_criarTip', e, false);
+      HapticFeedback.lightImpact();
+//      _PatternVibrate();
       return false;
     }
   }
 
   //endregion
+
+  /*_PatternVibrate() {
+    HapticFeedback.mediumImpact();
+
+    sleep(
+      const Duration(milliseconds: 200),
+    );
+
+    HapticFeedback.mediumImpact();
+
+    sleep(
+      const Duration(milliseconds: 500),
+    );
+
+    HapticFeedback.mediumImpact();
+
+    sleep(
+      const Duration(milliseconds: 200),
+    );
+    HapticFeedback.mediumImpact();
+  }*/
 
 }

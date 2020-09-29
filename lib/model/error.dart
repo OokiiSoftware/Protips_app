@@ -10,7 +10,7 @@ class Error {
   String metodo;
   String valor;
   String data;
-  int quantidade = 1;
+  List<String> _similares;
 
   Error();
 
@@ -31,7 +31,7 @@ class Error {
 
   Future<bool> salvar() async {
     try {
-      var result = await getFirebase.databaseReference()
+      var result = await getFirebase.databaseReference
           .child(FirebaseChild.LOGS)
           .child(data)
           .set(toJson())
@@ -45,11 +45,11 @@ class Error {
     }
   }
 
-  Future<bool> delete() async {
+  Future<bool> _delete(String key) async {
     try {
-      var result = await getFirebase.databaseReference()
+      var result = await getFirebase.databaseReference
           .child(FirebaseChild.LOGS)
-          .child(data)
+          .child(key)
           .remove()
           .then((value) => true)
           .catchError((ex) => false);
@@ -59,6 +59,21 @@ class Error {
       //Todo \(ºvº)/
       return false;
     }
+  }
+
+  Future<bool> deleteAll() async {
+    List<bool> list = [];
+    for (String key in similares) {
+      list.add(await _delete(key));
+    }
+    var quantidade = list.where((x) => x == false).length;
+    return quantidade == 0;
+  }
+
+  List<String> get similares {
+    if (_similares == null)
+      _similares = [];
+    return _similares;
   }
 
 }

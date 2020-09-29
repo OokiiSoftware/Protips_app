@@ -1,25 +1,25 @@
-import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:open_file/open_file.dart';
-import 'package:progress_dialog/progress_dialog.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/model/data_hora.dart';
+import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/model/user_dados.dart';
 import 'package:protips/pages/about_page.dart';
+import 'package:protips/pages/users_page.dart';
 import 'package:protips/pages/gerencia_page.dart';
 import 'package:protips/pages/login_page.dart';
-import 'package:protips/pages/meu_perfil_page.dart';
 import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/pages/tutorial_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
 import 'package:protips/sub_pages/fragment_perfil.dart';
-import 'package:protips/sub_pages/fragment_pesquisa.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:protips/sub_pages/fragment_users_list.dart';
+import 'package:random_string/random_string.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatefulWidget {
-  static const String tag = 'MainPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -27,19 +27,22 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   //region Variaveis
   static const String TAG = 'MainPage';
+  static bool _showUserDados = false;
+  UserDados _user;
+
   TabController _tabController;
-  int currentIndex = 0;
+  int _currentIndex = 0;
 
   String _currentTitle = Titles.main_page[0];
   FragmentInicio _fragmentInicio;
   FragmentPerfil _fragmentPerfil;
-  FragmentPesquisa _fragmentPesquisa;
+  FragmentUsersList _fragmentPesquisa;
 
   List<StatefulWidget> _widgetOptions;
 
   TabBarView _tabBarView;
-  bool inicializado = false;
-  bool isTipster = false;
+  bool _isInicializado = false;
+  bool _isTipster = false;
   //endregion
 
   //region overrides
@@ -48,8 +51,6 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   void dispose() {
     super.dispose();
     _tabController.dispose();
-//    getFirebase.notificationManager.dispose();
-    Log.d(TAG, 'dispose', 'ok');
   }
 
   @override
@@ -58,11 +59,11 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     Log.d(TAG, 'initState', 'ok');
     _fragmentInicio = FragmentInicio();
     _fragmentPerfil = FragmentPerfil();
-    _fragmentPesquisa = FragmentPesquisa();
+    _fragmentPesquisa = FragmentUsersList(isFiliadosList: false, mostrarAppBar: true);
 
     _widgetOptions = [_fragmentInicio, _fragmentPesquisa, _fragmentPerfil];
 
-    _tabController = TabController(length: _widgetOptions.length, initialIndex: currentIndex, vsync: this);
+    _tabController = TabController(length: _widgetOptions.length, initialIndex: _currentIndex, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _onPageChanged(_tabController.index);
@@ -70,35 +71,34 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     });
     _tabBarView = TabBarView(children: _widgetOptions, controller: _tabController);
 
-    init();
+    _init();
   }
 
   @override
   Widget build(BuildContext context) {
     Log.setToast = context;
-    isTipster = getFirebase.user().dados.isTipster;
 
-    double screenHeight = MediaQuery.of(context).size.height/3;
-    double iconSize = 200;
+    //region Variaveis
+    _user = getFirebase.user.dados;
+    _isTipster = _user.isTipster;
 
     var navIconColor = MyTheme.tintColor();
-    var navIconSize = 15.0;
-    var drawerIconSize = 23.0;
-    var navHeight = 50.0;
+    var draewrIconColor = MyTheme.primaryDark();
+    var draewrTextStyle = TextStyle(color: draewrIconColor);
+    var navHeight = 40.0;
+    //endregion
 
-    return inicializado ?
-    Scaffold(
+    if (!_isInicializado)
+      return MyLayouts.splashScreen();
+
+    // sendPostTest();
+    return Scaffold(
       appBar: AppBar(
         elevation: 0,
         title: Text(_currentTitle),
         actions: <Widget>[
-          if (currentIndex == 0 && getFirebase.isAdmin)
-            Tooltip(message: 'Gerencia', child: IconButton(
-              icon: Icon(Icons.whatshot),
-              onPressed: () {Navigator.of(context).pushNamed(GerenciaPage.tag);},
-            )),
-          if (currentIndex == 1) IconButton(
-            icon: SvgPicture.asset(MyIcons.ic_pesquisa_svg, color: navIconColor, width: navIconSize + 5),
+          if (_currentIndex == 1) IconButton(
+            icon: Icon(Icons.person_search_sharp),
             onPressed: () {
               showSearch(context: context, delegate: DataSearch());
             },
@@ -126,17 +126,20 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Image.asset(
-                        MyIcons.ic_launcher,
+                      child: Container(
                         width: 70,
                         height: 70,
+                        child: _showUserDados ? ClipRRect(
+                          borderRadius: BorderRadius.circular(70),
+                          child: MyLayouts.fotoUser(_user)
+                        ) : Image.asset(MyAssets.ic_launcher),
                       ),
                     ),
                     Spacer(),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        MyStrings.APP_NAME,
+                        _showUserDados ? _user.nome : MyStrings.APP_NAME,
                         style: TextStyle(
                           color: MyTheme.textColor(),
                           fontSize: 18,
@@ -146,7 +149,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        MyStrings.app_email,
+                        _showUserDados ? _user.email : MyStrings.app_email,
                         style: TextStyle(
                           color: MyTheme.textSubtitleColor(),
                           fontSize: 15,
@@ -159,56 +162,85 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
             ),
             //Atualização
             ListTile(
-              leading: Icon(Icons.update),
-              title: Text(MyMenus.ATUALIZACAO),
+              leading: Icon(Icons.update, color: draewrIconColor),
+              title: Text(MyMenus.ATUALIZACAO, style: draewrTextStyle),
               onTap: () {
-                onAtualizarTap();
-                Navigator.pop(context);
+                _onAtualizarTap();
+                _closeDrawer(context);
               },
             ),
             //Meus Posts
-            if (isTipster)
+            if (_isTipster)...[
               ListTile(
-                leading: Icon(Icons.lightbulb_outline),
-                title: Text(MyMenus.MEUS_POSTS),
+                leading: Icon(Icons.group, color: draewrIconColor),
+                title: Text(MyMenus.MEUS_FILIADOS, style: draewrTextStyle),
                 onTap: () {
-                  Navigator.pop(context);
-                  Navigator.of(context).pushNamed(PerfilPage.tag, arguments: getFirebase.user());
+                  _closeDrawer(context);
+                  Navigate.to(context, UsersPage());
                 },
               ),
+              ListTile(
+                leading: Icon(Icons.lightbulb_outline, color: draewrIconColor), //Image.asset(MyIcons.ic_lamp_p, ,/* width: drawerIconSize - 5*/),
+                title: Text(MyMenus.MEUS_POSTS, style: draewrTextStyle),
+                onTap: () {
+                  _closeDrawer(context);
+                  Navigate.to(context, PerfilTipsterPage(getFirebase.user));
+                },
+              ),
+              ]
+             else ...[
+              ListTile(
+                leading: Icon(Icons.group, color: draewrIconColor),
+                title: Text(MyMenus.MEUS_TIPSTERS, style: draewrTextStyle),
+                onTap: () {
+                  _closeDrawer(context);
+                  Navigate.to(context, UsersPage());
+                },
+              )
+            ],
             //Meu Perfil
             ListTile(
-              leading: Image.asset(MyIcons.ic_perfil, color: Colors.black38, width: drawerIconSize),
-              title: Text(MyMenus.MEU_PERFIL),
+              leading: Icon(Icons.person_pin, color: draewrIconColor), //Image.asset(MyIcons.ic_home, /*color: draewrIconColor,*/ /*width: drawerIconSize*/),
+              title: Text(MyMenus.MEU_PERFIL, style: draewrTextStyle),
               onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+                _closeDrawer(context);
+                Navigate.to(context,PerfilPage());
               },
             ),
-            if (isTipster)
+            if (getFirebase.isAdmin)
               ListTile(
-                leading: Icon(Icons.help),
-                title: Text(MyMenus.TUTORIAL),
+                leading: Icon(Icons.whatshot, color: draewrIconColor),
+                title: Text(MyMenus.GERENCIA, style: draewrTextStyle),
                 onTap: () {
-                  Navigator.pop(context);Navigator.of(context).pushNamed(TutorialPage.tag);
+                  _closeDrawer(context);
+                  Navigate.to(context, GerenciaPage());
+                },
+              ),
+            if (_isTipster)
+              ListTile(
+                leading: Icon(Icons.help, color: draewrIconColor),
+                title: Text(MyMenus.TUTORIAL, style: draewrTextStyle),
+                onTap: () {
+                  _closeDrawer(context);
+                  Navigate.to(context, TutorialPage());
                 },
               ),
             //Sobre
             ListTile(
-              leading: Icon(Icons.info),
-              title: Text(MyMenus.SOBRE),
+              leading: Icon(Icons.info, color: draewrIconColor),
+              title: Text(MyMenus.SOBRE, style: draewrTextStyle),
               onTap: () {
-                Navigator.pop(context);
-                Navigator.of(context).pushNamed(AboutPage.tag);
+                _closeDrawer(context);
+                Navigate.to(context, AboutPage());
               },
             ),
             //Loguot
             ListTile(
-              leading: Icon(Icons.remove_circle),
-              title: Text(MyMenus.LOGOUT),
+              leading: Icon(Icons.remove_circle, color: draewrIconColor),
+              title: Text(MyMenus.LOGOUT, style: draewrTextStyle),
               onTap: () {
-                Navigator.pop(context);
-                onLogoutTap();
+                _closeDrawer(context);
+                _onLogoutTap();
               },
             ),
           ],
@@ -220,66 +252,39 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
         child: TabBar(
             controller: _tabController,
             indicatorColor: MyTheme.primary(),
-//            indicatorWeight: 0.1,
             tabs: [
-              Container(
-                height: navHeight,
-                child: Tab(
-                    iconMargin: EdgeInsets.all(0),
-                    text: Titles.nav_titles_main[0],
-                    icon: SvgPicture.asset(MyIcons.ic_home_svg, color: navIconColor, width: navIconSize)),
-              ),
-              Container(
+              Tooltip(
+                message: Titles.nav_titles_main[0],
+                child: Container(
                   height: navHeight,
                   child: Tab(
                       iconMargin: EdgeInsets.all(0),
-                      text: Titles.nav_titles_main[1],
-                      icon: SvgPicture.asset(MyIcons.ic_pesquisa_svg, color: navIconColor, width: navIconSize)
-                  )
+                      icon: Icon(Icons.home, color: navIconColor)//Image.asset(MyIcons.ic_home, /*color: navIconColor,*/ width: 30)
+                  ),
+                ),
               ),
-              Container(
-                  height: navHeight,
-                  child: Tab(
-                      iconMargin: EdgeInsets.all(0),
-                      text: Titles.nav_titles_main[2],
-                      icon: SvgPicture.asset(MyIcons.ic_perfil_svg, color: navIconColor, width: navIconSize))),
+              Tooltip(
+                message: Titles.nav_titles_main[1],
+                child: Container(
+                    height: navHeight,
+                    child: Tab(
+                        iconMargin: EdgeInsets.all(0),
+                        icon: Icon(Icons.share, color: navIconColor)
+                    )
+                ),
+              ),
+              Tooltip(
+                message: Titles.nav_titles_main[2],
+                child: Container(
+                    height: navHeight,
+                    child: Tab(
+                        iconMargin: EdgeInsets.all(0),
+                        icon: Icon(Icons.person_pin, color: navIconColor)//Image.asset(MyIcons.ic_perfil, /*color: navIconColor,*/ width: 30)//SvgPicture.asset(MyIcons.ic_perfil_svg, color: navIconColor, width: navIconSize)
+                    )
+                ),
+              ),
             ]),
       ),
-    ) :
-        /*BottomNavigationBar(
-        currentIndex: currentIndex,
-        showUnselectedLabels: false,
-        selectedItemColor: MyTheme.textColor(),
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(MyIcons.ic_home_svg, color: navIconColor, width: navIconSize),
-            title: Text(Titles.nav_titles_main[0]),
-          ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(MyIcons.ic_pesquisa_svg, color: navIconColor, width: navIconSize),
-            title: Text(Titles.nav_titles_main[1]),
-          ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(MyIcons.ic_perfil_svg, color: navIconColor, width: navIconSize),
-            title: Text(Titles.nav_titles_main[2]),
-          ),
-        ],
-        onTap: _onItemTapped,
-      )*/
-        //SplashScreen
-    Scaffold(
-      body: Container(
-        padding: EdgeInsets.fromLTRB(0, screenHeight, 0, 100),
-        alignment: Alignment.center,
-        child: Column(
-          children: [
-            Image.asset(MyIcons.ic_launcher, width: iconSize, height: iconSize),
-            Padding(padding: EdgeInsets.only(top: 20)),
-            Text(MyStrings.APP_NAME, style: TextStyle(fontSize: 25)),
-            LinearProgressIndicator()
-          ],
-        ),
-      )
     );
   }
 
@@ -287,47 +292,48 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   //region Metodos
 
-  Future<void> init() async {
+  Future<void> _init() async {
     var result = await getFirebase.init();
     try {
       if (result == FirebaseInitResult.fUserNull)
         throw Exception(FirebaseInitResult.fUserNull);
 
-      await OfflineData.readDirectorys();
+      Aplication.init(context);
+
       if (await OfflineData.readOfflineData()) {
-        User item = await getUsers.get(getFirebase.fUser().uid);
+        User item = await getUsers.get(getFirebase.fUser.uid);
         if (item != null)
           getFirebase.setUser(item);
         setState(() {
-          inicializado = true;
+          _isInicializado = true;
         });
       }
 
       //Obtem os dados do usuário logado
       if (!await getFirebase.atualizarOfflineUser()) {
-        var result2 = await Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+        var result2 = await Navigate.to(context, PerfilPage());
         if (result2 == null) throw Exception(FirebaseInitResult.userNull);
-         else Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+         else Navigate.to(context, PerfilPage());
       }
 
-      isTipster = getFirebase.user().dados.isTipster;
+      _isTipster = getFirebase.user.dados.isTipster;
       _verificarTutorial();
-
-      getFirebase.initNotificationManager(context);
 
       getFirebase.observMyFirebaseData();
 
       await getUsers.baixar();
+      await _initPlatformState();
       setState(() {
-        inicializado = true;
+        _isInicializado = true;
       });
 
       await OfflineData.saveOfflineData();
-      await getUsers.saveFotosPerfilLocal();
+//      await getUsers.saveFotosPerfilLocal();
       await getPosts.saveFotosLocal();
+      _verificarDiaPagamento();
 
-      OfflineData.deletefile(OfflineData.appTempPath, OfflineData.appTempName);
-      onAtualizarTap(false);
+//      OfflineData.deletefile(OfflineData.appTempPath, OfflineData.appTempName);
+      _onAtualizarTap(false);
 
     } catch(e) {
       bool sendError = true;
@@ -336,51 +342,77 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       if (e.toString().contains(FirebaseInitResult.userNull.toString()))
         sendError = false;
       Log.e(TAG, 'init', e, sendError);
-      Navigator.of(context).pushReplacementNamed(LoginPage.tag);
+      Navigate.toReplacement(context, LoginPage());
     }
   }
 
-  void onLogoutTap() {
-    FirebaseAuth.instance.signOut();
-    getFirebase.user().logout();
-    getFirebase.finalize();
-    Navigator.pushReplacementNamed(context, LoginPage.tag);
+  /// TODO Usado somente pra testes
+  sendPostTest() async {
+    Post p = Post();
+    p.id = randomString(10);
+    p.titulo = 'test';
+    p.isPublico = false;
+    p.data = DataHora.now();
+    p.descricao = 'desc';
+    p.idTipster = getFirebase.fUser.uid;
+    p.campeonato = 'camp';
+    p.linha = 'linha';
+    p.esporte = 'esport';
+    p.unidade = '2';
+    p.oddAtual = '1';
+    // p.postar();
+    EventListener.onPostSend(p);
+    // getFirebase.notificationManager.sendPost(p, await getUsers.get('bXSEl3yiwFRor74nPga0P56OeHo2'));
   }
 
-   void onAtualizarTap([bool showMsg = true]) async {
-    if (showMsg)
-       Log.toast('Verificando Atualização');
-     if(await openFile()) {
-       return;
-     }
-     var resultData = await Import.buscarAtualizacao();
+  void _onLogoutTap() {
+    FirebaseAuth.instance.signOut();
+    getFirebase.user.logout();
+    getFirebase.finalize();
+    Navigate.toReplacement(context, LoginPage());
+  }
 
-     if(resultData != null) {
-       bool result = await showDialog(
-           context: context,
-           barrierDismissible: false,
-           builder: (BuildContext context) {
-             return AlertDialog(
-               title: Text(MyTexts.VERIF_ATUALIZACAO),
-               content: Text(MyTexts.BAIXAR_ATUALIZACAO),
-               actions: <Widget>[
-                 FlatButton(
-                   child: Text(MyStrings.CANCELAR),
-                   onPressed: () {
-                     Navigator.of(context).pop(false);
-                   },
-                 ),
-                 FlatButton(
-                   child: Text(MyStrings.BAIXAR),
-                   onPressed: () {
-                     Navigator.of(context).pop(true);
-                   },
-                 ),
-               ],
-             );
-           }
-       );
-       if (result) {
+  void _onPageChanged(int index) {
+    setState(() {
+      _currentTitle = Titles.main_page[index];
+      _currentIndex = index;
+    });
+  }
+
+  void _onAtualizarTap([bool showMsg = true]) async {
+    if (showMsg)
+      Log.toast('Verificando Atualização');
+//     if(await _openFile()) {
+//       return;
+//     }
+    var resultData = await Aplication.buscarAtualizacao();
+
+    if(resultData != null) {
+      bool result = await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text(MyTexts.VERIF_ATUALIZACAO),
+              content: Text(MyTexts.BAIXAR_ATUALIZACAO),
+              actions: <Widget>[
+                FlatButton(
+                  child: Text(MyStrings.CANCELAR),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+                FlatButton(
+                  child: Text(MyStrings.BAIXAR),
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ],
+            );
+          }
+      );
+      /*if (result) {
          double progressBarValue = 0;
          final ProgressDialog pr = ProgressDialog(context, type: ProgressDialogType.Download, isDismissible: false);
          pr.style(
@@ -437,28 +469,39 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                );
              }
          );
-       }
-//       if (result)
-//         Import.openUrl(resultData, context);
-     } else
-       if (showMsg)
-         Log.toast('Sem Atualização');
-  }
-
-  void _onPageChanged(int index) {
-    setState(() {
-      _currentTitle = Titles.main_page[index];
-      currentIndex = index;
-    });
+       }*/
+      if (result)
+        Import.openUrl(resultData, context);
+    } else
+    if (showMsg)
+      Log.toast('Sem Atualização');
   }
 
   void _verificarTutorial() async {
     var pref = await SharedPreferences.getInstance();
-    if(isTipster && pref.getBool(SharedPreferencesKey.ULTIMO_TUTORIAL_OK) == null)
-      Navigator.of(context).pushNamed(TutorialPage.tag);
+    if(_isTipster && pref.getBool(SharedPreferencesKey.ULTIMO_TUTORIAL_OK) == null)
+      Navigate.to(context, TutorialPage());
   }
 
-  Future<bool> openFile() async {
+  void _verificarDiaPagamento() async {
+    DateTime hoje = DateTime.now();
+    int dia = _user.diaPagamento;
+    if (dia == hoje.day) {
+      Aplication.sharedPref.setBool(SharedPreferencesKey.DIA_PAGAMENTO, false);
+    }
+  }
+
+  void _closeDrawer(BuildContext context) {
+    Navigator.pop(context);
+    _showUserDados = !_showUserDados;
+  }
+
+  Future<void> _initPlatformState() async {
+//    await Purchases.setDebugLogsEnabled(true);
+//    await Purchases.setup(MyResources.revenueCatApi);
+  }
+
+  /*Future<bool> _openFile() async {
     final filePath = OfflineData.appTempPath + '/' + OfflineData.appTempName;
     final result = await OpenFile.open(filePath);
 
@@ -467,7 +510,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       Log.d(TAG, 'openFile', _openResult);
     });
     return result.type == ResultType.done;
-  }
+  }*/
 
   //endregion
 
@@ -475,7 +518,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
 class DataSearch extends SearchDelegate<String> {
 
-  final sugestoes = getUsers.data.values.toList();
+  final sugestoes = getTipster.data;
 
   @override
   String get searchFieldLabel => MyStrings.PESQUISAR;
@@ -497,21 +540,20 @@ class DataSearch extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return PerfilPage(user: getFirebase.user());
+    return PerfilTipsterPage(getFirebase.user);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final list = query.isEmpty ? [] : sugestoes.where((element) =>
-        element.dados.nome.toLowerCase().startsWith(query.toLowerCase())).toList();
+    final list = query.isEmpty ? [] : sugestoes.where((x) => x.dados.nome.toLowerCase().startsWith(query.toLowerCase())).toList();
 
     return ListView.builder(itemBuilder: (context, index) {
       User item = list[index];
 
       return ListTile(
-        leading: ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: MyIcons.fotoUser(item.dados, 50)
+        leading: MyLayouts.iconFormatUser(
+            radius: 50,
+            child: MyLayouts.fotoUser(item.dados)
         ),
         title: RichText(
           text: TextSpan(
@@ -527,7 +569,7 @@ class DataSearch extends SearchDelegate<String> {
         ),
         subtitle: Text(item.dados.tipname),
         onTap: () {
-          Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
+          Navigate.to(context, PerfilTipsterPage(item));
         },
       );
     },

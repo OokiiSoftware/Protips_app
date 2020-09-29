@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post_perfil.dart';
+import 'package:protips/model/colored_tabbar.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
+import 'package:protips/pages/cash_page.dart';
 import 'package:protips/pages/crop_page.dart';
-import 'package:protips/pages/meu_perfil_page.dart';
+import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/pages/notificacoes_page.dart';
 import 'package:protips/pages/new_post_page.dart';
 import 'package:protips/res/resources.dart';
@@ -17,21 +19,25 @@ class FragmentPerfil extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
-class MyWidgetState extends State<FragmentPerfil> {
+class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientMixin<FragmentPerfil> {
 
   //region Variaveis
   static const String TAG = 'FragmentPerfil';
 
   List<PostPerfil> _data = new List<PostPerfil>();
   bool hasNotificacao = false;
+  bool inProgress = false;
 
   User user/* = getFirebase.user()*/;
 
-  double progressBarValue = 0;
+//  double progressBarValue = 0;
 
   //endregion
 
   //region overrides
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -40,229 +46,209 @@ class MyWidgetState extends State<FragmentPerfil> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     //region Variaveis
     double itemFontSize = 15;
-    double itemSpacing = 3;
     double fotoSize = 90;
 
     Color itemColor = MyTheme.primaryLight2();
     var itemTextStyle = TextStyle(color: MyTheme.textColor(), fontSize: itemFontSize);
-    var headItemPadding = Padding(padding: EdgeInsets.only(left: 3));
+    var headItemPadding = Padding(padding: EdgeInsets.only(left: 5));
 
 //    double heightScreen = MediaQuery.of(context).size.height;
 
-    var gridItemPadding = EdgeInsets.all(10);
-    var gridItemBackground = MyTheme.primaryDark();
-    double gridSpace = 5;
-    double headerHeight = 140;
+    double headerHeight = 180;
 
-    user = getFirebase.user();
+    user = getFirebase.user;
     UserDados dados = user.dados;
+
+    bool isTipster = dados.isTipster && !user.solicitacaoEmAndamento();
 
     if (user.seguidoresPendentes.length > 0)
       hasNotificacao = true;
 
     _data.clear();
     _data.addAll(user.postPerfilList);
+//    for (int i = 0; i < 30; i++) {
+//      PostPerfil p = PostPerfil();
+//      p.titulo = 'Post ' + i.toString();
+//      _data.add(p);
+//    }
+
+    var tabBar = [Tab(text: 'FERRAMENTAS')];
+    var tabBarView = [_ferramentas(isTipster)];
+
+    if (isTipster) {
+      tabBar.add(Tab(text: 'PUBLICAÇÕES'));
+      tabBarView.add(_publicacoes(_data));
+    }
 
     //endregion
 
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          //Header
-          SliverAppBar(
-            expandedHeight: headerHeight,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                padding: EdgeInsets.fromLTRB(15, 20, 10, 15),
-                color: MyTheme.primaryLight(),
-                child: Row(
-                  children: [
-                    //Foto
-                    Container(
-                      child: Tooltip(
-                        message: MyTooltips.EDITAR_PERFIL,
-                        child: GestureDetector(
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(100),
-                                child: MyIcons.fotoUser(user.dados, fotoSize)
-                              ),
-                              Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Padding(
-                                      padding: EdgeInsets.only(left: 5, bottom: 10),
-                                      child: Icon(Icons.add_circle, size: 30, color: MyTheme.accent())
-                                  ))
-                            ],
-                          ),
-                          onTap: () {
-                            _onPerfilPage();
-                          },
-                        ),
-                      ),
+    return DefaultTabController(
+      length: tabBar.length,
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: headerHeight,
+          elevation: 0,
+          backgroundColor: MyTheme.primaryLight(),
+          title: Row(
+            children: [
+              //Foto
+              Container(
+                child: Tooltip(
+                  message: MyTooltips.EDITAR_PERFIL,
+                  child: GestureDetector(
+                    child: MyLayouts.iconFormatUser(
+                      radius: 100,
+                      child: MyLayouts.fotoUser(dados, iconSize: fotoSize),
                     ),
-                    Padding(padding: EdgeInsets.only(right: 5)),
-                    //Dados
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        //Nome
-                        Row(
-                          children: [
-                            Icon(Icons.person, color: itemColor),
-                            headItemPadding,
-                            Text(dados.nome, style: itemTextStyle)
-                          ],
-                        ),
-                        //Email
-                        Row(
-                          children: [
-                            Icon(Icons.email, color: itemColor),
-                            headItemPadding,
-                            Text(dados.email, style: itemTextStyle)
-                          ],
-                        ),
-                        //TipName
-                        Row(
-                          children: [
-                            Icon(Icons.language, color: itemColor),
-                            headItemPadding,
-                            Text(dados.tipname, style: itemTextStyle)
-                          ],
-                        ),
-                        //Punters
-                        Row(
-                          children: [
-                            Icon(Icons.group, color: itemColor),
-                            headItemPadding,
-                            Text((dados.isTipster ? MyStrings.FILIADOS : MyStrings.TIPSTERS) + ': ' +
-                                (dados.isTipster ? user.seguidores.values.length.toString() :
-                                user.seguindo.values.length.toString()), style: itemTextStyle)
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                    onTap: _onPerfilPage,
+                  ),
                 ),
               ),
-            ),
-          ),
-          //progressBar
-          SliverPadding(
-            padding: EdgeInsets.all(0),
-            sliver: SliverGrid.count(
-              crossAxisCount: 1,
-              childAspectRatio: 90,
-              children: [
-                LinearProgressIndicator(value: progressBarValue)
-              ],
-            ),
-          ),
-          //Grid Botões
-          SliverPadding(
-            padding: EdgeInsets.only(left: 5, right: 5),
-            sliver: SliverGrid.count(
-              crossAxisSpacing: gridSpace,
-              mainAxisSpacing: gridSpace,
-              crossAxisCount: 3,
-              children: [
-                buttonNotificacoes(gridItemPadding, gridItemBackground),
-//                buttonN(gridItemPadding, gridItemBackground),
-//                buttonF(gridItemPadding, gridItemBackground),
-                if(dados.isTipster) buttonNewPost(gridItemBackground),
-                if(dados.isTipster) buttonNewPerfilPost(gridItemBackground),
-              ],
-            )
-          ),
-
-          //PostList Label
-          if(dados.isTipster)
-            SliverPadding(
-            padding: EdgeInsets.all(0),
-            sliver: SliverGrid.count(
-              crossAxisCount: 1,
-              childAspectRatio: 10,
-              children: [
-                  Container(
-                    height: 40,
-                    margin: EdgeInsets.only(top: gridSpace),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(color: MyTheme.primaryDark()),
-                    child: Text('Meus Posts'.toUpperCase(), style: itemTextStyle),
-                  )
-              ],
-            ),
-          ),
-          //PostList
-          if(dados.isTipster)
-            SliverPadding(
-            padding: EdgeInsets.all(5),
-            sliver: SliverGrid(
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 300,
-                  mainAxisSpacing: itemSpacing,
-                  crossAxisSpacing: itemSpacing,
-                ),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final item = _data[index];
-                return Stack(
-                  alignment: AlignmentDirectional.topEnd,
-                  children: [
-                    //foto
-                    Container(
-                        alignment: Alignment.center,
-                        child: GestureDetector(
-                          child: MyIcons.fotoPostNetwork(item.foto),
-                          onTap: () {
-                            Import.showPopup(context, item);
-                          },
-                        )
-                    ),
-                    //botão excluir
-                    IconButton(
-                      icon: Container(
-                        decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(color: MyTheme.textColorInvert(), offset: Offset(-5, 5), blurRadius: 40)
-                            ]
-                        ),
-                        child: Icon(Icons.delete, color: MyTheme.tintColor()),
-                      ),
-                      onPressed: () {
-                        onPerfilPostDelete(item);
-                      },
-                    ),
-                  ],
-                );
-              },
-                  childCount: _data.length
+              Padding(padding: EdgeInsets.only(right: 15)),
+              //Dados
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  //Nome
+                  Row(
+                    children: [
+                      Icon(Icons.person, color: itemColor),
+                      headItemPadding,
+                      Text(dados.nome, style: itemTextStyle)
+                    ],
+                  ),
+                  //Email
+                  Row(
+                    children: [
+                      Icon(Icons.email, color: itemColor),
+                      headItemPadding,
+                      Text(dados.email, style: itemTextStyle)
+                    ],
+                  ),
+                  //TipName
+                  Row(
+                    children: [
+                      Icon(Icons.language, color: itemColor),
+                      headItemPadding,
+                      Text(dados.tipname, style: itemTextStyle)
+                    ],
+                  ),
+                  //Punters
+                  Row(
+                    children: [
+                      Icon(Icons.group, color: itemColor),
+                      headItemPadding,
+                      Text((isTipster ? MyStrings.FILIADOS : MyStrings.TIPSTERS) + ': ' +
+                          (isTipster ? user.seguidores.values.length.toString() :
+                          user.seguindo.values.length.toString()), style: itemTextStyle)
+                    ],
+                  ),
+                ],
               ),
-            ),
-          )
-        ],
+            ],
+          ),
+          bottom: ColoredTabBar(tabs: tabBar, color: MyTheme.primary(), height: 40),
+        ),
+        body: TabBarView(children: tabBarView),
+        floatingActionButton: inProgress ? CircularProgressIndicator() : Container(),
       ),
     );
   }
 
   //endregion
 
+  //region Widgets
+
+  Widget _publicacoes(List<PostPerfil> data) {
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.all(2),
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 300,
+              mainAxisSpacing: 2,
+              crossAxisSpacing: 2,
+            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              var item = data[index];
+              return Stack(
+                alignment: AlignmentDirectional.topEnd,
+                children: [
+                  //foto
+                  Container(
+                      alignment: Alignment.center,
+                      child: GestureDetector(
+                        child: MyLayouts.fotoPostNetwork(item.foto),
+                        onTap: () {
+                          MyLayouts.showPopupPostPerfil(context, item);
+                        },
+                      )
+                  ),
+                  //botão excluir
+                  IconButton(
+                    icon: Container(
+                      decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(color: MyTheme.textColorInvert(),
+                                offset: Offset(-5, 5),
+                                blurRadius: 40)
+                          ]
+                      ),
+                      child: Icon(Icons.delete, color: MyTheme.tintColor()),
+                    ),
+                    onPressed: () {
+                      onPerfilPostDelete(item);
+                    },
+                  ),
+                ],
+              );
+            },
+                childCount: data.length
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _ferramentas(bool isTipster) {
+    const double itemSpacing = 5;
+    const double gridSpace = 5;
+
+    return GridView.count(
+      crossAxisSpacing: gridSpace,
+      mainAxisSpacing: gridSpace,
+      crossAxisCount: 3,
+      padding: const EdgeInsets.all(itemSpacing),
+      children: [
+        buttonNotificacoes(),
+        if(isTipster)...[
+          buttonNewPost(),
+          buttonCash(),
+          buttonNewPerfilPost(),
+        ],
+      ],
+    );
+  }
+
   //Notificações
-  Widget buttonNotificacoes(EdgeInsets padding, Color backcolor) {
+  Widget buttonNotificacoes() {
     return Container(
-      padding: padding,
-      color: backcolor,
+      color: MyTheme.primaryDark(),
       child: Tooltip(
         message: MyTooltips.NOTIFICACOES,
         child: ButtonTheme(
           minWidth: double.infinity,
           height: double.infinity,
           child: FlatButton(
-            child: Image.asset(hasNotificacao?MyIcons.ic_sms_2:MyIcons.ic_sms),
+            padding: EdgeInsets.all(20),
+            child: Image.asset(hasNotificacao?MyAssets.ic_sms_2:MyAssets.ic_sms),
             onPressed: () async {
-              await Navigator.of(context).pushNamed(NotificacoesPage.tag);
+              await Navigate.to(context, NotificacoesPage());
               setState(() {});
             },
           ),
@@ -271,78 +257,75 @@ class MyWidgetState extends State<FragmentPerfil> {
     );
   }
 
-  Widget buttonN(EdgeInsets padding, Color backcolor) {
+  Widget buttonCash() {
     return Container(
-      padding: padding,
-      color: backcolor,
-      child: ButtonTheme(
-        minWidth: double.infinity,
-        height: double.infinity,
+      color: MyTheme.primaryDark(),
+      child: Tooltip(
+        message: MyTooltips.CASH,
         child: FlatButton(
-          child: Image.asset(MyIcons.ic_cash),
-          onPressed: (){
-
-          },
+          minWidth: double.infinity,
+          height: double.infinity,
+          padding: EdgeInsets.all(20),
+          child: Image.asset(MyAssets.ic_cash),
+          onPressed: _onCash,
         ),
       ),
     );
   }
 
-  Widget buttonF(EdgeInsets padding, Color backcolor) {
+  Widget buttonF() {
     return Container(
-      padding: padding,
-      color: backcolor,
+      color: MyTheme.primaryDark(),
       child: ButtonTheme(
         minWidth: double.infinity,
         height: double.infinity,
         child: FlatButton(
-          child: Image.asset(MyIcons.ic_planilha),
-          onPressed: (){
-
-          },
+          padding: EdgeInsets.all(20),
+          child: Image.asset(MyAssets.ic_planilha),
+          onPressed: (){},
         ),
       ),
     );
   }
   //Button newPost
-  Widget buttonNewPost(Color backcolor) {
+  Widget buttonNewPost() {
     return Container(
-      color: backcolor,
+      color: MyTheme.primaryDark(),
       child: Tooltip(
         message: MyTooltips.POSTAR_TIP,
-        child: ButtonTheme(
+        child: FlatButton(
           minWidth: double.infinity,
           height: double.infinity,
-          child: FlatButton(
-            child: Image.asset(MyIcons.ic_lamp),
-            onPressed: _onNewPost,
-          ),
+          padding: EdgeInsets.all(20),
+          child: Image.asset(MyAssets.ic_lamp),
+          onPressed: _onNewPost,
         ),
       ),
     );
   }
   //Button newPerfilPost
-  Widget buttonNewPerfilPost(Color backcolor) {
+  Widget buttonNewPerfilPost() {
     return Container(
-      color: backcolor,
+      color: MyTheme.primaryDark(),
       child: Tooltip(
         message: MyTooltips.POSTAR_NO_PERFIL,
-        child: ButtonTheme(
+        child: FlatButton(
           minWidth: double.infinity,
           height: double.infinity,
-          child: FlatButton(
-            child: Icon(Icons.add, color: MyTheme.tintColor(), size: 100),
-            onPressed: onPerfilPost,
-          ),
+          padding: EdgeInsets.all(20),
+          child: Image.asset(MyAssets.ic_add),
+          onPressed: onPerfilPost,
         ),
       ),
     );
   }
 
+  //endregion
+
   //region Metodos
 
   Future<void> onPerfilPost() async {
-    var result = await Navigator.of(context).pushNamed(CropImagePage.tag, arguments: 1/1);
+    var result = await Navigate.to(context, CropImagePage(1/1));
     if (result != null && result is File) {
       TextEditingController _titulo = TextEditingController();
       TextEditingController _legenda = TextEditingController();
@@ -377,20 +360,20 @@ class MyWidgetState extends State<FragmentPerfil> {
                   child: Text(MyStrings.POSTAR),
                   onPressed: () async {
                     Navigator.of(context).pop();
-                    _progressBar(true);
+                    _setInProgress(true);
                     PostPerfil post = new PostPerfil();
                     post.id = randomString(10);
                     post.foto = result.path;
                     post.titulo = _titulo.text;
                     post.texto = _legenda.text;
-                    post.idTipster = getFirebase.fUser().uid;
+                    post.idTipster = getFirebase.fUser.uid;
                     post.data = DataHora.now();
 
                     if (await post.postar())
                       setState(() {});
                     else
                       Log.toast(MyErros.ERRO_GENERICO, isError: true);
-                    _progressBar(false);
+                    _setInProgress(false);
                   },
                 ),
               ],
@@ -417,16 +400,16 @@ class MyWidgetState extends State<FragmentPerfil> {
               FlatButton(
                 child: Text(MyStrings.SIM),
                 onPressed: () async {
-                  _progressBar(true);
+                  _setInProgress(true);
                   Navigator.pop(context);
                   bool result = await item.excluir();
                   setState(() {
                     if (result) {
                       _data.remove(item);
-                      getFirebase.user().postPerfil.remove(item.id);
+                      getFirebase.user.postPerfil.remove(item.id);
                     }
                   });
-                  _progressBar(false);
+                  _setInProgress(false);
                 },
               ),
             ],
@@ -436,17 +419,21 @@ class MyWidgetState extends State<FragmentPerfil> {
   }
 
   _onPerfilPage() async {
-    await Navigator.of(context).pushNamed(MeuPerfilPage.tag);
+    await Navigate.to(context, PerfilPage());
     setState(() {});
   }
 
   _onNewPost() {
-    Navigator.of(context).pushNamed(NewPostPage.tag);
+    Navigate.to(context, NewPostPage());
   }
 
-  _progressBar(bool ativar) {
+  _onCash() {
+    Navigate.to(context, CashPage());
+  }
+
+  void _setInProgress(bool b) {
     setState(() {
-      progressBarValue = ativar ? null : 0;
+      inProgress = b;
     });
   }
 

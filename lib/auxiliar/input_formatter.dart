@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
-class NumberTextInputFormatter extends TextInputFormatter {
+class TextInputFormatterPhone extends TextInputFormatter {
   //Codigo Original
   /*@override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
@@ -41,6 +42,58 @@ class NumberTextInputFormatter extends TextInputFormatter {
     if (newTextLength >= 8) {
       newText.write(newValue.text.substring(usedSubstringIndex, usedSubstringIndex = 7) + '-');
       if (newValue.selection.end >= 7) selectionIndex++;
+    }
+    if (newTextLength >= 12) {
+      newText.write(newValue.text.substring(selectionIndex, usedSubstringIndex));
+    }
+    // Dump the rest.
+    if (newTextLength >= usedSubstringIndex)
+      newText.write(newValue.text.substring(usedSubstringIndex));
+    return new TextEditingValue(
+      text: newText.toString(),
+      selection: new TextSelection.collapsed(offset: selectionIndex),
+    );
+  }
+}
+
+class TextInputFormatterMoney extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if(newValue.selection.baseOffset == 0) {
+      print(true);
+      return newValue;
+    }
+
+    double value = double.parse(newValue.text);
+
+    final formatter = NumberFormat.simpleCurrency(locale: "pt_Br");
+
+    String newText = formatter.format(value/100);
+
+    return newValue.copyWith(
+        text: newText,
+        selection: new TextSelection.collapsed(offset: newText.length));
+  }
+}
+
+class TextInputFormatterCPF extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final int newTextLength = newValue.text.length;
+    int selectionIndex = newValue.selection.end;
+    int usedSubstringIndex = 0;
+    final StringBuffer newText = new StringBuffer();
+    if (newTextLength >= 4) {
+      newText.write(newValue.text.substring(0, usedSubstringIndex = 3) + '.');
+      if (newValue.selection.end >= 4) selectionIndex++;
+    }
+    if (newTextLength >= 7) {
+      newText.write(newValue.text.substring(usedSubstringIndex, usedSubstringIndex = 6) + '.');
+      if (newValue.selection.end >= 6) selectionIndex++;
+    }
+    if (newTextLength >= 10) {
+      newText.write(newValue.text.substring(usedSubstringIndex, usedSubstringIndex = 9) + '-');
+      if (newValue.selection.end >= 9) selectionIndex++;
     }
     if (newTextLength >= 12) {
       newText.write(newValue.text.substring(selectionIndex, usedSubstringIndex));

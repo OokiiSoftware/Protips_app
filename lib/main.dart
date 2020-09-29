@@ -1,42 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:protips/auxiliar/import.dart';
-import 'package:protips/pages/about_page.dart';
-import 'package:protips/pages/cadastro_page.dart';
-import 'package:protips/pages/crop_page.dart';
-import 'package:protips/pages/denuncia_page.dart';
-import 'package:protips/pages/gerencia_page.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:protips/pages/main_page.dart';
-import 'package:protips/pages/login_page.dart';
-import 'package:protips/pages/meu_perfil_page.dart';
-import 'package:protips/pages/notificacoes_page.dart';
-import 'package:protips/pages/perfil_page.dart';
-import 'package:protips/pages/new_post_page.dart';
-import 'package:protips/pages/post_page.dart';
-import 'package:protips/pages/recuperar_senha_page.dart';
-import 'package:protips/pages/tutorial_page.dart';
 import 'package:protips/res/resources.dart';
 
-void main() => runApp(Main());
+void main() {
+  // Para a biblioteca de cobrança do Google Play 2.0 no Android, é obrigatório ligar
+  // como parte da inicialização do aplicativo.
+  InAppPurchaseConnection.enablePendingPurchases();
+  runApp(Main());
+}
 
 class Main extends StatelessWidget {
   static const String TAG = 'Main';
-
-  final routes = <String, WidgetBuilder> {
-    LoginPage.tag: (context) => LoginPage(),
-    MainPage.tag: (context) => MainPage(),
-    AboutPage.tag: (context) => AboutPage(),
-    PostPage.tag: (context) => PostPage(),
-    PerfilPage.tag: (context) => PerfilPage(),
-    NewPostPage.tag: (context) => NewPostPage(),
-    TutorialPage.tag: (context) => TutorialPage(),
-    GerenciaPage.tag: (context) => GerenciaPage(),
-    CadastroPage.tag: (context) => CadastroPage(),
-    DenunciaPage.tag: (context) => DenunciaPage(),
-    MeuPerfilPage.tag: (context) => MeuPerfilPage(),
-    CropImagePage.tag: (context) => CropImagePage(),
-    NotificacoesPage.tag: (context) => NotificacoesPage(),
-    RecuperarSenhaPage.tag: (context) => RecuperarSenhaPage(),
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +33,7 @@ class Main extends StatelessWidget {
           bodyText2: TextStyle(fontSize: 14),
         ),
       ),
-      routes: routes,
+//      routes: routes,
       home: MainPage(),
       //getInitPage
       /*home: FutureBuilder<FirebaseUser> (

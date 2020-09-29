@@ -4,7 +4,7 @@ import 'package:protips/model/denuncia.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/pages/post_page.dart';
 
 // ignore: must_be_immutable
@@ -14,27 +14,35 @@ class FragmentDenunciasG extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => MyWidgetState(user);
 }
-class MyWidgetState extends State<FragmentDenunciasG> {
+class MyWidgetState extends State<FragmentDenunciasG> with AutomaticKeepAliveClientMixin<FragmentDenunciasG> {
 
-  User user;
   MyWidgetState(this.user);
   //region Variaveis
   static const String TAG = 'FragmentErros';
 
+  User user;
   List<Denuncia> _data = new List<Denuncia>();
+
+  bool _inProgress = false;
+  bool _isAdmin = false;
 
   //endregion
 
   //region overrides
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
+    _isAdmin = getFirebase.isAdmin;
     _preencherList();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -42,6 +50,7 @@ class MyWidgetState extends State<FragmentDenunciasG> {
           Container(child: _itemLayout())
         ]),
       ),
+      floatingActionButton: _inProgress ? CircularProgressIndicator() : Container(),
     );
   }
 
@@ -72,31 +81,28 @@ class MyWidgetState extends State<FragmentDenunciasG> {
             },
             body: ListTile(
               title: Row(children: [
-              if (user == null || !item.isUser) Tooltip(message: 'Visualizar', child: IconButton(icon: Icon(Icons.visibility), onPressed: () async {
+                if (user == null || !item.isUser) Tooltip(message: 'Visualizar', child: IconButton(icon: Icon(Icons.visibility), onPressed: () async {
                   if (item.isUser) {
                     User user = await getUsers.get(item.idUser);
-                    Navigator.of(context).pushNamed(PerfilPage.tag, arguments: user);
+                    Navigate.to(context, PerfilTipsterPage(user));
                   } else {
                     Post post = await getPosts.baixar(item.itemKey, item.idUser);
                     if (post != null)
-                      Navigator.of(context).pushNamed(PostPage.tag, arguments: post);
+                      Navigate.to(context, PostPage(post));
                   }
                 })),
-                Tooltip(message: 'Deletar', child: IconButton(icon: Icon(Icons.delete_forever), onPressed: () async {
-                  if (user == null ? await item.delete() : await user.removeDenuncia(item.data)) {
-                    getDenuncias.remove(item.data);
-                    setState(() {
-                      _data.remove(item);
-                    });
-                  }
-                })),
+                if (_isAdmin) Tooltip(message: 'Deletar', child: IconButton(icon: Icon(Icons.delete_forever), onPressed: () async {
+                    _setAtualizando(true);
+                    if (user == null ? await item.delete() : await user.removeDenuncia(item.data)) {
+                      getDenuncias.remove(item.data);
+                      setState(() {
+                        _data.remove(item);
+                      });
+                    }
+                    _setAtualizando(false);
+                  })),
                 if (user == null) Tooltip(message: 'Aprovar Denúncia', child: IconButton(icon: Icon(Icons.offline_pin), onPressed: () async {
-                  if (await item.aprovar()) {
-                    getDenuncias.remove(item.data);
-                    setState(() {
-                      _data.remove(item);
-                    });
-                  }
+                  _onAprovarDenuncia(item);
                 })),
               ]),
               subtitle: Text(item.texto),
@@ -115,10 +121,48 @@ class MyWidgetState extends State<FragmentDenunciasG> {
     _preencherList();
   }
 
+  _onAprovarDenuncia(Denuncia item) async {
+    var _controler = TextEditingController();
+    _controler.text = item.texto;
+
+    var result = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Escreva o que o usuário verá'),
+          content: TextField(
+            controller: _controler,
+          ),
+          actions: [
+            FlatButton(child: Text('Cancelar'), onPressed: () {Navigator.pop(context);}),
+            FlatButton(child: Text('Enviar'), onPressed: () {Navigator.of(context).pop(_controler.text);})
+          ],
+        );
+      }
+    );
+    if (result != null && result.toString().isNotEmpty) {
+      item.texto = result;
+      _setAtualizando(true);
+      if (await item.aprovar()) {
+        getDenuncias.remove(item.data);
+        setState(() {
+          _data.remove(item);
+        });
+      }
+      _setAtualizando(false);
+    }
+  }
+
   _preencherList() {
     _data.clear();
     setState(() {
       _data.addAll(user == null ? getDenuncias.data : user.denuncias.values);
+    });
+  }
+
+  void _setAtualizando(bool b) {
+    setState(() {
+      _inProgress = b;
     });
   }
 

@@ -6,7 +6,7 @@ int _currentPosition = 0;
 int _posicMax = 1;
 
 class TutorialPage extends StatefulWidget {
-  static const String tag = 'TutorialPage';
+//  static const String tag = 'TutorialPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -28,10 +28,7 @@ class MyWidgetState extends State<TutorialPage> with SingleTickerProviderStateMi
               mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('BEM VINDO PRO\'TIPSTER', style: textTitleStyle),
-                  Container(
-                    width: 200,
-                      child: Divider(thickness: 3, color: MyTheme.tintColor())
-                  ),
+                  Container(width: 200, child: Divider(thickness: 3, color: MyTheme.tintColor())),
                 ]))
         ),
         Container(height: screenHeight / 2, child: Page1()),
@@ -63,19 +60,19 @@ class MyWidgetState extends State<TutorialPage> with SingleTickerProviderStateMi
                 Tooltip(message: 'Finalizar',
                 child: IconButton(
                     icon: Icon(Icons.check_circle, color: MyTheme.tintColor()),
-                    onPressed: _onBack)),
+                    onPressed: () => _onBack(context))),
             ])
       ]),
           floatingActionButton: _currentPosition < _posicMax ? FloatingActionButton.extended(
           elevation: 0,
           backgroundColor: MyTheme.primary(),
           label: Text('Pular', style: TextStyle(color: textColor)),
-          onPressed: _onBack
+          onPressed: () => _onBack(context)
       ) : Container(),
     );
   }
 
-  _onBack() async {
+  _onBack(BuildContext context) async {
     _currentPosition = 0;
     var pref = await SharedPreferences.getInstance();
     pref.setBool(SharedPreferencesKey.ULTIMO_TUTORIAL_OK, true);
@@ -84,12 +81,10 @@ class MyWidgetState extends State<TutorialPage> with SingleTickerProviderStateMi
 }
 
 class Page1 extends StatefulWidget{
-  static const String tag = 'Page1';
   @override
   State<StatefulWidget> createState() => Page1State();
 }
 class Page1State extends State<Page1> {
-  static const String TAG = 'Page1';
 
   @override
   Widget build(BuildContext context) {
@@ -111,9 +106,7 @@ class Page1State extends State<Page1> {
                     .toUpperCase(), style: textStyle, textAlign: textAlign),
               ]) :
             _currentPosition == 1 ?
-            Expanded(
-                child: Image.asset(MyIcons.img_tutorial, fit: BoxFit.cover)
-                ) :
+            Image.asset(MyAssets.img_tutorial) :
             Column()
         )
     );

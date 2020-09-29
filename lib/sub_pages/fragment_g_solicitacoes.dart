@@ -2,14 +2,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/pages/perfil_page.dart';
+import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/res/resources.dart';
 
 class FragmentSolicitacoes extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
-class MyWidgetState extends State<FragmentSolicitacoes> {
+class MyWidgetState extends State<FragmentSolicitacoes> with AutomaticKeepAliveClientMixin<FragmentSolicitacoes> {
 
   //region Variaveis
   static const String TAG = 'FragmentSolicitacoes';
@@ -21,6 +21,9 @@ class MyWidgetState extends State<FragmentSolicitacoes> {
   //region overrides
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
     if(_data.length == 0) {
@@ -30,6 +33,7 @@ class MyWidgetState extends State<FragmentSolicitacoes> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -58,14 +62,14 @@ class MyWidgetState extends State<FragmentSolicitacoes> {
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
-              leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child:  MyIcons.fotoUser(item.dados, fotoUserSize)
+              leading: MyLayouts.iconFormatUser(
+                  radius: 50,
+                  child:  MyLayouts.fotoUser(item.dados, iconSize: fotoUserSize)
               ),
               title: Text(item.dados.nome),
               subtitle: Text(item.dados.tipname),
               onTap: () {
-                Navigator.of(context).pushNamed(PerfilPage.tag, arguments: item);
+                Navigate.to(context, PerfilTipsterPage(item));
               },
             );
           },

@@ -4,11 +4,11 @@ import 'package:protips/auxiliar/import.dart';
 import 'package:protips/res/resources.dart';
 
 class AboutPage extends StatefulWidget {
-  static String tag = 'AboutPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
 class MyWidgetState extends State<AboutPage> {
+
   @override
   Widget build(BuildContext context) {
     var divider = Divider(height: 30, color: Colors.white);
@@ -19,7 +19,7 @@ class MyWidgetState extends State<AboutPage> {
         child: Center(
           child: Column(children: [
             //Icone
-            Image.asset(MyIcons.ic_launcher,
+            Image.asset(MyAssets.ic_launcher,
               width: 130,
               height: 130,
             ),
@@ -27,7 +27,7 @@ class MyWidgetState extends State<AboutPage> {
             //Texto
             Text(MyStrings.APP_NAME, style: TextStyle(fontSize: 22)),
             divider,
-            Text(MyStrings.VERSAO + ': ' + Import.APP_VERSION.toString()),
+            Text(MyStrings.VERSAO + ': ' + Aplication.packageInfo.version),
             divider,
             Text(MyStrings.CONTATOS),
             GestureDetector(

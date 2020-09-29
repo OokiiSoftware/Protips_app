@@ -81,8 +81,14 @@ class DataHora {
   //endregion
 
   static String now() {
+    //format yyyy-MM-dd hh:mm:ss
     String value = DateTime.now().toString();
     return value.substring(0, value.indexOf('.'));
+  }
+
+  static String get onlyDate {
+    var value = now();
+    return value.substring(0, value.indexOf(' ') -3);
   }
 
   static int toHour(String value) {
