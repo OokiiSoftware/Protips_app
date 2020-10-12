@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:protips/res/resources.dart';
-import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/firebase.dart';
+import 'package:protips/auxiliar/log.dart';
 
 class PostPerfil {
 
@@ -52,7 +52,7 @@ class PostPerfil {
     if (!result)
       return false;
 
-    result = await getFirebase.databaseReference
+    result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES_PERFIL)
@@ -62,13 +62,13 @@ class PostPerfil {
         .catchError((e) => false);
 
     if (result)
-      getFirebase.user.postPerfil[id] = this;
+      Firebase.user.postPerfil[id] = this;
     Log.d(TAG, 'Postar', result);
     return result;
   }
 
   Future<bool> excluir() async {
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES_PERFIL)
@@ -77,13 +77,13 @@ class PostPerfil {
         .then((value) => true)
         .catchError((e) => false);
     if (result) {
-      await getFirebase.storage
+      await Firebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES_PERFIL)
           .child(idTipster)
           .child(id + '.jpg').delete();
 
-      getFirebase.user.postPerfil.remove(id);
+      Firebase.user.postPerfil.remove(id);
     }
     Log.d(TAG, 'excluir', result);
     return result;
@@ -100,7 +100,7 @@ class PostPerfil {
     Log.d(TAG, 'uploadPhoto', 'file path: ' + file.path);
 
     try {
-      final StorageReference ref = getFirebase.storage
+      final StorageReference ref = Firebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES_PERFIL)
           .child(idTipster)

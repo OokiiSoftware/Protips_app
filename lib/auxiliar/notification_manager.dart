@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +12,11 @@ import 'package:protips/model/post.dart';
 import 'package:protips/model/token.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/gerencia_page.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'firebase.dart';
+import 'log.dart';
 
 class NotificationManager {
 
@@ -22,8 +27,8 @@ class NotificationManager {
   NotificationManager(this.context);
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-  FirebaseMessaging _fcm = FirebaseMessaging();
-  SharedPreferences pref;
+  final FirebaseMessaging _fcm = FirebaseMessaging();
+  final SharedPreferences pref = Aplication.sharedPref;
 
   String _currentToken = '';
   User _user;
@@ -31,7 +36,6 @@ class NotificationManager {
   //endregion
 
   void init() async {
-    pref = await SharedPreferences.getInstance();
     currentToken = pref.getString(SharedPreferencesKey.ULTIMO_TOKEM);
 
     //region FlutterLocalNotifications
@@ -51,44 +55,7 @@ class NotificationManager {
     );
 
     _fcm.configure(
-        onMessage: (message) async {
-          PushNotification notification = PushNotification();
-          notification.title = message['notification']['title'];
-          notification.body = message['notification']['body'];
-          notification.action = message['data']['action'];
-          _showNotification(notification);
-
-//          String title = message['notification']['title'];
-//          String body = message['notification']['body'];
-//          var data = message['data'];
-//          var action = data['action'];
-//          var itemId = data['item_id'];
-//          var remetenteId = data['remetente'];
-          /*if (action != null) {
-            switch(action.toString()) {
-              case NotificationActions.ATUALIZACAO:
-                Import.openUrl(await Import.buscarAtualizacao());
-                break;
-              case NotificationActions.SOLICITACAO_FILIAL:
-                break;
-              case NotificationActions.SOLICITACAO_TIPSTER:
-              break;
-              case NotificationActions.NOVO_TIP:
-//                if (_context != null) {
-//                  Map<String, String> args = Map();
-//                  args['itemKey'] = itemId;
-//                  args['canOpenPerfil'] = 'true';
-//                  Navigator.of(_context).pushNamed(PostPage.tag, arguments: args);
-//                }
-                break;
-            }
-            Log.d(TAG, 'fcm', 'onMessage', 'action', action);
-          }*/
-
-//          Log.d(TAG, 'fcm', 'onMessage', 'action', action);
-//          Log.d(TAG, 'fcm', 'onMessage', title, body);
-          Log.d(TAG, 'fcm', 'onMessage', message);
-        },
+        onMessage: _onReceiveMessage,
         onResume: (message) async {
           Log.d(TAG, 'fcm', 'onResume', message);
         },
@@ -101,6 +68,8 @@ class NotificationManager {
     });
     //endregion
 
+    _atualizarTopics();
+
     String tokem = await _fcm.getToken();
     await _saveTokem(_createToken(tokem));
     user.validarTokens();
@@ -111,23 +80,25 @@ class NotificationManager {
 
   User get user {
     if (_user == null)
-      _user = getFirebase.user;
+      _user = Firebase.user;
     return _user;
   }
 
   String get currentToken => _currentToken ?? '';
   set currentToken(String value) {_currentToken = value;}
 
+  String get meuID => user.dados.id;
+
   //endregion
 
   //region sends
 
-  Future<bool> sendPost(Post item, User destino) async {
+  Future<bool> _sendPost(Post item, User destino) async {
     try {
       if (!item.isPublico) {
         var pagamento = await destino.pagamento(user.dados.id, DataHora.onlyDate);
         Log.d(TAG, 'sendPost', 'pagamento', pagamento);
-        if (pagamento == null) return sendCobranca(destino);
+        // if (pagamento == null) return sendCobranca(destino);
       }
 
       await destino.validarTokens();
@@ -147,11 +118,12 @@ class NotificationManager {
           body += '\n'+ MyStrings.HORARIO + ': ' + item.horarioMinimo + ' - ' + item.horarioMaximo;
 
         PushNotification notificacao = PushNotification();
-        notificacao.de = user.dados.id;
+        notificacao.remetente = meuID;
         notificacao.title = MyTexts.NOVO_TIP + ': ' + user.dados.nome;
         notificacao.body = body;
         notificacao.timestamp = item.data;
         notificacao.token = token;
+        notificacao.topic = NotificationTopics.receberTips(meuID);
         notificacao.action = NotificationActions.NOVO_TIP;
         notificacao.enviar();
       }
@@ -161,8 +133,68 @@ class NotificationManager {
       return false;
     }
   }
+  Future<bool> sendPostTopic(Post item) async {
+    Log.d(TAG, 'sendPostTopic', 'init');
+    await user.refresh();
+    try {
+      String pagantes = '';
 
-  Future<bool> sendCobranca(User destino) async {
+      Log.d(TAG, 'sendPostTopic', 'seguidores', user.seguidores.keys);
+      for (String key in user.seguidores.keys) {
+        if(item.isPublico)
+          pagantes += '$key,';
+        else {
+          var user = await getUsers.get(key);
+          if (user != null) {
+            String mensalidade = await user.pagamento(meuID, DataHora.onlyDate);
+            if (mensalidade != null) pagantes += '$key,';
+          }
+        }
+      }
+
+      Log.d(TAG, 'sendPostTopic', 'pagantes', pagantes);
+      if (pagantes.length > 5)
+        await _sendPostTopicAux(item, pagantes);
+
+      return true;
+    } catch(e) {
+      Log.e(TAG, 'sendPostTopic', e);
+      return false;
+    }
+  }
+  Future<bool> _sendPostTopicAux(Post item, String destinos) async {
+    Log.d(TAG, 'sendPostTopicAux', 'destino', destinos);
+    try {
+      String body = MyStrings.ESPORTE + ': ' + item.esporte;
+      body += '\n'+ MyStrings.ODD_ATUAL + ': ' + item.oddAtual;
+
+      if (item.campeonato.isNotEmpty)
+        body += '\n'+ MyStrings.CAMPEONATO + ': ' + item.campeonato;
+
+      if (item.oddMinima.isNotEmpty && item.oddMaxima.isNotEmpty)
+        body += '\n'+ MyStrings.ODD + ': ' + item.oddMinima + ' - ' + item.oddMaxima;
+
+      if (item.horarioMinimo.isNotEmpty && item.horarioMaximo.isNotEmpty)
+        body += '\n'+ MyStrings.HORARIO + ': ' + item.horarioMinimo + ' - ' + item.horarioMaximo;
+
+      PushNotification notificacao = PushNotification();
+      notificacao.remetente = meuID;
+      notificacao.title = MyTexts.NOVO_TIP + ': ' + user.dados.nome;
+      notificacao.body = body;
+      notificacao.timestamp = item.data;
+      notificacao.pagantes = destinos;
+      notificacao.topic = NotificationTopics.receberTips(meuID);
+      notificacao.action = NotificationActions.NOVO_TIP;
+      notificacao.enviarTopic();
+
+      return true;
+    } catch (e) {
+      Log.e(TAG, 'sendPostTopicAux', e);
+      return false;
+    }
+  }
+
+  Future<bool> _sendCobranca(User destino) async {
     try {
       await destino.validarTokens();
       for (String token in destino.tokens.keys) {
@@ -173,11 +205,33 @@ class NotificationManager {
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = user.dados.id;
+        notificacao.remetente = user.dados.id;
         notificacao.action = NotificationActions.REALIZAR_PAGAMENTO;
         notificacao.token = token;
         notificacao.enviar();
       }
+      return true;
+    } catch (e) {
+      Log.e(TAG, 'sendCobranca', e);
+      return false;
+    }
+  }
+  Future<bool> _sendCobrancaTopic(List<String> destinos) async {
+    try {
+      // await destino.validarTokens();
+      // for (String token in destino.tokens.keys) {
+      //   String titulo = '${MyTexts.NOVO_TIP}: ${user.dados.nome}';
+      //   String texto = MyTexts.REALIZAR_PAGAMENTO;
+      //
+      //   PushNotification notificacao = new PushNotification();
+      //   notificacao.title = titulo;
+      //   notificacao.body = texto;
+      //   notificacao.timestamp = DataHora.now();
+      //   notificacao.remetente = user.dados.id;
+      //   notificacao.action = NotificationActions.REALIZAR_PAGAMENTO;
+      //   notificacao.token = token;
+      //   notificacao.enviar();
+      // }
       return true;
     } catch (e) {
       Log.e(TAG, 'sendCobranca', e);
@@ -196,8 +250,8 @@ class NotificationManager {
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = user.dados.id;
-        notificacao.action = NotificationActions.SOLICITACAO_FILIAL;
+        notificacao.remetente = user.dados.id;
+        notificacao.action = NotificationActions.SOLICITACAO_FILIALDO;
         notificacao.token = token;
         notificacao.enviar();
       }
@@ -219,8 +273,8 @@ class NotificationManager {
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = user.dados.id;
-        notificacao.action = NotificationActions.SOLICITACAO_ACEITA;
+        notificacao.remetente = user.dados.id;
+        notificacao.action = NotificationActions.SOLICITACAO_ACEITA_FILIALDO;
         notificacao.token = token;
         notificacao.enviar();
       }
@@ -242,8 +296,8 @@ class NotificationManager {
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = user.dados.id;
-        notificacao.action = NotificationActions.SOLICITACAO_ACEITA;
+        notificacao.remetente = user.dados.id;
+        notificacao.action = NotificationActions.SOLICITACAO_ACEITA_TIPSTER;
         notificacao.token = token;
         notificacao.enviar();
       }
@@ -265,7 +319,7 @@ class NotificationManager {
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = user.dados.id;
+        notificacao.remetente = user.dados.id;
         notificacao.action = NotificationActions.SOLICITACAO_TIPSTER;
         notificacao.token = token;
         notificacao.enviar();
@@ -288,7 +342,7 @@ class NotificationManager {
         String body = MyStrings.MOTIVO + ': ' + item.texto;
 
         PushNotification notificacao = PushNotification();
-        notificacao.de = user.dados.id;
+        notificacao.remetente = user.dados.id;
         notificacao.title = MyStrings.ATENCAO.toUpperCase() + ' ' + MyTexts.VC_FOI_DENUNCIADO;
         notificacao.body = body;
         notificacao.timestamp = item.data;
@@ -314,7 +368,7 @@ class NotificationManager {
         notificacao.title = titulo;
         notificacao.body = texto;
         notificacao.timestamp = DataHora.now();
-        notificacao.de = user.dados.id;
+        notificacao.remetente = user.dados.id;
         notificacao.action = NotificationActions.PAGAMENTO_REALIZADO;
         notificacao.token = token;
         notificacao.enviar();
@@ -352,6 +406,32 @@ class NotificationManager {
 
   //endregion
 
+  Future _onReceiveMessage(message) async {
+    PushNotification notification = PushNotification();
+    String pagantes = message['data']['pagantes'];
+    notification.action = message['data']['action'];
+    notification.remetente = message['data']['remetente'];
+    notification.title = message['notification']['title'];
+
+    if (pagantes == null || pagantes.contains(meuID)) {
+      notification.body = message['notification']['body'];
+    } else {
+      notification.body = MyTexts.REALIZAR_PAGAMENTO;
+    }
+
+    switch(notification.action) {
+      case NotificationActions.SOLICITACAO_ACEITA_FILIALDO:
+        _fcm.subscribeToTopic(NotificationTopics.receberTips(notification.remetente));
+        break;
+      case NotificationActions.FILIALDO_REMOVIDO:
+        _fcm.unsubscribeFromTopic(NotificationTopics.receberTips(notification.remetente));
+        break;
+    }
+
+    _showNotification(notification);
+    Log.d(TAG, 'fcm', 'onMessage', message);
+  }
+
   Future _onSelectNotification (String payload) async {
     if (payload != null && context != null) {
       Log.d(TAG, 'onSelectNotification', payload);
@@ -370,13 +450,31 @@ class NotificationManager {
 
   _showNotification(PushNotification notification) async {
     try {
-      var android = AndroidNotificationDetails('channelId', 'channelName', 'channelDescription');
+      var android = AndroidNotificationDetails(
+          'channelId', 'channelName', 'channelDescription',
+        ledColor: MyTheme.primary(),
+        vibrationPattern: Int64List(8),
+        enableLights: true,
+      );
       var iOS = IOSNotificationDetails();
       var platform = NotificationDetails(android, iOS);
       await flutterLocalNotificationsPlugin.show(0, notification.title, notification.body, platform, payload: notification.action);
     } catch (e) {
       Log.e(TAG, 'showNotification', e);
     }
+  }
+
+  void _atualizarTopics() async {
+    for (String key in user.seguindo.keys) {
+      User user = await getUsers.get(key);
+      if (user != null) {
+        if (user.seguidores.containsKey(meuID))
+          await _fcm.subscribeToTopic(NotificationTopics.receberTips(key));
+        else
+          await _fcm.unsubscribeFromTopic(NotificationTopics.receberTips(key));
+      }
+    }
+    Log.d(TAG, 'atualizarTopics', 'OK');
   }
 
 }

@@ -1,5 +1,5 @@
-import 'package:protips/res/resources.dart';
-import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/firebase.dart';
+import 'package:protips/auxiliar/log.dart';
 
 class Error {
 
@@ -31,7 +31,7 @@ class Error {
 
   Future<bool> salvar() async {
     try {
-      var result = await getFirebase.databaseReference
+      var result = await Firebase.databaseReference
           .child(FirebaseChild.LOGS)
           .child(data)
           .set(toJson())
@@ -47,7 +47,7 @@ class Error {
 
   Future<bool> _delete(String key) async {
     try {
-      var result = await getFirebase.databaseReference
+      var result = await Firebase.databaseReference
           .child(FirebaseChild.LOGS)
           .child(key)
           .remove()

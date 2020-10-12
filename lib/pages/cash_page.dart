@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/pagamento.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
 
 class CashPage extends StatefulWidget {
   @override
@@ -20,7 +22,7 @@ class MyWidgetState extends State<CashPage> {
   double _total = 0.0;
   DateTime _dateTime;
   String _currentData = '';
-  User _user = getFirebase.user;
+  User _user = Firebase.user;
   List<User> _data = [];
 
   Map<dynamic, dynamic> _pagamentosMap = Map();
@@ -117,7 +119,9 @@ class MyWidgetState extends State<CashPage> {
   Map get _currentMap => _pagamentosMap[_currentData] ?? Map();
 
   double _pagamentoValue(User user) {
-    return double.parse(_currentMap[user.dados.id] ?? '0');
+    if (_currentMap[user.dados.id] == null)
+      return 0.0;
+    return double.parse(_currentMap[user.dados.id].toString().replaceAll(',', '.') ?? '0');
   }
 
   String get _dateMesName {

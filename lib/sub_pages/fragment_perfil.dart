@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/animations/container_transition.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/colored_tabbar.dart';
@@ -13,6 +16,8 @@ import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/pages/notificacoes_page.dart';
 import 'package:protips/pages/new_post_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:random_string/random_string.dart';
 
 class FragmentPerfil extends StatefulWidget {
@@ -23,6 +28,8 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
 
   //region Variaveis
   static const String TAG = 'FragmentPerfil';
+
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<PostPerfil> _data = new List<PostPerfil>();
   bool hasNotificacao = false;
@@ -59,21 +66,15 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
 
     double headerHeight = 180;
 
-    user = getFirebase.user;
+    user = Firebase.user;
     UserDados dados = user.dados;
 
     bool isTipster = dados.isTipster && !user.solicitacaoEmAndamento();
 
-    if (user.seguidoresPendentes.length > 0)
-      hasNotificacao = true;
+    _checkNotificacoes();
 
     _data.clear();
     _data.addAll(user.postPerfilList);
-//    for (int i = 0; i < 30; i++) {
-//      PostPerfil p = PostPerfil();
-//      p.titulo = 'Post ' + i.toString();
-//      _data.add(p);
-//    }
 
     var tabBar = [Tab(text: 'FERRAMENTAS')];
     var tabBarView = [_ferramentas(isTipster)];
@@ -95,17 +96,17 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
           title: Row(
             children: [
               //Foto
-              Container(
-                child: Tooltip(
-                  message: MyTooltips.EDITAR_PERFIL,
-                  child: GestureDetector(
-                    child: MyLayouts.iconFormatUser(
-                      radius: 100,
-                      child: MyLayouts.fotoUser(dados, iconSize: fotoSize),
-                    ),
-                    onTap: _onPerfilPage,
+              OpenContainerWrapper(
+                tooltip: MyTooltips.EDITAR_PERFIL,
+                statefulWidget: PerfilPage(),
+                child: Container(
+                  color: MyTheme.primaryLight(),
+                  child: MyLayouts.iconFormatUser(
+                    radius: 100,
+                    child: MyLayouts.fotoUser(dados, iconSize: fotoSize),
                   ),
                 ),
+                onClosed: (value) => setState(() {}),
               ),
               Padding(padding: EdgeInsets.only(right: 15)),
               //Dados
@@ -237,40 +238,42 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
 
   //Notificações
   Widget buttonNotificacoes() {
-    return Container(
-      color: MyTheme.primaryDark(),
-      child: Tooltip(
-        message: MyTooltips.NOTIFICACOES,
-        child: ButtonTheme(
-          minWidth: double.infinity,
-          height: double.infinity,
-          child: FlatButton(
-            padding: EdgeInsets.all(20),
-            child: Image.asset(hasNotificacao?MyAssets.ic_sms_2:MyAssets.ic_sms),
-            onPressed: () async {
-              await Navigate.to(context, NotificacoesPage());
-              setState(() {});
-            },
-          ),
-        ),
+    return OpenContainerWrapper(
+      tooltip: MyTooltips.NOTIFICACOES,
+      statefulWidget: NotificacoesPage(),
+      child: Container(
+        color: MyTheme.primaryDark(),
+        padding: EdgeInsets.all(20),
+        child: Image.asset(hasNotificacao ? MyAssets.ic_sms_2 : MyAssets.ic_sms),
       ),
+      onClosed: (value) => _checkNotificacoes(),
     );
   }
 
   Widget buttonCash() {
-    return Container(
-      color: MyTheme.primaryDark(),
-      child: Tooltip(
-        message: MyTooltips.CASH,
-        child: FlatButton(
-          minWidth: double.infinity,
-          height: double.infinity,
-          padding: EdgeInsets.all(20),
-          child: Image.asset(MyAssets.ic_cash),
-          onPressed: _onCash,
-        ),
+    return OpenContainerWrapper(
+      tooltip: MyTooltips.CASH,
+      statefulWidget: CashPage(),
+      child: Container(
+        color: MyTheme.primaryDark(),
+        padding: EdgeInsets.all(20),
+        child: Image.asset(MyAssets.ic_cash),
       ),
+      onClosed: (value) => setState(() {}),
     );
+    // return Container(
+    //   color: MyTheme.primaryDark(),
+    //   child: Tooltip(
+    //     message: MyTooltips.CASH,
+    //     child: FlatButton(
+    //       minWidth: double.infinity,
+    //       height: double.infinity,
+    //       padding: EdgeInsets.all(20),
+    //       child: Image.asset(MyAssets.ic_cash),
+    //       onPressed: _onCash,
+    //     ),
+    //   ),
+    // );
   }
 
   Widget buttonF() {
@@ -289,19 +292,29 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
   }
   //Button newPost
   Widget buttonNewPost() {
-    return Container(
-      color: MyTheme.primaryDark(),
-      child: Tooltip(
-        message: MyTooltips.POSTAR_TIP,
-        child: FlatButton(
-          minWidth: double.infinity,
-          height: double.infinity,
-          padding: EdgeInsets.all(20),
-          child: Image.asset(MyAssets.ic_lamp),
-          onPressed: _onNewPost,
-        ),
+    return OpenContainerWrapper(
+      tooltip: MyTooltips.POSTAR_TIP,
+      statefulWidget: NewPostPage(),
+      child: Container(
+        color: MyTheme.primaryDark(),
+        padding: EdgeInsets.all(20),
+        child: Image.asset(MyAssets.ic_lamp),
       ),
+      onClosed: (value) => setState(() {}),
     );
+    // return Container(
+    //   color: MyTheme.primaryDark(),
+    //   child: Tooltip(
+    //     message: MyTooltips.POSTAR_TIP,
+    //     child: FlatButton(
+    //       minWidth: double.infinity,
+    //       height: double.infinity,
+    //       padding: EdgeInsets.all(20),
+    //       child: Image.asset(MyAssets.ic_lamp),
+    //       onPressed: _onNewPost,
+    //     ),
+    //   ),
+    // );
   }
   //Button newPerfilPost
   Widget buttonNewPerfilPost() {
@@ -366,13 +379,13 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                     post.foto = result.path;
                     post.titulo = _titulo.text;
                     post.texto = _legenda.text;
-                    post.idTipster = getFirebase.fUser.uid;
+                    post.idTipster = Firebase.fUser.uid;
                     post.data = DataHora.now();
 
                     if (await post.postar())
                       setState(() {});
                     else
-                      Log.toast(MyErros.ERRO_GENERICO, isError: true);
+                      Log.snackbar(MyErros.ERRO_GENERICO, isError: true);
                     _setInProgress(false);
                   },
                 ),
@@ -406,7 +419,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                   setState(() {
                     if (result) {
                       _data.remove(item);
-                      getFirebase.user.postPerfil.remove(item.id);
+                      Firebase.user.postPerfil.remove(item.id);
                     }
                   });
                   _setInProgress(false);
@@ -418,22 +431,28 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
     );
   }
 
-  _onPerfilPage() async {
-    await Navigate.to(context, PerfilPage());
-    setState(() {});
-  }
+  // _onPerfilPage() async {
+  //   await Navigate.to(context, PerfilPage());
+  //   setState(() {});
+  // }
+  //
+  // _onNewPost() {
+  //   Navigate.to(context, NewPostPage());
+  // }
+  //
+  // _onCash() {
+  //   Navigate.to(context, CashPage());
+  // }
 
-  _onNewPost() {
-    Navigate.to(context, NewPostPage());
-  }
-
-  _onCash() {
-    Navigate.to(context, CashPage());
-  }
-
-  void _setInProgress(bool b) {
+  _setInProgress(bool b) {
     setState(() {
       inProgress = b;
+    });
+  }
+
+  _checkNotificacoes() {
+    setState(() {
+      hasNotificacao = user.seguidoresPendentes.length > 0;
     });
   }
 

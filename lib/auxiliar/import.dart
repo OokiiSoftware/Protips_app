@@ -2,17 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'dart:io';
-
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_api_availability/google_api_availability.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info/package_info.dart';
 import 'package:protips/model/data_hora.dart';
@@ -20,12 +13,12 @@ import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/error.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/res/resources.dart';
-import 'file:///C:/Users/jhona/Documents/GitHub/protips_app/lib/auxiliar/device_info.dart';
+import 'package:protips/auxiliar/device_info.dart';
+import 'package:protips/res/strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import 'notification_manager.dart';
+import 'firebase.dart';
+import 'log.dart';
 
 class Aplication {
   static const String TAG = 'Aplication';
@@ -35,16 +28,15 @@ class Aplication {
   static SharedPreferences sharedPref;
 
   static Future<void> init(BuildContext context) async {
-    Log.setToast = context;
     packageInfo = await PackageInfo.fromPlatform();
     Device._deviceData = await DeviceInfo.getDeviceInfo();
     sharedPref = await SharedPreferences.getInstance();
-    getFirebase.initNotificationManager(context);
+    Firebase.initNotificationManager(context);
   }
 
   static Future<String> buscarAtualizacao() async {
     Log.d(TAG, 'buscarAtualizacao', 'Iniciando');
-    int _value = await getFirebase.databaseReference
+    int _value = await Firebase.databaseReference
         .child(FirebaseChild.VERSAO)
         .once()
         .then((value) => value.value)
@@ -101,8 +93,24 @@ class Device {
 
 class Navigate {
   static dynamic to(BuildContext context, StatefulWidget widget) async {
-    return await Navigator.of(context).push(MaterialPageRoute(builder: (context) => widget));
+    return await Navigator.of(context).push(
+        PageRouteBuilder(
+            pageBuilder: (context, ani, ani2) => widget,
+          transitionsBuilder: (context, ani, ani2, child) {
+            var begin = Offset(-1.0, 0.0);
+            var end = Offset.zero;
+            var curve = Curves.fastOutSlowIn;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var offsetAnimation = ani.drive(tween);
+            return SlideTransition(
+              position: offsetAnimation,
+              child: child,
+            );
+          }
+        )
+    );
   }
+
   static toReplacement(BuildContext context, StatefulWidget widget) {
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => widget));
   }
@@ -130,7 +138,7 @@ class Import {
         throw Exception(MyErros.ABRIR_LINK);
     } catch(e) {
       if (context != null)
-        Log.toast(MyErros.ABRIR_LINK, isError: true);
+        Log.snackbar(MyErros.ABRIR_LINK, isError: true);
       Log.e(TAG, 'openUrl', e);
     }
   }
@@ -150,7 +158,7 @@ class Import {
         throw Exception(MyErros.ABRIR_EMAIL);
     } catch(e) {
       if (context != null)
-        Log.toast(MyErros.ABRIR_EMAIL, isError: true);
+        Log.snackbar(MyErros.ABRIR_EMAIL, isError: true);
       Log.e(TAG, 'openUrl', e);
     }
   }
@@ -165,7 +173,7 @@ class Import {
         throw Exception(MyErros.ABRIR_WHATSAPP);
     } catch(e) {
       if (context != null)
-        Log.toast(MyErros.ABRIR_WHATSAPP, isError: true);
+        Log.snackbar(MyErros.ABRIR_WHATSAPP, isError: true);
       Log.e(TAG, 'openUrl', e);
     }
   }
@@ -174,257 +182,28 @@ class Import {
 class EventListener {
   static onPostSend(Post item) async {
     getPosts.add(item);
-    for (String key in getFirebase.user.seguidores.keys) {
-      User user = await getUsers.get(key);
-      if (user != null)
-        getFirebase.notificationManager.sendPost(item, user);
-    }
-    Log.toast('TIP Postado');
+    Firebase.notificationManager.sendPostTopic(item);
+    Log.snackbar('TIP Postado');
   }
 
   static onPostSendFail() async {
-    Log.toast('Ocorreu um erro ao enviar sua TIP');
+    Log.snackbar('Ocorreu um erro ao enviar sua TIP');
   }
 
   static onPostDelete(Post item) {
-    getFirebase.user.postes.remove(item.id);
-    Log.toast('TIP Excluido');
-  }
-}
-
-enum FirebaseInitResult {
-  ok, userNull, fUserNull, none
-}
-
-// ignore: camel_case_types
-class getFirebase {
-  //region Variaveis
-  static const String TAG = 'getFirebase';
-
-  static FirebaseApp _firebaseApp;
-  static FirebaseUser _firebaseUser;
-  static FirebaseStorage _storage = FirebaseStorage.instance;
-  static DatabaseReference _databaseReference = FirebaseDatabase.instance.reference();
-  static FirebaseAuth _auth = FirebaseAuth.instance;
-  static NotificationManager _fcm;
-  static GoogleSignIn _googleSignIn = GoogleSignIn();
-//  static Token _token;
-
-  static User _user;
-  static bool _isAdmin;
-  static Map<String, bool> _admins = Map();// <id, isEnabled>
-  //endregion
-
-  //region Firebase App
-
-  static Future<FirebaseApp> app() async{
-    if (_firebaseApp == null) {
-      var iosOptions = FirebaseOptions(
-        googleAppID: '1:721419790842:ios:ac0829d013db5cad509c43',
-        gcmSenderID: '',
-        storageBucket: _dataUrl['storageBucket'],
-        databaseURL: _dataUrl['databaseURL'],
-      );
-      var androidOptions = FirebaseOptions(
-        googleAppID: '1:721419790842:android:84815debd1879d3d509c43',
-        apiKey: 'AIzaSyClZ-JCdZwUKQqVamI3C6LwRVWBmEP3x2A',
-        storageBucket: _dataUrl['storageBucket'],
-        databaseURL: _dataUrl['databaseURL'],
-      );
-
-      _firebaseApp = await FirebaseApp.configure(
-          name: MyStrings.APP_NAME,
-          options: Platform.isIOS ? iosOptions : androidOptions
-      );
-    }
-
-    return _firebaseApp;
+    Firebase.user.postes.remove(item.id);
+    Log.snackbar('TIP Excluido');
   }
 
-  static StorageReference get storage => _storage.ref();
-
-  static FirebaseAuth get auth => _auth;
-
-  static DatabaseReference get databaseReference => _databaseReference;
-
-  static Future<FirebaseUser> googleAuth() async {
-    final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
-    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-    final AuthCredential credential = GoogleAuthProvider.getCredential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-
-    final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
-    print("signed in " + user.displayName);
-    return user;
+  static onPagamentoConcluido(User user) async {
+    Firebase.notificationManager.sendPagamento(user);
+    Log.snackbar('Pagamento concluido');
   }
-
-  //endregion
-
-  //region Metodos
-
-  static Future<FirebaseInitResult> init() async {
-    Log.d(TAG, 'init', 'Firebase Iniciando');
-
-    const firebaseUser_Null = 'firebaseUser Null';
-    try {
-      await OfflineData.createPerfilDirectory();
-      await OfflineData.createPostDirectory();
-      await OfflineData.readDirectorys();
-      await app();
-
-      _firebaseUser = await _auth.currentUser();
-      if (_firebaseUser == null)
-        throw new Exception(firebaseUser_Null);
-
-      _checkAdmin();
-      Log.d(TAG, 'init', 'Firebase OK');
-      return FirebaseInitResult.ok;
-    } catch (e) {
-      if (e.toString().contains(firebaseUser_Null)) {
-        Log.e(TAG, 'init', e, false);
-        return FirebaseInitResult.fUserNull;
-      } else
-        Log.e(TAG, 'init', e);
-      return FirebaseInitResult.none;
-    }
-  }
-  
-  static void initAdmin() async {
-    databaseReference.child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER).onValue.listen((event) async {
-      Map<dynamic, dynamic> map = event.snapshot.value;
-      if (map != null)
-        for(String key in map.keys) {
-          var item = await getUsers.get(key);
-          if (item != null)
-            getSolicitacoes.add(item);
-        }
-    });
-
-    getDenuncias.baixar();
-    getErros.baixar();
-  }
-
-  static void _checkAdmin() async {
-    try {
-      var snapshot = await getFirebase.databaseReference
-          .child(FirebaseChild.ADMINISTRADORES)/*.child(fUser().uid)*/.once();
-      Map<dynamic, dynamic> map = snapshot.value;
-      for (dynamic d in map.keys) {
-        _admins[d] = map[d];
-      }
-      if (_admins.containsKey(fUser.uid))
-        _isAdmin = map[fUser.uid] ?? false;
-      if (isAdmin)
-        initAdmin();
-    } catch (e) {
-      Log.e(TAG, '_checkAdmin', e);
-    }
-  }
-
-  static void initNotificationManager(BuildContext context) {
-    _fcm = NotificationManager(context);
-    _fcm.init();
-  }
-
-  static void finalize() async {
-    _firebaseUser = null;
-    _isAdmin = false;
-//    _token = null;
-    getTipster.reset();
-    getPosts.reset();
-    await _user.logout();
-    _fcm = null;
-    _user = null;
-  }
-
-  static Map get _dataUrl => {
-    'databaseURL': 'https://protips-oki.firebaseio.com',
-    'storageBucket': 'gs://protips-oki.appspot.com'
-  };
-
-//  static Token get token => _token;
-
-  static bool get isAdmin => _isAdmin ?? false;
-
-  static NotificationManager get notificationManager => _fcm;
-
-  static Future<List<User>> get admins async {
-    List<User> list = [];
-    for(String uid in _admins.keys)
-      if (_admins[uid])
-        list.add(await getUsers.get(uid));
-    return list;
-  }
-
-  //endregion
-
-  //region Usuario
-
-  static User get user {
-    if (_user == null)
-      _user = new User();
-    return _user;
-  }
-
-  static FirebaseUser get fUser => _firebaseUser;
-
-  static void setUltinoEmail(String email) async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    await pref.setString(SharedPreferencesKey.EMAIL, email);
-  }
-
-  static Future<String> getUltinoEmail() async {
-    SharedPreferences pref = await SharedPreferences.getInstance();
-    return pref.getString(SharedPreferencesKey.EMAIL) ?? '';
-  }
-
-  static void setUser(User user) {
-    _user = user;
-  }
-
-  static observMyFirebaseData() {
-    databaseReference
-        .child(FirebaseChild.USUARIO)
-        .child(fUser.uid)
-        .onValue.listen((event) {
-      try {
-        User user = User.fromJson(event.snapshot.value);
-        if (user != null) {
-          setUser(user);
-          OfflineData.saveOfflineData();
-        }
-      } catch(e) {
-        Log.e(TAG, 'observMyFirebaseData', e);
-      }
-    });
-  }
-
-  static Future<bool> atualizarOfflineUser() async {
-    const user_Null = 'user Null';
-    try {
-      _user = await getUsers.baixarUser(_firebaseUser.uid);
-      if (_user == null)
-        throw new Exception(user_Null);
-      return true;
-    }catch(e) {
-      if (e.toString().contains(user_Null))
-        Log.e(TAG, 'atualizarOfflineUser', e, false);
-      else
-        Log.e(TAG, 'atualizarOfflineUser', e);
-      return false;
-    }
-  }
-
-  //endregion
-
 }
 
 class OfflineData {
   static const String TAG = 'offlineData';
-  static String appTempName =  MyStrings.APP_NAME + '.apk';
+  static String appTempName =  MyResources.APP_NAME + '.apk';
   static String appTempPath;
   static Dio _dio = Dio();
 
@@ -570,8 +349,8 @@ class getUsers {
 
   static void add(User item) {
     _data[item.dados.id] = item;
-    if(item.dados.id == getFirebase.user.dados.id)
-      getFirebase.setUser(item);
+    if(item.dados.id == Firebase.user.dados.id)
+      Firebase.setUser(item);
   }
   static void addAll(Map<String, User> items) {
     _data.addAll(items);
@@ -586,7 +365,7 @@ class getUsers {
 
   static Future<void> baixar() async {
     try {
-      var snapshot = await getFirebase.databaseReference.child(FirebaseChild.USUARIO).once();
+      var snapshot = await Firebase.databaseReference.child(FirebaseChild.USUARIO).once();
       Map<dynamic, dynamic> map = snapshot.value;
       dd(map);
       Log.d(TAG, 'baixa', 'OK');
@@ -598,7 +377,7 @@ class getUsers {
 
   static Future<User> baixarUser(String uid) async {
     try {
-      var snapshot = await getFirebase.databaseReference
+      var snapshot = await Firebase.databaseReference
           .child(FirebaseChild.USUARIO).child(uid).once();
       if (snapshot.value == null)
         return null;
@@ -623,7 +402,7 @@ class getUsers {
 
         if (addTipster) {
           //Adiciona os Posts de quem eu sigo e meu Postes
-          if (getFirebase.user.seguindo.containsKey(key) || key == getFirebase.fUser.uid) {
+          if (Firebase.user.seguindo.containsKey(key) || key == Firebase.fUser.uid) {
             getPosts.addAll(item.postes.values.toList());
           } else {
             // for (Post post in item.postes.values) {
@@ -644,7 +423,7 @@ class getUsers {
 
   static Future<void> saveFotosPerfilLocal() async {
     //Salva minha foto
-    await OfflineData.downloadFile(getFirebase.user.dados.foto, localPath, getFirebase.user.dados.fotoLocal, override: true);
+    await OfflineData.downloadFile(Firebase.user.dados.foto, localPath, Firebase.user.dados.fotoLocal, override: true);
     //Salva foto dos tipsters
     for (User item in getTipster.data) {
       try {
@@ -724,7 +503,7 @@ class getErros {
   static Error get(String key) => _data[key];
 
   static Future<void> baixar() async {
-    Map<dynamic, dynamic> result = await getFirebase.databaseReference.child(FirebaseChild.LOGS)
+    Map<dynamic, dynamic> result = await Firebase.databaseReference.child(FirebaseChild.LOGS)
         .once().then((value) => value.value).catchError((ex) => null);
     if (result != null) {
       reset();
@@ -776,7 +555,7 @@ class getDenuncias {
   static Denuncia get(String key) => _data[key];
 
   static Future<void> baixar() async {
-    Map<dynamic, dynamic> result = await getFirebase.databaseReference.child(FirebaseChild.DENUNCIAS)
+    Map<dynamic, dynamic> result = await Firebase.databaseReference.child(FirebaseChild.DENUNCIAS)
         .once().then((value) => value.value).catchError((ex) => null);
     if (result != null) {
       reset();
@@ -833,7 +612,7 @@ class getPosts {
 
   static Future<Post> baixar(String postKey, String userId) async {
     if (_data[postKey] == null) {
-      var result = await getFirebase.databaseReference.child(FirebaseChild.USUARIO)
+      var result = await Firebase.databaseReference.child(FirebaseChild.USUARIO)
       .child(userId).child(FirebaseChild.POSTES).child(postKey).once().then((value) => value.value);
       if (result != null) {
         Post item = Post.fromJson(result);
@@ -879,98 +658,14 @@ class getPosts {
   }
 
   static Future<String> loadPagamento(String tipsterID, String data) async {
-    var snapshot = await getFirebase.databaseReference
+    var snapshot = await Firebase.databaseReference
         .child(FirebaseChild.PAGAMENTOS)
         .child(tipsterID)
         .child(data)
-        .child(getFirebase.fUser.uid)
+        .child(Firebase.fUser.uid)
         .once();
 
     return snapshot.value;
   }
 }
 
-class Log {
-  static FlutterToast _toast;
-  static set setToast (BuildContext context) {
-    _toast = FlutterToast(context);
-  }
-
-  static void toast(String texto, {bool isError = false}) {
-    var tint = isError ? MyTheme.textColor() : MyTheme.textColorInvert();
-    Widget body = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25.0),
-        color: isError ? Colors.red : MyTheme.accent(),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(isError ? Icons.clear : Icons.check, color: tint),
-          SizedBox(width: 12.0),
-          Text(texto, style: TextStyle(color: tint)),
-        ],
-      ),
-    );
-    _toast.showToast(child: body, gravity: ToastGravity.BOTTOM, toastDuration: Duration(seconds: isError ? 4 : 2));
-  }
-
-  static void d(String tag, String metodo, [dynamic value, dynamic value1, dynamic value2, dynamic value3]) {
-    String msg = '';
-    if (value != null) msg += value.toString();
-    if (value1 != null) msg += ': ' + value1.toString();
-    if (value2 != null) msg += ': ' + value2.toString();
-    if (value3 != null) msg += ': ' + value3.toString();
-    print(tag + ": D/" + metodo + ": " + msg);
-  }
-  static void e(String tag, String metodo, dynamic e, [dynamic value, dynamic value1, dynamic value2, dynamic value3]) {
-    String msg = e.toString();
-    bool send = true;
-    if (value != null) {
-      if (value is bool && value == false)
-        send = false;
-      else
-        msg += ': ' + value.toString();
-    }
-    if (value1 != null) msg += ': ' + value1.toString();
-    if (value2 != null) msg += ': ' + value2.toString();
-    if (value3 != null) msg += ': ' + value3.toString();
-    print(tag + ": E/: " + metodo + ': ' + msg);
-//    _saveLog(tag + msg);
-    if (send)
-      _sendError(tag, metodo, msg);
-  }
-
-//  static _saveLog(String data) {
-//    try {
-//      OfflineData.saveData(data);
-//    } catch(e) {
-//      //Todo \(ºvº)/
-//    }
-//  }
-  
-  static _sendError(String tag, String metodo, String value) {
-    String id = getFirebase.fUser?.uid ?? 'deslogado';
-
-    Error e = Error();
-    e.data = DataHora.now();
-    e.classe = tag;
-    e.metodo = metodo;
-    e.valor = value;
-    e.userId = id;
-    e.salvar();
-
-    try {
-//      String data = tag + value;
-//      getFirebase.databaseReference()
-//          .child(FirebaseChild.LOGS)
-//          .child(tag)
-//          .child(id)
-//          .child(Data.now())
-//          .set(data);
-    } catch(e) {
-      //Todo \(ºvº)/
-    }
-  }
-}

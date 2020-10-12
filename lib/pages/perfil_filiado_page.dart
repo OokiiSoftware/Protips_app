@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
 class PerfilFiliadoPage extends StatefulWidget {
   final User user;
@@ -15,6 +21,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
 
   //region Variaveis
   static const String TAG = 'PerfilFiliadoPage';
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   User user;
   User _eu;
@@ -35,7 +42,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
   @override
   void initState() {
     super.initState();
-    _eu = getFirebase.user;
+    _eu = Firebase.user;
     _precos = Import.getDropDownMenuItems(GoogleProductsID.precos.values.toList());
 
     _mensalidadePadrao = _eu.dados.precoPadrao;
@@ -145,7 +152,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
                           icon: Icon(Icons.refresh, color: MyTheme.primary()),
                           onPressed: () async {
                             var title = 'Redefinir padrão?';
-                            var result = await MyLayouts.dialogCancelOK(context, title: title);
+                            var result = await DialogBox.dialogCancelOK(context, title: title);
                             if (result.isOk) {
                               setState(() {
 //                                  _cMensalidadeValue.text =
@@ -198,7 +205,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
     if (_mensalidadeAtual != _currentMensalidade) {
       String value = _isMensalidadePadrao ? UserTag.PRECO_PADRAO : _currentMensalidade;
       await _eu.updateMensalidadeFiliado(user.dados.id, value);
-      Log.toast(MyTexts.DADOS_SALVOS);
+      Log.snackbar(MyTexts.DADOS_SALVOS);
     }
 
     _setProgressBarVisible(false);

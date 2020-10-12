@@ -2,11 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/theme.dart';
 
 class CadastroPage extends StatefulWidget{
-//  static const String tag = 'CadastroPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -253,7 +253,7 @@ class MyWidgetState extends State<CadastroPage> {
       }
       if (e.toString().contains('ERROR_TOO_MANY_REQUESTS')) {
         sendError = false;
-        Log.toast('Bloqueamos os pedidos deste dispositivo devido a atividades incomuns. Tente mais tarde.', isError: true);
+        Log.snackbar('Bloqueamos os pedidos deste dispositivo devido a atividades incomuns. Tente novamente mais tarde.', isError: true);
       }
       setState(() {});
       _setInLoading(false);

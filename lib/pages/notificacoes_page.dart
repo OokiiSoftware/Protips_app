@@ -1,14 +1,16 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/notificacao.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
 import 'package:random_string/random_string.dart';
 
 class NotificacoesPage extends StatefulWidget {
-//  static const String tag = 'NotificacoesPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -26,7 +28,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   @override
   void initState() {
     super.initState();
-    user = getFirebase.user;
+    user = Firebase.user;
     _addSeguidoresPendentes();
   }
 
@@ -89,7 +91,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   }
 
   Future<void> _onRefresh() async {
-    user = getFirebase.user;
+    user = Firebase.user;
     _data.clear();
     await _addSeguidoresPendentes();
     setState(() {});

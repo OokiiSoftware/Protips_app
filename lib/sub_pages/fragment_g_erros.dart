@@ -2,7 +2,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/error.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/auxiliar/log.dart';
+import 'package:protips/res/dialog_box.dart';
+import 'package:protips/auxiliar/firebase.dart';
+import 'package:protips/res/strings.dart';
 
 class FragmentErros extends StatefulWidget {
   @override
@@ -12,6 +15,8 @@ class MyWidgetState extends State<FragmentErros> with AutomaticKeepAliveClientMi
 
   //region Variaveis
   static const String TAG = 'FragmentErros';
+
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<Error> _data = new List<Error>();
   bool isAtualizando = false;
@@ -97,11 +102,11 @@ class MyWidgetState extends State<FragmentErros> with AutomaticKeepAliveClientMi
   }
 
   Future<void> _deleteAll() async {
-    var result = await MyLayouts.dialogCancelOK(context, title: 'Excluir todos os dados?');
+    var result = await DialogBox.dialogCancelOK(context, title: 'Excluir todos os dados?');
     if (result.isOk)
     try {
       _setAtualizando(true);
-      var result = await getFirebase.databaseReference
+      var result = await Firebase.databaseReference
           .child(FirebaseChild.LOGS)
           .remove()
           .then((value) => true)
@@ -110,10 +115,10 @@ class MyWidgetState extends State<FragmentErros> with AutomaticKeepAliveClientMi
         setState(() {
           _data.clear();
         });
-        Log.toast('Sucesso');
+        Log.snackbar('Sucesso');
       }
       else
-        Log.toast('Erro', isError: true);
+        Log.snackbar(MyErros.ERRO_GENERICO, isError: true);
     } catch(e) {
       //Todo \(ºvº)/
     }

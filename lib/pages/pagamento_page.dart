@@ -1,12 +1,14 @@
-import 'dart:io';
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/pagamento.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:flutter_google_pay/flutter_google_pay.dart';
+import 'package:protips/res/strings.dart';
 
 class PagamentoPage extends StatefulWidget {
   final User valor;
@@ -20,82 +22,78 @@ class MyWidgetState extends State<PagamentoPage> {
   MyWidgetState(this._user);
 
   //region Variaveis
-  final User _user;
-  final InAppPurchaseConnection _connection = InAppPurchaseConnection.instance;
-  StreamSubscription<List<PurchaseDetails>> _subscription;
 
-  ProductDetails _product;
-  String _queryProductError;
+  final User _user;
+
   String _log = '';
+
   bool _isAvailable = false;
-  bool _purchasePending = false;
-  bool _loading = true;
   bool _comraResultOK = false;
+
   //endregion
 
   //region overrides
 
   @override
   void initState() {
-    Stream purchaseUpdated = _connection.purchaseUpdatedStream;
-    _subscription = purchaseUpdated.listen((purchaseDetailsList) {
-      _listenToPurchaseUpdated(purchaseDetailsList);
-    }, onDone: () {
-      _subscription.cancel();
-    }, onError: (e) {
-      Log.e(TAG, 'metodo', e);
-    });
-    initStoreInfo();
     super.initState();
+    _checkGooglePay();
   }
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> stack = [];
-    if (_queryProductError == null) {
-      stack.add(
-        ListView(
-          children: [
-            _buildConnectionCheckTile,
-            _buildProductList,
-          ],
-        ),
-      );
-    } else {
-      stack.add(Center(
-        child: Text(_queryProductError),
-      ));
-    }
-    if (_purchasePending) {
-      stack.add(
-        Stack(
-          children: [
-            Opacity(
-              opacity: 0.3,
-              child: const ModalBarrier(dismissible: false, color: Colors.grey),
-            ),
-            Center(
-              child: CircularProgressIndicator(),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_log.isNotEmpty)
-      stack.add(Center(child: Text(_log, style: TextStyle(color: ThemeData.light().errorColor))));
-
     return WillPopScope(
       onWillPop: () async {
         Navigator.pop(context, _comraResultOK);
         return false;
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(Titles.PAGAMENTO),
-        ),
-        body: Stack(
-          children: stack,
+        appBar: AppBar(title: Text(Titles.PAGAMENTO)),
+        body: Column(
+          children: [
+            MyLayouts.userTile(_user),
+
+            if (_comraResultOK)
+              Container(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
+                    Text('Sucesso.', style: TextStyle(fontSize: 15)),
+                    Text('Pagamento realizado com o Google Pay.',
+                        style: TextStyle(fontSize: 15)),
+                  ],
+                ),
+              )
+            else...[
+              Container(
+                color: Colors.black12,
+                padding: EdgeInsets.all(20),
+                child: Text('Realizar pagamento da mensalidade deste Tipster no valor de R\$ $valor.',
+                    style: TextStyle(fontSize: 15)),
+              ),
+              if (_isAvailable)... [
+                Divider(),
+                Container(
+                  height: 45,
+                  width: 188,
+                  child: GestureDetector(
+                    child: Image.asset(MyAssets.googlePayButtonDark),
+                    onTap: _makeStripePayment,
+                  ),
+                ),
+
+                if(Firebase.isAdmin)
+                  ElevatedButton(
+                    child: Text('Google Pay [ADMIN TESTE]'),
+                    onPressed: _makeCustomPayment,
+                  ),
+              ],
+            ],
+
+            if (_log.isNotEmpty)
+              Text(_log, style: TextStyle(color: ThemeData.light().errorColor))
+          ],
         ),
       ),
     );
@@ -105,99 +103,91 @@ class MyWidgetState extends State<PagamentoPage> {
 
   //region Metodos
 
-  Future<void> initStoreInfo() async {
-    final bool isAvailable = await _connection.isAvailable();
-    if (!isAvailable) {
+  _checkGooglePay() async {
+    bool release = Aplication.isRelease;
+    var environment = release ? 'production' : 'rest';
+    if (await FlutterGooglePay.isAvailable(environment)) {
       setState(() {
-        _isAvailable = isAvailable;
-        _purchasePending = false;
-        _loading = false;
+        _isAvailable = true;
       });
-      return;
+    } else {
+      _setLogError('Google Pay não disponível');
     }
+  }
 
-    ProductDetailsResponse productDetailResponse =
-    await _connection.queryProductDetails(GoogleProductsID.precos.keys.toSet());
-    if (productDetailResponse.error != null) {
-      setState(() {
-        _queryProductError = productDetailResponse.error.message;
-      });
-    }
+  _makeStripePayment() async {
+    _setLogError();
 
-    if (productDetailResponse.productDetails.isEmpty) {
-      setState(() {
-        _queryProductError = null;
-      });
-    }
+    PaymentItem pm = PaymentItem(
+        stripeToken: MyResources.stripeID,
+        stripeVersion: "2020-03-02",
+        currencyCode: "brl",
+        amount: valor.replaceAll(',', '.'),
+        gateway: 'stripe');
 
-    setState(() {
-      _isAvailable = isAvailable;
-      _product = productDetailResponse.productDetails.firstWhere((e) => e.id == itemID);
-      _purchasePending = false;
-      _loading = false;
+    FlutterGooglePay.makePayment(pm).then((Result result) {
+      if (result.status == ResultStatus.SUCCESS) {
+        _onSucesso();
+      } else if (result.error != null) {
+        _setLogError(result.error);
+        Log.e(TAG, '_makeStripePayment', result.error, 1);
+      }
+    }).catchError((e) {
+      _setLogError(e.toString());
+      Log.e(TAG, '_makeStripePayment', e, 0);
     });
   }
 
-  String get itemID {
-    var valor = _user.seguidores[getFirebase.fUser.uid] ?? '';
-    if (valor == MyStrings.DEFAULT) valor = _user.dados.precoPadrao;
-    return valor.substring(0, valor.indexOf(','));
+  _makeCustomPayment() async {
+    ///docs https://developers.google.com/pay/api/android/guides/tutorial
+    PaymentBuilder pb = PaymentBuilder()
+      ..addGateway("stripe")
+      ..addTransactionInfo(valor, "BRL")
+      ..addAllowedCardAuthMethods(["PAN_ONLY", "CRYPTOGRAM_3DS"])
+      ..addAllowedCardNetworks(["AMEX", "DISCOVER", "JCB", "MASTERCARD", "VISA"])
+      ..addBillingAddressRequired(true)
+      ..addPhoneNumberRequired(true)
+      ..addShippingAddressRequired(true)
+      ..addShippingSupportedCountries(["BR"])
+      ..addMerchantInfo(MyResources.merchantID);
+
+    FlutterGooglePay.makeCustomPayment(pb.build()).then((Result result) {
+      if (result.status == ResultStatus.SUCCESS) {
+        _onSucesso();
+      } else if (result.error != null) {
+        _setLogError(result.error);
+        Log.e(TAG, '_makeCustomPayment', result.error, 1);
+      }
+    }).catchError((e) {
+      _setLogError('Desculpe. Ocorreu um erro.');
+      Log.e(TAG, '_makeCustomPayment', e, 0);
+    });
   }
 
-  Card get _buildConnectionCheckTile {
-    if (_loading) {
-      return Card(child: ListTile(title: const Text('Tentando se conectar...')));
-    }
-    final Widget storeHeader = ListTile(
-      leading: Icon(_isAvailable ? Icons.check : Icons.block,
-          color: _isAvailable ? Colors.green : ThemeData.light().errorColor),
-      title: Text((_isAvailable ? 'Tudo OK' : 'Temos um problema') + '.'),
-    );
-    final List<Widget> children = <Widget>[storeHeader];
+  _onSucesso() async {
+      Pagamento p = Pagamento(
+          userOrigem: Firebase.user,
+          userDestino: _user,
+        data: DataHora.onlyDate,
+        valor: valor
+      );
 
-    if (!_isAvailable) {
-      children.addAll([
-        Divider(),
-        ListTile(
-          title: Text('Não conectado', style: TextStyle(color: ThemeData.light().errorColor)),
-          subtitle: const Text('Não foi possível conectar ao processador de pagamentos.'),
-        ),
-      ]);
-    }
-    return Card(child: Column(children: children));
+      while (true) {
+        if (await p.salvar())
+          break;
+      }
+
+      setState(() {
+        _comraResultOK = true;
+        _isAvailable = false;
+      });
+      // Navigator.pop(context, _comraResultOK);
   }
 
-  Card get _buildProductList {
-    if (_loading) {
-      return Card(
-          child: (ListTile(
-              leading: CircularProgressIndicator(),
-              title: Text('Por favor, aguarde um pouco...'))));
-    }
-    if (!_isAvailable) {
-      return Card();
-    }
-    final ListTile productHeader = ListTile(title: Text('Realizar pagamento'));
-    List<ListTile> productList = <ListTile>[];
-
-    productList.add(ListTile(
-        title: Text(_product.title),
-        subtitle: Text(_product.description),
-        trailing: FlatButton(
-          child: Text(_product.price),
-          color: Colors.green[800],
-          textColor: Colors.white,
-          onPressed: _comraResultOK ? null : _onPagarClick,
-        )));
-
-    return Card(child: Column(children: <Widget>[productHeader, Divider()] + productList));
-  }
-
-  void _onPagarClick() {
-    _setLogError();
-    PurchaseParam purchaseParam = PurchaseParam(productDetails: _product);
-
-    _connection.buyConsumable(purchaseParam: purchaseParam);
+  String get valor {
+    String valor = _user.seguidores[Firebase.fUser.uid] ?? '';
+    if (valor.isEmpty || valor == MyStrings.DEFAULT) valor = _user.dados.precoPadrao;
+    return valor;
   }
 
   void _setLogError([String value = '']) {
@@ -206,77 +196,6 @@ class MyWidgetState extends State<PagamentoPage> {
     });
   }
 
-  void _showPendingUI() {
-    setState(() {
-      _purchasePending = true;
-    });
-  }
-
-  void _handleError(IAPError error) {
-    setState(() {
-      _purchasePending = false;
-    });
-    _setLogError('Desculpe. Ocorreu um erro com o seu pagamento.');
-  }
-
-  void _deliverProduct(PurchaseDetails purchaseDetails) async {
-    var meuID = getFirebase.fUser.uid;
-
-    Pagamento p = Pagamento();
-    p.tipsterId = _user.dados.id;
-    p.data = DataHora.onlyDate;
-    p.filiadoId = meuID;
-    p.valor = itemID;
-
-    while (true) {
-      if (await p.salvar())
-        break;
-    }
-    getFirebase.notificationManager.sendPagamento(_user);
-    Log.toast('Pagamento concluido');
-
-    setState(() {
-      _purchasePending = false;
-      _comraResultOK = true;
-    });
-    Navigator.pop(context, _comraResultOK);
-  }
-
-  void _handleInvalidPurchase(PurchaseDetails purchaseDetails) {
-    // lidar com compra inválida aqui se _verifyPurchase` falhou.
-    _setLogError('Parece que este pagamento não é válido.');
-  }
-
-  Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) {
-    // IMPORTANTE !! Sempre verifique uma compra antes de entregar o produto.
-    // Para fins de exemplo, retornamos true diretamente.
-    return Future<bool>.value(true);
-  }
-
-  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    purchaseDetailsList.forEach((PurchaseDetails purchaseDetails) async {
-      if (purchaseDetails.status == PurchaseStatus.pending) {
-        _showPendingUI();
-        return;
-      }
-
-      if (purchaseDetails.status == PurchaseStatus.error) {
-        _handleError(purchaseDetails.error);
-      } else if (purchaseDetails.status == PurchaseStatus.purchased) {
-        if (!await _verifyPurchase(purchaseDetails)) {
-          _handleInvalidPurchase(purchaseDetails);
-          return;
-        }
-        _deliverProduct(purchaseDetails);
-      }
-      if (Platform.isAndroid) {
-        await _connection.consumePurchase(purchaseDetails);
-      }
-      if (purchaseDetails.pendingCompletePurchase) {
-        await _connection.completePurchase(purchaseDetails);
-      }
-    });
-  }
-
   //endregion
+
 }

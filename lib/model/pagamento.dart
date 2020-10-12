@@ -1,28 +1,37 @@
+import 'package:flutter/material.dart';
 import 'package:protips/model/data_hora.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/model/user.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 
 class Pagamento {
   static const String TAG = 'Pagamento';
 
   bool isExpanded = false;
 
-  String tipsterId;
-  String filiadoId;
-  String valor;
-  String data;
+  Pagamento({@required this.userOrigem, @required this.userDestino, this.data, this.valor});
+
+  final User userOrigem;
+  final User userDestino;
+
+  final String valor;
+  final String data;
 
   Future<bool> salvar() async {
     try {
-      var result = await getFirebase.databaseReference
+      var result = await Firebase.databaseReference
           .child(FirebaseChild.PAGAMENTOS)
-          .child(tipsterId)
+          .child(userDestino.dados.id)
           .child(data)
-          .child(filiadoId)
+          .child(userOrigem.dados.id)
           .set(valor)
           .then((value) => true)
-          .catchError((ex) => false);
+          .catchError((e) => false);
       Log.d(TAG, 'salvar', result);
+
+      if(result)
+        EventListener.onPagamentoConcluido(userDestino);
       return result;
     } catch(e) {
       Log.e(TAG, 'salvar', e);
@@ -32,11 +41,11 @@ class Pagamento {
 
   Future<bool> delete() async {
     try {
-      var result = await getFirebase.databaseReference
+      var result = await Firebase.databaseReference
           .child(FirebaseChild.PAGAMENTOS)
-          .child(tipsterId)
+          .child(userDestino.dados.id)
           .child(data)
-          .child(filiadoId)
+          .child(userOrigem.dados.id)
           .remove()
           .then((value) => true)
           .catchError((ex) => false);
@@ -50,11 +59,11 @@ class Pagamento {
 
   static Future<bool> load(String userID) async {
     try {
-      var result = await getFirebase.databaseReference
+      var result = await Firebase.databaseReference
           .child(FirebaseChild.PAGAMENTOS)
           .child(userID)
           .child(DataHora.onlyDate)
-          .child(getFirebase.fUser.uid)
+          .child(Firebase.fUser.uid)
           .once()
           .then((value) => value.value != null)
           .catchError((ex) => false);
@@ -67,7 +76,7 @@ class Pagamento {
   }
   static Future<Map<dynamic, dynamic>> loadAll(String userID) async {
     try {
-      var result = await getFirebase.databaseReference
+      var result = await Firebase.databaseReference
           .child(FirebaseChild.PAGAMENTOS)
           .child(userID)
           .once()

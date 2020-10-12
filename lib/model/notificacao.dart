@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:protips/auxiliar/import.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/auxiliar/firebase.dart';
+import 'package:protips/auxiliar/log.dart';
 
 class Notificacao {
 
@@ -35,37 +35,30 @@ class Notificacao {
 
 }
 
-class NotificationActions {
-  static const String NOVO_TIP = 'NOVO_TIP';
-  static const String SOLICITACAO_TIPSTER = 'SOLICITACAO_TIPSTER';
-  static const String SOLICITACAO_FILIAL = 'SOLICITACAO_FILIAL';
-  static const String SOLICITACAO_ACEITA = 'SOLICITACAO_ACEITA';
-  static const String PAGAMENTO_REALIZADO = 'PAGAMENTO_REALIZADO';
-  static const String REALIZAR_PAGAMENTO = 'REALIZAR_PAGAMENTO';
-  static const String ATUALIZACAO = 'ATUALIZACAO';
-  static const String DENUNCIA = 'DENUNCIA';
-}
-
 class PushNotification {
   static const String TAG = "PushNotification";
 
   String _title;
   String _body;
-  String _de;
+  String _remetente;
   String _token;
+  String _topic;
   String _action;
   String _timestamp;
   String _itemId;
+  String _pagantes;
 //  Map<dynamic, dynamic> _destinos;
 
   Map toJson() => {
     'title': title,
     'body': body,
-    'de': de,
+    'remetente': remetente,
     'token': token,
+    'topic': topic,
     'action': action,
     'item_id': itemId,
     'timestamp': timestamp,
+    'pagantes': pagantes,
   };
 
   PushNotification();
@@ -73,15 +66,16 @@ class PushNotification {
   PushNotification.fromJson(Map map) {
     title = map['title'];
     body = map['body'];
-    de = map['de'];
+    remetente = map['remetente'];
     token = map['token'];
     action = map['action'];
     itemId = map['item_id'];
     timestamp = map['timestamp'];
+    pagantes = map['pagantes'];
   }
 
   Future<bool> enviar() async {
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.NOTIFICATIONS)
         .child(token)
         .child(timestamp)
@@ -92,12 +86,24 @@ class PushNotification {
     Log.d(TAG, 'enviar', result);
     return result;
   }
+  Future<bool> enviarTopic() async {
+    var result = await Firebase.databaseReference
+        .child(FirebaseChild.NOTIFICATIONS_TOPIC)
+        .child(remetente)
+        .child(timestamp)
+        .set(toJson())
+        .then((value) => true)
+        .catchError((e) => false);
+
+    Log.d(TAG, 'enviar', result);
+    return result;
+  }
 
   Future<bool> delete() async {
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.NOTIFICATIONS)
 //        .child(para)
-        .child(de)
+        .child(remetente)
         .child(timestamp)
         .remove()
         .then((value) => true)
@@ -115,6 +121,17 @@ class PushNotification {
     _action = value;
   }
 
+  String get topic => _topic ?? '';
+
+  set topic(String value) {
+    _topic = value;
+  }
+
+  String get pagantes => _pagantes ?? null;
+
+  set pagantes(String value) {
+    _pagantes = value;
+  }
 
   String get token => _token ?? '';
 
@@ -122,10 +139,10 @@ class PushNotification {
     _token = value;
   }
 
-  String get de => _de ?? '';
+  String get remetente => _remetente ?? '';
 
-  set de(String value) {
-    _de = value;
+  set remetente(String value) {
+    _remetente = value;
   }
 
   String get timestamp => _timestamp ?? '';
@@ -154,4 +171,23 @@ class PushNotification {
 
   //endregion
 
+}
+
+class NotificationActions {
+  static const String NOVO_TIP = 'NOVO_TIP';
+  static const String SOLICITACAO_TIPSTER = 'SOLICITACAO_TIPSTER';
+  static const String SOLICITACAO_FILIALDO = 'SOLICITACAO_FILIALDO';
+  static const String SOLICITACAO_ACEITA_TIPSTER = 'SOLICITACAO_ACEITA_TIPSTER';
+  static const String SOLICITACAO_ACEITA_FILIALDO = 'SOLICITACAO_ACEITA_FILIALDO';
+  static const String FILIALDO_REMOVIDO = 'FILIALDO_REMOVIDO';
+  static const String PAGAMENTO_REALIZADO = 'PAGAMENTO_REALIZADO';
+  static const String REALIZAR_PAGAMENTO = 'REALIZAR_PAGAMENTO';
+  static const String ATUALIZACAO = 'ATUALIZACAO';
+  static const String DENUNCIA = 'DENUNCIA';
+}
+
+class NotificationTopics {
+  static String receberTips(String uid) {
+    return 'receberTips_$uid';
+  }
 }

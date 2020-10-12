@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
 import 'package:protips/sub_pages/fragment_users_list.dart';
 
 class UsersPage extends StatefulWidget {
@@ -17,8 +19,8 @@ class MyWidgetState extends State<UsersPage> {
   @override
   void initState() {
     super.initState();
-    String meuId = getFirebase.fUser.uid;
-    _isTipster = getFirebase.user.dados.isTipster;
+    String meuId = Firebase.fUser.uid;
+    _isTipster = Firebase.user.dados.isTipster;
     if (_isTipster)
       _data.addAll(getUsers.data.values.where((e) => e.seguindo.containsKey(meuId)));
     else

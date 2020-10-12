@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
 class PostPage extends StatefulWidget {
   final Post post;
@@ -53,7 +57,7 @@ class MyWidgetState extends State<PostPage> {
   Widget itemLayout(Post item) {
     User user = getTipster.get(item.idTipster);
     double fotoUserSize = 40;
-    bool isMyPost = item.idTipster == getFirebase.fUser.uid;
+    bool isMyPost = item.idTipster == Firebase.fUser.uid;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
 
@@ -114,7 +118,7 @@ class MyWidgetState extends State<PostPage> {
               ),
             ),
             onTap: () {
-              if (user.dados.id == getFirebase.fUser.uid)
+              if (user.dados.id == Firebase.fUser.uid)
                 Navigate.to(context, PerfilPage());
               else
                 Navigate.to(context, PerfilTipsterPage(user));

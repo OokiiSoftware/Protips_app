@@ -2,12 +2,15 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/pages/crop_page.dart';
-import 'package:protips/res/resources.dart';
 import 'package:path/path.dart' as path;
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:random_string/random_string.dart';
 
 class NewPostPage extends StatefulWidget {
@@ -19,6 +22,7 @@ class MyWidgetState extends State<NewPostPage> {
   //region Variaveis
   static const String TAG = 'NewPostPage';
   static Post _currentPost;
+  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   bool _isPublico = false;
   bool _isPostando = false;
@@ -81,7 +85,7 @@ class MyWidgetState extends State<NewPostPage> {
       _link.text = _currentPost.link;
       _campeonato.text = _currentPost.campeonato;
     }
-    _isBloqueadoPorDenuncias = getFirebase.user.denuncias.length >= 5;
+    _isBloqueadoPorDenuncias = Firebase.user.denuncias.length >= 5;
     if (_isBloqueadoPorDenuncias) {
       _isPostando = true;//o botão ficará indisponível
     }
@@ -232,7 +236,9 @@ class MyWidgetState extends State<NewPostPage> {
           backgroundColor: !_isPostando ? MyTheme.accent() : MyTheme.tintColor2(),
           onPressed: !_isPostando ? () {
             _postManager();
-          } : _isBloqueadoPorDenuncias ? () {Log.toast('Você tem muitas denúncias.\nEntre em contato com o Admin', isError: true);} : null,
+          } : _isBloqueadoPorDenuncias ? () {
+            Log.snackbar('Você tem muitas denúncias.\nEntre em contato com o Admin', isError: true);
+          } : null,
         ),
       ),
     );
@@ -330,7 +336,7 @@ class MyWidgetState extends State<NewPostPage> {
     item.oddMinima = _oddMinima.text;
     item.oddAtual = _oddAtual.text;
     item.unidade = _unidades.text;
-    item.idTipster = getFirebase.fUser.uid;
+    item.idTipster = Firebase.fUser.uid;
     item.titulo = _titulo.text;
     item.descricao = _descricao.text;
     item.link = _link.text;

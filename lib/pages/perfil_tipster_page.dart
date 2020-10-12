@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:protips/animations/container_transition.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/pagamento.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/pagamento_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_g_denuncias.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
 
@@ -46,15 +51,15 @@ class MyWidgetState extends State<PerfilTipsterPage> {
     if (!_isdadosAtualizados)
       _updateUser();
 
-    var eu = getFirebase.user;
-    bool isMyPerfil = _user.dados.id == getFirebase.fUser.uid;
+    var eu = Firebase.user;
+    bool isMyPerfil = _user.dados.id == Firebase.fUser.uid;
     bool isTipster = _user.dados.isTipster;
     bool isPendente = _user.seguidoresPendentes.containsValue(eu.dados.id);
     bool isSeguindo = eu.seguindo.containsKey(_user.dados.id);
     bool isFilialPendente = eu.seguidoresPendentes.containsKey(_user.dados.id);
     bool isFilial = eu.seguidores.containsKey(_user.dados.id);
 
-    bool isAdminAndHasDenuncias = getFirebase.isAdmin && _user.denuncias.length > 0;
+    bool isAdminAndHasDenuncias = Firebase.isAdmin && _user.denuncias.length > 0;
 
     List<Widget> tabItems = [];
     List<Widget> tabs = [];
@@ -96,19 +101,29 @@ class MyWidgetState extends State<PerfilTipsterPage> {
               //AppBar
               MyLayouts.customAppBar(
                   context,
-                icon: (_user.isMyTipster) ?
-                IconButton(
-                  tooltip: 'Realizar Pagamento',
-                  icon: Icon(Icons.credit_card),
-                  onPressed: _isPagamentoLoaded ? () async {
-//                   bool result = await PaymentService.novoPagamento(_user);
-                    bool result = await Navigate.to(context, PagamentoPage(_user));
-                   setState(() {
-                     _isPagamentoLoaded = !result;
-                   });
-                  }: null,
+                icon: ((_user.isMyTipster && _isPagamentoLoaded) || Firebase.isAdmin) ?
+                OpenContainerWrapper(
+                  tooltip: Firebase.isAdmin ? 'Admin Mode' : 'Realizar Pagamento',
+                  statefulWidget: PagamentoPage(_user),
+                  child: Container(
+                    color: MyTheme.primaryLight(),
+                    child: Icon(
+                        Icons.credit_card,
+                        color: Firebase.isAdmin ? Colors.red : Colors.white
+                    ),
+                  ),
+                  onClosed: (value) => setState(() {_isPagamentoLoaded = !value;}),
                 ) : null,
               ),
+              // MyLayouts.customAppBar(
+              //     context,
+              //   icon: (_user.isMyTipster) ?
+              //   IconButton(
+              //     tooltip: 'Realizar Pagamento',
+              //     icon: Icon(Icons.credit_card),
+              //     onPressed: _isPagamentoLoaded ? _onPagarTipster: null,
+              //   ) : null,
+              // ),
               Padding(padding: EdgeInsets.only(top: 10)),
               //Foto e Dados
               MyLayouts.fotoEDados(_user),

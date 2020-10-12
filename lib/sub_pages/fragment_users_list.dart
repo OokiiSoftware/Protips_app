@@ -1,10 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/animations/container_transition.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/pages/perfil_filiado_page.dart';
 import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
 class FragmentUsersList extends StatefulWidget {
   final bool isFiliadosList;
@@ -40,7 +44,7 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
   @override
   void initState() {
     super.initState();
-    _eu = getFirebase.user;
+    _eu = Firebase.user;
     if(data == null) {
       data = new List<User>();
       data.addAll(getTipster.data);
@@ -129,16 +133,8 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
 
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
-            bool descricaoIsEmpty = item.dados.descricao.isEmpty;
-
-            return ListTile(
-              leading: MyLayouts.iconFormatUser(
-                  radius: 50,
-                  child: MyLayouts.fotoUser(item.dados)
-              ),
-              title: Text(item.dados.nome),
-              subtitle: Text(
-                  descricaoIsEmpty ? item.dados.tipname : item.dados.descricao),
+            return MyLayouts.userTile(
+              item,
               onTap: () {
                 setState(() {
                   item.isExpanded = !item.isExpanded;
@@ -146,14 +142,23 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
               },
             );
           },
-          body: ListTile(
-              title: Text('Visitar ' + item.dados.tipname),
-              subtitle: Text(subTitleText),
-              onTap: () async {
-                await Navigate.to(context, PerfilTipsterPage(item));
-                setState(() {});
-              }),
+
+          // body: ListTile(
+          //     title: Text('Visitar ' + item.dados.tipname),
+          //     subtitle: Text(subTitleText),
+          //     onTap: () async {
+          //       await Navigate.to(context, PerfilTipsterPage(item));
+          //       setState(() {});
+          //     }),
           isExpanded: item.isExpanded,
+          body: OpenContainerWrapper(
+            statefulWidget: PerfilTipsterPage(item),
+            child: ListTile(
+                title: Text('Visitar ' + item.dados.tipname),
+                subtitle: Text(subTitleText)
+            ),
+            onClosed: (value) => setState(() {}),
+          )
         );
       }).toList(),
     );
@@ -188,13 +193,20 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
               },
             );
           },
-          body: ListTile(
-              title: Text('Visitar '+ item.dados.tipname),
-              onTap: () async {
-                await Navigate.to(context, PerfilFiliadoPage(item));
-                setState(() {});
-              }),
+          // body: ListTile(
+          //     title: Text('Visitar '+ item.dados.tipname),
+          //     onTap: () async {
+          //       await Navigate.to(context, PerfilFiliadoPage(item));
+          //       setState(() {});
+          //     }),
           isExpanded: item.isExpanded,
+            body: OpenContainerWrapper(
+              statefulWidget: PerfilFiliadoPage(item),
+              child: ListTile(
+                  title: Text('Visitar ' + item.dados.tipname),
+              ),
+              onClosed: (value) => setState(() {}),
+            )
         );
       }).toList(),
     );
@@ -205,7 +217,7 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
     data.clear();
     setState(() {
       if (isFiliadosList) {
-        String meuId = getFirebase.fUser.uid;
+        String meuId = Firebase.fUser.uid;
         data.addAll(getUsers.data.values.where((e) => e.seguindo.containsKey(meuId)));
       }
       else
@@ -216,3 +228,72 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
 
   //endregion
 }
+/*
+*
+        child: Column(
+          children: [
+            OpenContainerWrapper(
+              // statefulWidget: Navigate.to(context, PerfilTipsterPage(user)),
+              closedBuilder: (BuildContext _, VoidCallback openContainer) {
+                return ExampleCard(
+                    openContainer: openContainer,
+                  child: itemLayout(Post()),
+                );
+              },
+              onClosed: (value) {},
+            ),
+            _TransitionListTile(
+              title: 'Container transform',
+              subtitle: 'OpenContainer',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) {
+                      return OpenContainerTransformDemo();
+                    },
+                  ),
+                );
+              },
+            ),
+            _TransitionListTile(
+              title: 'Shared axis',
+              subtitle: 'SharedAxisTransition',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) {
+                      return SharedAxisTransitionDemo();
+                    },
+                  ),
+                );
+              },
+            ),
+            _TransitionListTile(
+              title: 'Fade through',
+              subtitle: 'FadeThroughTransition',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) {
+                      return FadeThroughTransitionDemo();
+                    },
+                  ),
+                );
+              },
+            ),
+            _TransitionListTile(
+              title: 'Fade',
+              subtitle: 'FadeScaleTransition',
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) {
+                      return FadeScaleTransitionDemo();
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+* */

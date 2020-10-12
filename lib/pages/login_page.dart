@@ -2,15 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/pages/cadastro_page.dart';
 import 'package:protips/pages/main_page.dart';
 import 'package:protips/pages/recuperar_senha_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:protips/res/theme.dart';
 
 class LoginPage extends StatefulWidget{
-//  static const String tag = 'LoginPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -44,7 +46,6 @@ class MyWidgetState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    Log.setToast = context;
     //region Variaveis
     var backgorundColor = MyTheme.primaryLight();
     var iconColor = MyTheme.primaryDark();
@@ -251,7 +252,7 @@ class MyWidgetState extends State<LoginPage> {
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: senha);
-      getFirebase.setUltinoEmail(email);
+      Firebase.setUltinoEmail(email);
       Navigate.toReplacement(context, MainPage());
       Log.d(TAG, 'Login com Email', 'OK');
     } catch(e) {
@@ -278,12 +279,12 @@ class MyWidgetState extends State<LoginPage> {
   void onLoginWithGoogleButtonPressed() async {
     try{
       Log.d(TAG, 'Login com Google');
-      await getFirebase.googleAuth();
+      await Firebase.googleAuth();
       Log.d(TAG, 'Login com Google', 'OK');
       Navigate.toReplacement(context, MainPage());
     } catch (e) {
       Log.e(TAG, 'Login com Google Fail', e);
-      Log.toast('Login with Google fails');
+      Log.snackbar('Login with Google fails', isError: true);
     }
   }
 
@@ -297,7 +298,7 @@ class MyWidgetState extends State<LoginPage> {
   }
 
   _loadUltimoEmail() async {
-    cEmail.text = await getFirebase.getUltinoEmail();
+    cEmail.text = Firebase.getUltinoEmail();
   }
 
   void onCadastroButtonPressed() {

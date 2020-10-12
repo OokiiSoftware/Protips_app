@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
 class AboutPage extends StatefulWidget {
   @override
@@ -25,22 +27,22 @@ class MyWidgetState extends State<AboutPage> {
             ),
             divider,
             //Texto
-            Text(MyStrings.APP_NAME, style: TextStyle(fontSize: 22)),
+            Text(MyResources.APP_NAME, style: TextStyle(fontSize: 22)),
             divider,
             Text(MyStrings.VERSAO + ': ' + Aplication.packageInfo.version),
             divider,
             Text(MyStrings.CONTATOS),
             GestureDetector(
-              child: Text(MyStrings.app_whatsapp, style: TextStyle(color: MyTheme.primary())),
-              onTap: () {Import.openWhatsApp(MyStrings.app_whatsapp, context);},
+              child: Text(MyResources.app_whatsapp, style: TextStyle(color: MyTheme.primary())),
+              onTap: () {Import.openWhatsApp(MyResources.app_whatsapp, context);},
             ),
             GestureDetector(
-              child: Text(MyStrings.app_email, style: TextStyle(color: MyTheme.primary())),
-              onTap: () {Import.openEmail(MyStrings.app_email, context);},
+              child: Text(MyResources.app_email, style: TextStyle(color: MyTheme.primary())),
+              onTap: () {Import.openEmail(MyResources.app_email, context);},
             ),
             Divider(height: 30),
             Text(MyStrings.POR),
-            Text(MyStrings.company_name),
+            Text(MyResources.company_name),
           ]),
         ),
       ),

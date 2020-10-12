@@ -1,12 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/pages/config_page.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_g_denuncias.dart';
 import 'package:protips/sub_pages/fragment_g_erros.dart';
 import 'package:protips/sub_pages/fragment_g_solicitacoes.dart';
 
 class GerenciaPage extends StatefulWidget {
-//  static const String tag = 'GerenciaPage';
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }

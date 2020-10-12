@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:protips/pages/main_page.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
+import 'auxiliar/log.dart';
 
 void main() {
   // Para a biblioteca de cobrança do Google Play 2.0 no Android, é obrigatório ligar
   // como parte da inicialização do aplicativo.
-  InAppPurchaseConnection.enablePendingPurchases();
+  // InAppPurchaseConnection.enablePendingPurchases();
   runApp(Main());
 }
 
@@ -16,7 +17,7 @@ class Main extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: MyStrings.APP_NAME,
+      title: MyResources.APP_NAME,
       theme: ThemeData(
           primaryColorLight: MyTheme.primaryLight(),
           primaryColorDark: MyTheme.primaryDark(),
@@ -32,9 +33,19 @@ class Main extends StatelessWidget {
             headline6: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           bodyText2: TextStyle(fontSize: 14),
         ),
+      ).copyWith(
+        pageTransitionsTheme: PageTransitionsTheme(
+          builders: <TargetPlatform, PageTransitionsBuilder>{
+            TargetPlatform.android: ZoomPageTransitionsBuilder()
+          }
+        )
       ),
 //      routes: routes,
       home: MainPage(),
+      builder: (context, child) => Scaffold(
+        key: Log.scaffKey,
+          body: child
+      ),// usado pra funcionar o SnackBar global
       //getInitPage
       /*home: FutureBuilder<FirebaseUser> (
         future: getFirebase.auth().currentUser(),
@@ -56,3 +67,4 @@ class Main extends StatelessWidget {
     );
   }
 }
+

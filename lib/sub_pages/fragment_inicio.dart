@@ -1,15 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/denuncia_page.dart';
 import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
-// ignore: must_be_immutable
 class FragmentInicio extends StatefulWidget {
-  User user;
+  final User user;
   FragmentInicio({this.user});
   @override
   State<StatefulWidget> createState() => MyWidgetState(user: user);
@@ -26,9 +28,6 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
   bool canOpenPerfil = false;
 
   bool _inProgress = false;
-//  double progressBarValue = 0;
-//  CircularProgressIndicator progressBar;
-
   DateTime _dateTime;
 
   //endregion
@@ -77,6 +76,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
           ),
           onPressed: _onFloatingAtionPressed
       ) : null,
+      // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 
@@ -87,7 +87,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
   Widget itemLayout(Post item) {
     //region Variaveis
     User user = getTipster.get(item.idTipster);
-    String meuId = getFirebase.fUser.uid;
+    String meuId = Firebase.fUser.uid;
     bool isMyPost = item.idTipster == meuId;
 
     var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
@@ -404,7 +404,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
       list.addAll(await getPosts.data(data));
     }
     else {
-      String meuId = getFirebase.fUser.uid;
+      String meuId = Firebase.fUser.uid;
       if (user.seguidores.containsKey(meuId)) {
         String dataPagamentoTemp = '';
         bool inserir = false;
@@ -418,7 +418,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
             list.add(item);
         }
       }
-      else if (getFirebase.isAdmin || user.dados.id == meuId) {
+      else if (Firebase.isAdmin || user.dados.id == meuId) {
         list.addAll(user.postes.values);
       }
       else

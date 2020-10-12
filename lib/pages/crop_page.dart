@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:async';
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_crop/image_crop.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
 class CropImagePage extends StatefulWidget {
   final double aspect;

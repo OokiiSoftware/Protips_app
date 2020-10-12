@@ -6,6 +6,7 @@ import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/pages/post_page.dart';
+import 'package:protips/auxiliar/firebase.dart';
 
 // ignore: must_be_immutable
 class FragmentDenunciasG extends StatefulWidget {
@@ -36,7 +37,7 @@ class MyWidgetState extends State<FragmentDenunciasG> with AutomaticKeepAliveCli
   @override
   void initState() {
     super.initState();
-    _isAdmin = getFirebase.isAdmin;
+    _isAdmin = Firebase.isAdmin;
     _preencherList();
   }
 

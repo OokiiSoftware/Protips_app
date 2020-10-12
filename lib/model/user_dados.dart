@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/endereco.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/auxiliar/log.dart';
 
 class UserDados {
 
@@ -80,7 +81,7 @@ class UserDados {
       if (!await _userUpdateInfo())
         return false;
 
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(id)
         .child(FirebaseChild.DADOS)
@@ -105,7 +106,7 @@ class UserDados {
     Log.d(TAG, 'uploadUserPhoto', 'Iniciando', file.path);
 
     try {
-      final StorageReference ref = getFirebase.storage
+      final StorageReference ref = Firebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.PERFIL)
           .child(id + '.jpg');
@@ -141,7 +142,7 @@ class UserDados {
     }
     try {
       if (i > 0)
-        await getFirebase.fUser.updateProfile(userUpdateInfo);
+        await Firebase.fUser.updateProfile(userUpdateInfo);
       Log.d(TAG, 'uploadUserInfo', 'OK');
       return true;
     } catch (e) {
@@ -151,7 +152,7 @@ class UserDados {
   }
 
   Future<bool> addIdentificador() async {
-    return await getFirebase.databaseReference
+    return await Firebase.databaseReference
         .child(FirebaseChild.IDENTIFICADOR)
         .child(tipname)
         .set(id)

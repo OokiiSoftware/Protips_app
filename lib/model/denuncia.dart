@@ -1,5 +1,5 @@
-import 'package:protips/auxiliar/import.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/auxiliar/firebase.dart';
+import 'package:protips/auxiliar/log.dart';
 
 class Denuncia {
 
@@ -50,7 +50,7 @@ class Denuncia {
 
 
   Future<bool> salvar() async {
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.DENUNCIAS)
         .child(data)
         .set(toJson())
@@ -61,7 +61,7 @@ class Denuncia {
   }
 
   Future<bool> delete() async {
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.DENUNCIAS)
         .child(data)
         .remove()
@@ -72,7 +72,7 @@ class Denuncia {
   }
 
   Future<bool> aprovar() async {
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idUser)
         .child(FirebaseChild.DENUNCIAS)
@@ -81,7 +81,7 @@ class Denuncia {
         .then((value) => true)
         .catchError((ex) => false);
     if (result) {
-      getFirebase.notificationManager.sendDenuncia(this);
+      Firebase.notificationManager.sendDenuncia(this);
       await delete();
     }
     Log.d(TAG, 'aprovar', result);

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:protips/auxiliar/import.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:protips/auxiliar/firebase.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
 // ignore: must_be_immutable
 class DenunciaPage extends StatefulWidget {
@@ -78,8 +82,6 @@ class MyWidgetState extends State<DenunciaPage> {
   }
 
   Widget _itemLayoutUser(User item) {
-    double fotoSize = 50;
-
     return ListTile(
         leading: MyLayouts.iconFormatUser(
             radius: 50,
@@ -91,8 +93,6 @@ class MyWidgetState extends State<DenunciaPage> {
   }
 
   Widget _itemLayoutPost(Post item) {
-    double fotoSize = 50;
-
     return ListTile(
       leading: MyLayouts.fotoPost(item),
       title: Text(item.titulo),
@@ -105,10 +105,10 @@ class MyWidgetState extends State<DenunciaPage> {
     if (_verificarItem(d)) {
       _setEnviando(true);
       if (await d.salvar()) {
-        Log.toast('Enviado');
+        Log.snackbar('Enviado');
         Navigator.pop(context);
       } else
-        Log.toast('Ocorreu um erro', isError: true);
+        Log.snackbar('Ocorreu um erro', isError: true);
     }
     _setEnviando(false);
   }
@@ -121,7 +121,7 @@ class MyWidgetState extends State<DenunciaPage> {
     d.isUser = _isUser;
     d.idUser = _isUser ? user.dados.id : post.idTipster;
     d.itemKey = post?.data;//data é o key de um post
-    d.idDenunciante = getFirebase.fUser.uid;
+    d.idDenunciante = Firebase.fUser.uid;
     return d;
   }
 

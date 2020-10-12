@@ -1,13 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
+import 'package:protips/model/post.dart';
 import 'package:protips/pages/pagamento_test_page.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 
-// ignore: must_be_immutable
 class ConfigPage extends StatefulWidget{
-//  static const String tag = 'ConfigPage';
-  bool isAdmin;
+  final bool isAdmin;
   ConfigPage({this.isAdmin = false});
   @override
   State<StatefulWidget> createState() => MyWidgetState(isAdmin);
@@ -42,8 +44,18 @@ class MyWidgetState extends State<ConfigPage> {
                 onPressed: !inProgress ? _setAppVersao : null,
               ),
               ElevatedButton(
-                child: Text('Teste de Pagamento'),
+                child: Text('Abrir tela de teste de Pagamento'),
                 onPressed: () => Navigate.to(context, PagamentoTestPage(10.0)),
+              ),
+              ElevatedButton(
+                child: Text('Enviar Tip de teste'),
+                onPressed: () {
+                  if (!Firebase.user.dados.isTipster) {
+                    Log.snackbar('Esta não é uma conta Tipster');
+                    return;
+                  }
+                  Post.criarTeste(isPublico: false).postar(isTeste: true);
+                },
               ),
             ]
             else...[
@@ -62,7 +74,7 @@ class MyWidgetState extends State<ConfigPage> {
   //region Metodos
 
   void _onSalvar() async {
-    Log.toast(MyTexts.DADOS_SALVOS);
+    Log.snackbar(MyTexts.DADOS_SALVOS);
   }
 
   void _setAppVersao() async {
@@ -99,11 +111,11 @@ class MyWidgetState extends State<ConfigPage> {
       Aplication.appVersionInDatabase = newVersion;
 
       _setInProgress(true);
-      await getFirebase.databaseReference
+      await Firebase.databaseReference
           .child(FirebaseChild.VERSAO)
           .set(newVersion)
-          .then((value) => Log.toast(MyTexts.DADOS_SALVOS))
-          .catchError((e) => Log.toast(MyErros.ERRO_GENERICO));
+          .then((value) => Log.snackbar(MyTexts.DADOS_SALVOS))
+          .catchError((e) => Log.snackbar(MyErros.ERRO_GENERICO));
       _setInProgress(false);
     }
   }

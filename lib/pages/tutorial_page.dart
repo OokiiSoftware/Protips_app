@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 int _currentPosition = 0;

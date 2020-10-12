@@ -1,7 +1,6 @@
 import 'package:device_info/device_info.dart';
 import 'dart:io' show Platform;
-
-import 'package:protips/auxiliar/import.dart';
+import 'log.dart';
 
 class DeviceInfo {
 

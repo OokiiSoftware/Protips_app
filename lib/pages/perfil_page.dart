@@ -1,18 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:image_crop/image_crop.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/auxiliar/input_formatter.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
 import 'package:protips/pages/crop_page.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_g_denuncias.dart';
 
 class PerfilPage extends StatefulWidget {
@@ -66,8 +72,8 @@ class MyWidgetState extends State<PerfilPage> {
   String dateNascimentoValue;
   String souUm = ' ';
 
-  User user = getFirebase.user;
-  FirebaseUser fUser = getFirebase.fUser;
+  User user = Firebase.user;
+  FirebaseUser fUser = Firebase.fUser;
 
   //endregion
 
@@ -75,6 +81,7 @@ class MyWidgetState extends State<PerfilPage> {
 
   @override
   void initState() {
+    //region variaveis
     var dados = user.dados;
 
     _precos = Import.getDropDownMenuItems(GoogleProductsID.precos.values.toList());
@@ -111,7 +118,7 @@ class MyWidgetState extends State<PerfilPage> {
     _telefone.text = phone;
     _tipName.text = tipname;
     _descricao.text = descricao;
-
+    //endregion
     if (precoPadrao.isEmpty)
       precoPadrao = GoogleProductsID.precos['10'];
     _currentPreco = precoPadrao;
@@ -123,18 +130,15 @@ class MyWidgetState extends State<PerfilPage> {
     //region Variaveis
 //    double widthScreen = MediaQuery.of(context).size.width;
     double containerMargin = 20;
-//    double _containerPaddingTop = 0;
     double itemPaddingValue = 10;
 
     //region Container que contem os textField
-//    var silverPadding = EdgeInsets.only(top: 15, bottom: 15);
     var itemPadding = EdgeInsets.only(left: itemPaddingValue, right: itemPaddingValue);
 
     var itemMargin = EdgeInsets.only(top: containerMargin);
     var itemDecoration = BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(5)),
         color: MyTheme.primary(),
-//        boxShadow: [BoxShadow(color: Colors.white, blurRadius: 3)]
     );
     //endregion
 
@@ -165,7 +169,6 @@ class MyWidgetState extends State<PerfilPage> {
         return back;
       },
       child: Scaffold(
-//        backgroundColor: MyTheme.primaryLight(),
         appBar: AppBar(
           title: Text(Titles.MEU_PERFIL, style: TextStyle(
               color: MyTheme.textColor(), fontWeight: FontWeight.bold)),
@@ -184,175 +187,6 @@ class MyWidgetState extends State<PerfilPage> {
           padding: EdgeInsets.all(30),
           child: Column(
             children: [
-              /*SliverAppBar(
-              pinned: true,
-              expandedHeight: widthScreen/2,
-              title: Text(Titles.MEU_PERFIL, style: TextStyle(
-                  color: MyTheme.textColor(), fontWeight: FontWeight.bold)),
-              //Foto ◢◤
-              flexibleSpace: FlexibleSpaceBar(
-//                  stretchModes: <StretchMode>[
-//                    StretchMode.zoomBackground,
-//                    StretchMode.blurBackground,
-//                    StretchMode.fadeTitle,
-//                  ],
-                  //Foto
-                background: Container(
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    color: Colors.red,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(100),
-                      child: GestureDetector(
-                        child: _fotoLocal == null ?
-                        MyIcons.fotoUser(user.dados, null) :
-                        Image.file(_fotoLocal, ),
-                        onTap: () {
-                          _openCropImage();
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-                  //Botão salvar
-                  title: Align(
-                    alignment: Alignment.bottomRight,
-                    child: Container(
-                      child: FlatButton(
-                        child: Text(MyStrings.SALVAR,
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        textColor: MyTheme.textColor(),
-                        onPressed: () {
-                          salvarUserManager(context);
-                        },
-                      ),
-                    ),
-                  )
-              ),
-            ),*/
-              /*SliverPadding(
-                padding: EdgeInsets.all(0),
-                sliver: SliverGrid.count(
-                  crossAxisCount: 1,
-                  childAspectRatio: 90,
-                  children: [
-                    progressBar
-                  ],
-                ),
-              ),
-              //Foto
-              SliverPadding(
-                padding: EdgeInsets.all(0),
-                sliver: SliverGrid.count(
-                  crossAxisCount: 1,
-                  childAspectRatio: 3,
-                  children: [
-                    Container(
-//                    width: 100,
-//                    height: 100,
-                      color: Colors.red,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: GestureDetector(
-                          child: _fotoLocal == null ?
-                          MyIcons.fotoUser(user.dados, 100) :
-                          Image.file(_fotoLocal, ),
-                          onTap: () {
-                            _openCropImage();
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SliverPadding(
-                padding: silverPadding,
-                sliver: SliverGrid.count(
-                  crossAxisCount: 1,
-                  childAspectRatio: 8,
-                  mainAxisSpacing: 8,
-                  children: [
-                    //Nome
-                    CustomTextField(_nome, TextInputType.name, MyStrings.NOME,
-                        valueIsEmpty: _nomeIsEmpyt, onTap: () {
-                          setState(() {
-                            _nomeIsEmpyt = false;
-                          });
-                        }),
-                    //Tipname
-                    CustomTextField(
-                        _tipName, TextInputType.name, MyStrings.TIP_NAME,
-                        readOnly: !isPrimeiroLogin,
-                        valueIsEmpty: _tipNameIsEmpyt,
-                        tipNameExiste: _tipNameExixte,
-                        onTap: () {
-                          setState(() {
-                            _tipNameIsEmpyt = false;
-                            _tipNameExixte = false;
-                          });
-                        }),
-                    //Email
-                    CustomTextField(_email, TextInputType.emailAddress, MyStrings.EMAIL, readOnly: true),
-                    //Telefone
-                    CustomTextField(_telefone, TextInputType.phone, MyStrings.TELEFONE),
-                    //Nascimento
-                    CustomTextField(
-                        _nascimento, TextInputType.datetime, MyStrings.NASCIMENTO,
-                        dataIdadeMinima: _nascimentoIdadeMinima,
-                        readOnly: true,
-                        onTap: () {
-                          _nascimentoIdadeMinima = false;
-                          _selectDate(context);
-                        }),
-                    //Estado
-                    CustomDropdownButton(_dropDownEstados, _currentEstado, MyStrings.ESTADO),
-                    //Privacidade
-                    CustomDropdownButton(_dropDownPrivacidade, _currentPrivacidade, MyStrings.PRIVACIDADE),
-
-                    //Outros dados
-                    Container(
-                      margin: itemMargin,
-                      padding: itemPadding,
-                      alignment: Alignment.bottomLeft,
-                      child: Text('Outros dados'),
-                    ),
-                    //Descrição
-                    CustomTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO),
-                    //Sou Um
-                    CustomTextField(_souUm, TextInputType.name, MyTexts.SOU_UM, readOnly: true),
-
-                    if (user.denuncias.length > 0)
-                      Container(
-                        alignment: Alignment.center,
-                        margin: EdgeInsets.fromLTRB(containerPadding, 0, containerPadding, _containerPaddingTop),
-                        decoration: itemDecoration,
-                        child: Text('Você tem ${user.denuncias.length} denúncias',
-                            style: TextStyle(color: Colors.red)),
-                      ),
-                    //Button Sotilitar Ser Tipster
-                    if (!isPrimeiroLogin)
-                      Container(
-                        margin: EdgeInsets.fromLTRB(containerPadding, 0, containerPadding, _containerPaddingTop),
-                        decoration: itemDecoration,
-                        child: ButtonTheme(
-                          child: FlatButton(
-                            child: Text(
-                                !user.solicitacaoEmAndamento() ? user.dados
-                                    .isTipster ?
-                                MyTexts.QUERO_SER_FILIADO.toUpperCase() :
-                                MyTexts.QUERO_SER_TIPSTER.toUpperCase() :
-                                MyTexts.CANCELAR_SOLICITACAO.toUpperCase()
-                            ),
-                            onPressed: _solicitarAlterarCategoria,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),*/
-
               if(isPrimeiroLogin)
                 Container(
                   height: 30,
@@ -367,20 +201,20 @@ class MyWidgetState extends State<PerfilPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    width: 90,
-                    height: 90,
+                      width: 90,
+                      height: 90,
 //                    margin: EdgeInsets.only(bottom: 10),
-                    child: MyLayouts.iconFormatUser(
-                      radius: 100,
-                      child: GestureDetector(
-                        child: _fotoLocal == null ?
-                        MyLayouts.fotoUser(user.dados) :
-                        Image.file(_fotoLocal),
-                        onTap: () {
-                          _openCropImage();
-                        },
-                      ),
-                    )
+                      child: MyLayouts.iconFormatUser(
+                        radius: 100,
+                        child: GestureDetector(
+                          child: _fotoLocal == null ?
+                          MyLayouts.fotoUser(user.dados) :
+                          Image.file(_fotoLocal),
+                          onTap: () {
+                            _openCropImage();
+                          },
+                        ),
+                      )
                   ),
                   Padding(padding: EdgeInsets.only(right: 10)),
                   //Tipname
@@ -457,20 +291,20 @@ class MyWidgetState extends State<PerfilPage> {
               //Denuncias
               if (user.denuncias.length > 0)
                 GestureDetector(
-                  child: Container(
-                    height: 40,
-                    alignment: Alignment.center,
-                    margin: EdgeInsets.only(top: containerMargin),
-                    decoration: itemDecoration,
-                    child: Text('Você tem ${user.denuncias.length} denúncias',
-                        style: TextStyle(color: Colors.yellow)),
-                  ),
-                  onTap: () {
-                    MyLayouts.dialogOK(context,
-                        content: FragmentDenunciasG(user),
-                        contentPadding: EdgeInsets.zero
-                    );
-                  }
+                    child: Container(
+                      height: 40,
+                      alignment: Alignment.center,
+                      margin: EdgeInsets.only(top: containerMargin),
+                      decoration: itemDecoration,
+                      child: Text('Você tem ${user.denuncias.length} denúncias',
+                          style: TextStyle(color: Colors.yellow)),
+                    ),
+                    onTap: () {
+                      DialogBox.dialogOK(context,
+                          content: FragmentDenunciasG(user),
+                          contentPadding: EdgeInsets.zero
+                      );
+                    }
                 ),
               //Button Sotilitar Ser Tipster
               if (!isPrimeiroLogin)
@@ -608,7 +442,8 @@ class MyWidgetState extends State<PerfilPage> {
         }
       }
       String text = resultOK ? MyTexts.PERFIL_USER_SALVO : MyErros.PERFIL_USER_SALVO;
-      Log.toast(text, isError: !resultOK);
+      Log.snackbar(text, isError: !resultOK);
+      // Log.toast(text, isError: !resultOK);
       Log.d(TAG, 'Salvar', text);
     }
 
@@ -629,7 +464,7 @@ class MyWidgetState extends State<PerfilPage> {
     data.setData(_nascimento.text);
 
     UserDados dados = UserDados();
-    dados.id = getFirebase.fUser.uid;
+    dados.id = Firebase.fUser.uid;
     dados.nome = _nome.text;
     dados.email = _email.text;
     dados.tipname = _tipName.text;
@@ -678,7 +513,7 @@ class MyWidgetState extends State<PerfilPage> {
   }
 
   Future<bool> _verificarTipname(String tipName) async {
-    return await getFirebase.databaseReference
+    return await Firebase.databaseReference
         .child(FirebaseChild.IDENTIFICADOR)
         .child(tipName)
         .once()
@@ -733,7 +568,7 @@ class MyWidgetState extends State<PerfilPage> {
     var title = MyTexts.solicitacao_filiado;
     var content = Text(MyTexts.solicitacao_filiado_mensagem);
 
-    var result = await MyLayouts.dialogCancelOK(context, title: title, content: content);
+    var result = await DialogBox.dialogCancelOK(context, title: title, content: content);
 
     if (result.isOk) {
       if (await user.habilitarTipster(false)) {
@@ -751,8 +586,8 @@ class MyWidgetState extends State<PerfilPage> {
   void _solicitarSerTipster(final bool solicitei) async {
     String title = MyTexts.solicitacao_tipster;
     String mensagem = MyTexts.solicitacao_tipster_mensagem;
-    String whatsapp = MyStrings.app_whatsapp;
-    String email = MyStrings.app_email;
+    String whatsapp = MyResources.app_whatsapp;
+    String email = MyResources.app_email;
 
     var content = SingleChildScrollView(
       child: ListBody(
@@ -771,7 +606,7 @@ class MyWidgetState extends State<PerfilPage> {
       ),
     );
 
-    var result = await MyLayouts.dialogCancelOK(context, title: title, content: content);
+    var result = await DialogBox.dialogCancelOK(context, title: title, content: content);
 
     if (result.isOk)
       solicitacao(solicitei);

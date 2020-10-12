@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
@@ -13,6 +16,8 @@ import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/pages/perfil_tipster_page.dart';
 import 'package:protips/pages/tutorial_page.dart';
 import 'package:protips/res/resources.dart';
+import 'package:protips/res/strings.dart';
+import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
 import 'package:protips/sub_pages/fragment_perfil.dart';
 import 'package:protips/sub_pages/fragment_users_list.dart';
@@ -20,6 +25,7 @@ import 'package:random_string/random_string.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatefulWidget {
+  MainPage({Key key}) : super(key: key);
   @override
   State<StatefulWidget> createState() => MyWidgetState();
 }
@@ -76,10 +82,8 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    Log.setToast = context;
-
     //region Variaveis
-    _user = getFirebase.user.dados;
+    _user = Firebase.user.dados;
     _isTipster = _user.isTipster;
 
     var navIconColor = MyTheme.tintColor();
@@ -139,7 +143,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _showUserDados ? _user.nome : MyStrings.APP_NAME,
+                        _showUserDados ? _user.nome : MyResources.APP_NAME,
                         style: TextStyle(
                           color: MyTheme.textColor(),
                           fontSize: 18,
@@ -149,7 +153,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        _showUserDados ? _user.email : MyStrings.app_email,
+                        _showUserDados ? _user.email : MyResources.app_email,
                         style: TextStyle(
                           color: MyTheme.textSubtitleColor(),
                           fontSize: 15,
@@ -184,7 +188,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 title: Text(MyMenus.MEUS_POSTS, style: draewrTextStyle),
                 onTap: () {
                   _closeDrawer(context);
-                  Navigate.to(context, PerfilTipsterPage(getFirebase.user));
+                  Navigate.to(context, PerfilTipsterPage(Firebase.user));
                 },
               ),
               ]
@@ -207,7 +211,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 Navigate.to(context,PerfilPage());
               },
             ),
-            if (getFirebase.isAdmin)
+            if (Firebase.isAdmin)
               ListTile(
                 leading: Icon(Icons.whatshot, color: draewrIconColor),
                 title: Text(MyMenus.GERENCIA, style: draewrTextStyle),
@@ -293,7 +297,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   //region Metodos
 
   Future<void> _init() async {
-    var result = await getFirebase.init();
+    var result = await Firebase.init();
     try {
       if (result == FirebaseInitResult.fUserNull)
         throw Exception(FirebaseInitResult.fUserNull);
@@ -301,38 +305,36 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       Aplication.init(context);
 
       if (await OfflineData.readOfflineData()) {
-        User item = await getUsers.get(getFirebase.fUser.uid);
+        User item = await getUsers.get(Firebase.fUser.uid);
         if (item != null)
-          getFirebase.setUser(item);
+          Firebase.setUser(item);
         setState(() {
           _isInicializado = true;
         });
       }
 
       //Obtem os dados do usuário logado
-      if (!await getFirebase.atualizarOfflineUser()) {
+      if (!await Firebase.atualizarOfflineUser()) {
         var result2 = await Navigate.to(context, PerfilPage());
         if (result2 == null) throw Exception(FirebaseInitResult.userNull);
          else Navigate.to(context, PerfilPage());
       }
 
-      _isTipster = getFirebase.user.dados.isTipster;
+      _isTipster = Firebase.user.dados.isTipster;
       _verificarTutorial();
 
-      getFirebase.observMyFirebaseData();
+      Firebase.observMyFirebaseData();
 
       await getUsers.baixar();
-      await _initPlatformState();
+
       setState(() {
         _isInicializado = true;
       });
 
       await OfflineData.saveOfflineData();
-//      await getUsers.saveFotosPerfilLocal();
       await getPosts.saveFotosLocal();
       _verificarDiaPagamento();
 
-//      OfflineData.deletefile(OfflineData.appTempPath, OfflineData.appTempName);
       _onAtualizarTap(false);
 
     } catch(e) {
@@ -354,7 +356,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     p.isPublico = false;
     p.data = DataHora.now();
     p.descricao = 'desc';
-    p.idTipster = getFirebase.fUser.uid;
+    p.idTipster = Firebase.fUser.uid;
     p.campeonato = 'camp';
     p.linha = 'linha';
     p.esporte = 'esport';
@@ -367,8 +369,8 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   void _onLogoutTap() {
     FirebaseAuth.instance.signOut();
-    getFirebase.user.logout();
-    getFirebase.finalize();
+    Firebase.user.logout();
+    Firebase.finalize();
     Navigate.toReplacement(context, LoginPage());
   }
 
@@ -381,7 +383,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
   void _onAtualizarTap([bool showMsg = true]) async {
     if (showMsg)
-      Log.toast('Verificando Atualização');
+      Log.snackbar('Verificando Atualização');
 //     if(await _openFile()) {
 //       return;
 //     }
@@ -474,7 +476,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
         Import.openUrl(resultData, context);
     } else
     if (showMsg)
-      Log.toast('Sem Atualização');
+      Log.snackbar('Sem Atualização');
   }
 
   void _verificarTutorial() async {
@@ -494,11 +496,6 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   void _closeDrawer(BuildContext context) {
     Navigator.pop(context);
     _showUserDados = !_showUserDados;
-  }
-
-  Future<void> _initPlatformState() async {
-//    await Purchases.setDebugLogsEnabled(true);
-//    await Purchases.setup(MyResources.revenueCatApi);
   }
 
   /*Future<bool> _openFile() async {
@@ -540,7 +537,7 @@ class DataSearch extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return PerfilTipsterPage(getFirebase.user);
+    return PerfilTipsterPage(Firebase.user);
   }
 
   @override
@@ -578,3 +575,28 @@ class DataSearch extends SearchDelegate<String> {
   }
 
 }
+
+/*
+  //BottomAppBar com detalhe no botão flutuante
+
+  extendBody: true
+  floatingActionButton: FloatingActionButton(),
+  floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+  BottomAppBar(
+        shape: CircularNotchedRectangle(),
+        color: MyTheme.primary(),
+        child: IconTheme(
+          data: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
+          child: Row(
+            children: [
+              Spacer(),
+              IconButton(icon: Icon(Icons.home), onPressed: () {}),
+              Spacer(),
+              IconButton(icon: Icon(Icons.share), onPressed: () {}),
+              Spacer(),
+              IconButton(icon: Icon(Icons.person_pin), onPressed: () {}),
+              Spacer(),
+            ],
+          ),
+        ),
+*/

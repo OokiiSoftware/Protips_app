@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/auxiliar/log.dart';
+import 'package:random_string/random_string.dart';
+
+import 'data_hora.dart';
 
 class Post {
 
@@ -89,13 +93,35 @@ class Post {
 
   //region Métodos
 
-  Future<bool> postar() async {
+  static Post criarTeste({bool isPublico = false}) {
+    Post item = Post();
+    item.id = randomString(10);
+    item.horarioMaximo = '15:00 AM';
+    item.horarioMinimo = '12:00 AM';
+    item.linha = 'linha';
+    item.esporte = 'futebol';
+    item.campeonato = 'liga';
+    item.oddMaxima = '3';
+    item.oddMinima = '1';
+    item.oddAtual = '1';
+    item.unidade = '1';
+    item.idTipster = Firebase.fUser.uid;
+    item.titulo = 'Tip de teste';
+    item.descricao = 'descricao do tip';
+    item.link = 'link';
+    item.isPublico = isPublico;
+    item.data = DataHora.now();
+    item.foto = '';
+    return item;
+  }
+
+  Future<bool> postar({bool isTeste = false}) async {
     Log.d(TAG, 'postar', 'Iniciando');
     var result = await _uploadPhoto();
-    if (!result)
+    if (!isTeste && (result == null || !result))
       return false;
 
-    result = await getFirebase.databaseReference
+    result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -119,7 +145,7 @@ class Post {
   Future<bool> addBom(String userId) async {
     if (bom.containsValue(userId))
       return true;
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -140,7 +166,7 @@ class Post {
   Future<bool> addRuim(String userId) async {
     if (ruim.containsValue(userId))
       return true;
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -161,7 +187,7 @@ class Post {
   Future<bool> removeBom(String userId) async {
     if (!bom.containsValue(userId))
     return null;
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -180,7 +206,7 @@ class Post {
   Future<bool> removeRuim(String userId) async {
     if (!ruim.containsValue(userId))
       return true;
-     var result = await getFirebase.databaseReference
+     var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -197,7 +223,7 @@ class Post {
   }
 
   Future<bool> excluir() async {
-    var result = await getFirebase.databaseReference
+    var result = await Firebase.databaseReference
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -208,7 +234,7 @@ class Post {
 
     if (!result) return false;
 
-    result = await getFirebase.storage
+    result = await Firebase.storage
         .child(FirebaseChild.USUARIO)
         .child(FirebaseChild.POSTES)
         .child(idTipster)
@@ -233,7 +259,7 @@ class Post {
     Log.d(TAG, 'uploadPhoto', 'file path: ' + file.path);
 
     try {
-      final StorageReference ref = getFirebase.storage
+      final StorageReference ref = Firebase.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES)
           .child(idTipster)
@@ -253,7 +279,7 @@ class Post {
   }
 
   /// Retorna TRUE se o post pertece ao usuário logado
-  bool get isMyPost => idTipster == getFirebase.fUser.uid;
+  bool get isMyPost => idTipster == Firebase.fUser.uid;
 
   //endregion
 
