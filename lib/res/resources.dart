@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/post.dart';
-import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
 import 'package:protips/res/strings.dart';
@@ -11,27 +10,10 @@ import 'package:protips/res/theme.dart';
 
 class MyLayouts {
 
-  static Future<void> showPopupPostPerfil(BuildContext context, PostPerfil item) async {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            contentPadding: EdgeInsets.zero,
-            insetPadding: EdgeInsets.all(10),
-            content: GestureDetector(
-              child: fotoPostNetwork(item.foto),
-              onTapUp: (value) {
-                Navigator.pop(context);
-              },
-            ),
-          );
-        }
-    );
-  }
-
-  static Widget splashScreen() {
+  static Widget splashScreen([bool semInternet = false]) {
     double iconSize = 200;
-    var backColor = Color.fromRGBO(4, 68, 118, 1);
+    var backColor = MyTheme.dark;
+    var textColor = Colors.white;
 
     return Scaffold(
         backgroundColor: backColor,
@@ -41,7 +23,12 @@ class MyLayouts {
           children: [
             Image.asset(MyAssets.ic_launcher_adaptive, width: iconSize, height: iconSize),
             Padding(padding: EdgeInsets.only(top: 20)),
-            Text(MyResources.APP_NAME, style: TextStyle(fontSize: 25, color: MyTheme.textColor())),
+            Text(MyResources.APP_NAME, style: TextStyle(fontSize: 25, color: textColor)),
+            if (semInternet)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Text('Sem conexão com a internet ou conexão fraca', style: TextStyle(color: textColor)),
+              ),
             LinearProgressIndicator(backgroundColor: backColor)
           ],
         )
@@ -49,11 +36,11 @@ class MyLayouts {
   }
 
   //Foto e Dados
-  static Widget fotoEDados(User user) {
+  static Widget fotoEDados(UserPro user) {
     bool isTipster = user.dados.isTipster;
-    Color itemColor = MyTheme.primaryLight2();
-    var headItemPadding = Padding(padding: EdgeInsets.only(left: 3));
-    var itemTextStyle = TextStyle(color: MyTheme.textColor(), fontSize: 15);
+    Color itemColor = MyTheme.darkModeOn ? Colors.grey : MyTheme.primaryLight2;
+    var headItemPadding = Padding(padding: EdgeInsets.only(left: 8));
+    var itemTextStyle = TextStyle(fontSize: 15);
 
     return Row(children: [
         //Foto
@@ -65,9 +52,9 @@ class MyLayouts {
                 child: fotoUser(user.dados)
             )
         ),
-        Padding(padding: EdgeInsets.only(right: 5)),
+        Padding(padding: EdgeInsets.only(right: 10)),
         //Dados
-        Column(
+        Flexible(child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -76,7 +63,7 @@ class MyLayouts {
               children: [
                 Icon(Icons.person, color: itemColor),
                 headItemPadding,
-                Text(user.dados.nome, style: itemTextStyle)
+                Flexible(child: Text(user.dados.nome, style: itemTextStyle))
               ],
             ),
             //TipName
@@ -84,7 +71,7 @@ class MyLayouts {
               children: [
                 Icon(Icons.language, color: itemColor),
                 headItemPadding,
-                Text(user.dados.tipname, style: itemTextStyle)
+                Flexible(child: Text(user.dados.tipname, style: itemTextStyle))
               ],
             ),
             //Filiados
@@ -92,15 +79,19 @@ class MyLayouts {
               children: [
                 Icon(Icons.group, color: itemColor),
                 headItemPadding,
-                Text((isTipster ? MyStrings.FILIADOS : MyStrings.TIPSTERS) + ': ' + (isTipster ? user.seguidores : user.seguindo).values.length.toString(), style: itemTextStyle)
+                Flexible(child: Text(
+                    (isTipster ? MyStrings.FILIADOS : MyStrings.TIPSTERS) + ': ' +
+                        (isTipster ? user.seguidores : user.seguindo).values.length.toString(),
+                    style: itemTextStyle
+                ))
               ],
             ),
           ],
-        ),
+        )),
       ]);
   }
 
-  static Widget customAppBar(BuildContext context, {args, Widget icon}) {
+  static Widget customAppBar(BuildContext context, {@required String title, args, Widget icon}) {
     return Row(children: [
       Tooltip(
         message: 'Voltar',
@@ -112,12 +103,12 @@ class MyLayouts {
           onTap: () => Navigator.pop(context, args),
         ),
       ),
-      Expanded(child: Text(Titles.PERFIL_FILIADO)),
+      Expanded(child: Text(title)),
       if (icon != null) icon,
     ]);
   }
 
-  static FlatButton btnPagamento({String valor = '', @required User tipster}) {
+  static FlatButton btnPagamento({String valor = '', @required UserPro tipster}) {
     var text = 'Realizar Pagamento';
     if (valor.isNotEmpty)
       text += ' $valor';
@@ -132,7 +123,7 @@ class MyLayouts {
     );
   }
 
-  static ListTile userTile(User item, {onTap()}) {
+  static ListTile userTile(UserPro item, {onTap()}) {
     bool descricaoIsEmpty = item.dados.descricao.isEmpty;
     return ListTile(
       leading: MyLayouts.iconFormatUser(
@@ -142,6 +133,15 @@ class MyLayouts {
       title: Text(item.dados.nome),
       subtitle: Text(descricaoIsEmpty ? item.dados.tipname : item.dados.descricao),
       onTap: onTap
+    );
+  }
+
+  static Padding get appBarActionsPadding => Padding(padding: EdgeInsets.only(right: 10));
+
+  static Widget get icAlertInternet {
+    return Tooltip(
+      message: 'Sem Internet',
+      child: Icon(Icons.warning, color: Colors.orange),
     );
   }
 
@@ -227,6 +227,9 @@ class MyAssets {
   static const String ic_image_broken = 'assets/icons/ic_image_broken.png';
 
   static const String img_tutorial = 'assets/icons/img_tutorial.png';
+  static const String img_tutorial_2 = 'assets/icons/img_tutorial_2.png';
+
+  static const String ic_oki_logo = 'assets/icons/ic_oki_logo.png';
 
   static const String googlePayButtonDark = 'assets/icons/googlePayButtonDark.png';
   static const String googlePayButtonLight = 'assets/icons/googlePayButtonLight.png';

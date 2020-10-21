@@ -10,17 +10,22 @@ class Pagamento {
 
   bool isExpanded = false;
 
-  Pagamento({@required this.userOrigem, @required this.userDestino, this.data, this.valor});
+  Pagamento({
+    @required this.userOrigem,
+    @required this.userDestino,
+    @required this.data,
+    @required this.valor
+  });
 
-  final User userOrigem;
-  final User userDestino;
+  final UserPro userOrigem;
+  final UserPro userDestino;
 
   final String valor;
   final String data;
 
   Future<bool> salvar() async {
     try {
-      var result = await Firebase.databaseReference
+      var result = await FirebasePro.database
           .child(FirebaseChild.PAGAMENTOS)
           .child(userDestino.dados.id)
           .child(data)
@@ -41,7 +46,7 @@ class Pagamento {
 
   Future<bool> delete() async {
     try {
-      var result = await Firebase.databaseReference
+      var result = await FirebasePro.database
           .child(FirebaseChild.PAGAMENTOS)
           .child(userDestino.dados.id)
           .child(data)
@@ -59,11 +64,11 @@ class Pagamento {
 
   static Future<bool> load(String userID) async {
     try {
-      var result = await Firebase.databaseReference
+      var result = await FirebasePro.database
           .child(FirebaseChild.PAGAMENTOS)
           .child(userID)
           .child(DataHora.onlyDate)
-          .child(Firebase.fUser.uid)
+          .child(FirebasePro.user.uid)
           .once()
           .then((value) => value.value != null)
           .catchError((ex) => false);
@@ -76,13 +81,13 @@ class Pagamento {
   }
   static Future<Map<dynamic, dynamic>> loadAll(String userID) async {
     try {
-      var result = await Firebase.databaseReference
+      var result = await FirebasePro.database
           .child(FirebaseChild.PAGAMENTOS)
           .child(userID)
           .once()
           .then((value) => value.value)
           .catchError((ex) => null);
-      Log.d(TAG, 'load', result);
+      Log.d(TAG, 'loadAll', result);
       return result;
     } catch(e) {
       Log.e(TAG, 'load', e);

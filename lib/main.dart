@@ -1,38 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:protips/pages/main_page.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 import 'auxiliar/log.dart';
 
-void main() {
-  // Para a biblioteca de cobrança do Google Play 2.0 no Android, é obrigatório ligar
-  // como parte da inicialização do aplicativo.
-  // InAppPurchaseConnection.enablePendingPurchases();
-  runApp(Main());
-}
+void main() => runApp(Main());
 
 class Main extends StatelessWidget {
   static const String TAG = 'Main';
 
   @override
   Widget build(BuildContext context) {
+    var brightness = SchedulerBinding.instance.window.platformBrightness;
+    MyTheme.darkModeOn = brightness == Brightness.dark;
+
     return MaterialApp(
       title: MyResources.APP_NAME,
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: [GlobalMaterialLocalizations.delegate],
+      supportedLocales: [
+        const Locale('pt'),
+        const Locale('en'),
+      ],
       theme: ThemeData(
-          primaryColorLight: MyTheme.primaryLight(),
-          primaryColorDark: MyTheme.primaryDark(),
-          bottomNavigationBarTheme: BottomNavigationBarThemeData(
-            backgroundColor: MyTheme.primaryDark()
-          ),
-          tabBarTheme: TabBarTheme(),
-          primaryColor: MyTheme.primary(),
-          accentColor: MyTheme.accent(),
-          backgroundColor: MyTheme.textColor(),
-        fontFamily: 'Century',
-        textTheme: TextTheme(
-            headline6: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          bodyText2: TextStyle(fontSize: 14),
+        brightness: brightness,
+        primaryColorLight: MyTheme.primaryLight,
+        primaryColorDark: MyTheme.primaryDark,
+        primaryColor: MyTheme.primary,
+        accentColor: MyTheme.accent,
+        cardTheme: CardTheme(
+          color: MyTheme.cardColor
         ),
+        textTheme: TextTheme(
+          bodyText2: TextStyle(
+              fontSize: 14,
+              color: MyTheme.textColor
+          ),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+            backgroundColor: MyTheme.primaryDark
+          ),
+        fontFamily: 'Century',
       ).copyWith(
         pageTransitionsTheme: PageTransitionsTheme(
           builders: <TargetPlatform, PageTransitionsBuilder>{
@@ -40,14 +50,14 @@ class Main extends StatelessWidget {
           }
         )
       ),
-//      routes: routes,
       home: MainPage(),
       builder: (context, child) => Scaffold(
-        key: Log.scaffKey,
+          key: Log.scaffKey, // usado pra funcionar o SnackBar global
           body: child
-      ),// usado pra funcionar o SnackBar global
+      ),
+      /*
       //getInitPage
-      /*home: FutureBuilder<FirebaseUser> (
+      home: FutureBuilder<FirebaseUser> (
         future: getFirebase.auth().currentUser(),
         builder: (BuildContext context, AsyncSnapshot<FirebaseUser> snapshot) {
           switch (snapshot.connectionState) {

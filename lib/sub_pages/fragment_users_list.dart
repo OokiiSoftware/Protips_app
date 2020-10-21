@@ -1,11 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/animations/container_transition.dart';
+import 'package:protips/model/data_hora.dart';
+import 'package:protips/model/pagamento.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/pages/perfil_filiado_page.dart';
-import 'package:protips/pages/perfil_tipster_page.dart';
+import 'package:protips/pages/perfil_page_filiado.dart';
+import 'package:protips/pages/perfil_page_tipster.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
@@ -13,7 +16,7 @@ import 'package:protips/res/theme.dart';
 class FragmentUsersList extends StatefulWidget {
   final bool isFiliadosList;
   final bool mostrarAppBar;
-  final List<User> data;
+  final List<UserPro> data;
   FragmentUsersList({this.data, @required this.isFiliadosList, @required this.mostrarAppBar});
   @override
   State<StatefulWidget> createState() => MyWidgetState(data, isFiliadosList, mostrarAppBar);
@@ -25,15 +28,19 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
   //region Variaveis
   static const String TAG = 'FragmentUsersList';
 
-  List<User> data = new List<User>();
-  User _eu;
+  List<UserPro> data = new List<UserPro>();
+  UserPro _eu;
 
   final bool mostrarAppBar;
   static var _ordemData = Import.getDropDownMenuItems(Arrays.orderUsers);
   static String _ordemCurrent = Arrays.orderUsers[0];//0 = Ranking
   static bool _ordemAsc = false;
 
+  final Map<String, Pagamento> _filiadosAtivos = Map();
   final bool isFiliadosList;
+
+  bool inProgress = false;
+
   //endregion
 
   //region overrides
@@ -44,52 +51,63 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
   @override
   void initState() {
     super.initState();
-    _eu = Firebase.user;
+    _eu = FirebasePro.userPro;
     if(data == null) {
-      data = new List<User>();
+      data = new List<UserPro>();
       data.addAll(getTipster.data);
       _changeOrdem(_ordemCurrent, _ordemAsc);
     }
+    if (isFiliadosList)
+      _saveQuantAtivos();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    var textStyle = TextStyle(color: MyTheme.textColor());
+    var headerTextStyle = TextStyle(fontSize: 14);
+
     return Scaffold(
       appBar: mostrarAppBar ? AppBar(
         elevation: 0,
         title: Row(children: [
           Padding(
-              padding: EdgeInsets.only(right: 10),
-              child: Text(MyTexts.ORDEM_POR, style: TextStyle(fontSize: 14)),
+              padding: EdgeInsets.only(right: 20),
+              child: Text(MyTexts.ORDEM_POR, style: headerTextStyle),
             ),
           Expanded(child: DropdownButton(
             value: _ordemCurrent,
             items: _ordemData,
-            dropdownColor: MyTheme.primary(),
-            style: textStyle,
+            style: headerTextStyle,
+            dropdownColor: MyTheme.primary,
             onChanged: (value) {_changeOrdem(value, _ordemAsc);},
           )),
           Container(
-              width: 100,
+              width: 50,
               child: CheckboxListTile(
-            title: Text('dsc', style: textStyle),
-            value: _ordemAsc,
-            contentPadding: EdgeInsets.all(0),
-            controlAffinity: ListTileControlAffinity.leading,
-            onChanged: (bool value) {_changeOrdem(_ordemCurrent, value);},
-          ))
+                value: _ordemAsc,
+                contentPadding: EdgeInsets.zero,
+
+                onChanged: (bool value) {_changeOrdem(_ordemCurrent, value);},
+            )
+          ),
+          GestureDetector(
+            child: Text('DSC', style: headerTextStyle),
+            onTap: () {
+              _ordemAsc = !_ordemAsc;
+              _changeOrdem(_ordemCurrent, _ordemAsc);
+            }
+          ),
           ]),
       ) : null,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: ListView(children: [
           isFiliadosList ?
-          _itemLayoutFiliado() :
-          _itemLayoutTipster()
+          itemLayoutFiliado :
+          itemLayoutTipster
         ]),
       ),
+      floatingActionButton: inProgress ? CircularProgressIndicator() : null,
     );
   }
 
@@ -120,62 +138,65 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
     setState(() {});
   }
 
-  Widget _itemLayoutTipster() {
+  Widget get itemLayoutTipster {
     return ExpansionPanelList(
       expansionCallback: (int index, bool isExpanded) {
         setState(() {
           data[index].isExpanded = !isExpanded;
         });
       },
-      children: data.map<ExpansionPanel>((User item) {
-        String subTitleText = 'Green: ${item.bomCount} | Red: ${item
-            .ruimCount} | Posts: ${item.postes.length}';
+      children: data.map<ExpansionPanel>((UserPro item) {
+        String subTitleText = 'Green: ${item.bomCount} | Red: ${item.ruimCount} | Posts: ${item.postes.length}';
 
         return ExpansionPanel(
-          headerBuilder: (BuildContext context, bool isExpanded) {
-            return MyLayouts.userTile(
-              item,
-              onTap: () {
-                setState(() {
-                  item.isExpanded = !item.isExpanded;
-                });
-              },
-            );
-          },
-
-          // body: ListTile(
-          //     title: Text('Visitar ' + item.dados.tipname),
-          //     subtitle: Text(subTitleText),
-          //     onTap: () async {
-          //       await Navigate.to(context, PerfilTipsterPage(item));
-          //       setState(() {});
-          //     }),
-          isExpanded: item.isExpanded,
-          body: OpenContainerWrapper(
-            statefulWidget: PerfilTipsterPage(item),
-            child: ListTile(
-                title: Text('Visitar ' + item.dados.tipname),
-                subtitle: Text(subTitleText)
-            ),
-            onClosed: (value) => setState(() {}),
-          )
+            canTapOnHeader: true,
+            isExpanded: item.isExpanded,
+            headerBuilder: (BuildContext context, bool isExpanded) => MyLayouts.userTile(item),
+            body: OpenContainerWrapper(
+              statefulWidget: PerfilTipsterPage(item),
+              child: ListTile(
+                title: Text('Visitar Perfil'),
+                subtitle: Text(subTitleText),
+              ),
+              onClosed: (value) => setState(() {}),
+            )
         );
       }).toList(),
     );
   }
 
-  Widget _itemLayoutFiliado() {
+  Widget get itemLayoutFiliado {
     return ExpansionPanelList(
       expansionCallback: (int index, bool isExpanded) {
         setState(() {
           data[index].isExpanded = !isExpanded;
         });
       },
-      children: data.map<ExpansionPanel>((User item) {
+      children: data.map<ExpansionPanel>((UserPro item) {
         String mensalidadeValue = _eu.seguidores[item.dados.id] ?? '';
         if (mensalidadeValue == UserTag.PRECO_PADRAO) {
           mensalidadeValue = '${_eu.dados.precoPadrao} (Padrão)';
         }
+
+        if (!_filiadosAtivos.containsKey(item.dados.id)) {
+          void dd() async {
+            _filiadosAtivos[item.dados.id] = null;
+            var result = await item.pagamento(_eu.dados.id, DataHora.onlyDate);
+            setState(() {
+              if (result != null && result.isNotEmpty)
+              _filiadosAtivos[item.dados.id] = criarPagamento(item, result);
+              else
+              _filiadosAtivos[item.dados.id] = criarPagamento(item, '');
+            });
+          }
+          dd();
+        }
+        bool pagamentoOK;
+        if (_filiadosAtivos[item.dados.id] != null)
+          pagamentoOK = _filiadosAtivos[item.dados.id].valor.isNotEmpty;
+
+        if (_filiadosAtivos.length == _eu.seguidores.length)
+          _setInProgress(false);
 
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
@@ -186,6 +207,10 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
               ),
               title: Text(item.dados.nome),
               subtitle: Text(mensalidadeValue),
+              trailing: pagamentoOK == null ? null : Icon(
+                pagamentoOK ? Icons.offline_pin : Icons.clear,
+                color: pagamentoOK ? Colors.green : Colors.red,
+              ),
               onTap: () {
                 setState(() {
                   item.isExpanded = !item.isExpanded;
@@ -193,17 +218,29 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
               },
             );
           },
-          // body: ListTile(
-          //     title: Text('Visitar '+ item.dados.tipname),
-          //     onTap: () async {
-          //       await Navigate.to(context, PerfilFiliadoPage(item));
-          //       setState(() {});
-          //     }),
           isExpanded: item.isExpanded,
             body: OpenContainerWrapper(
               statefulWidget: PerfilFiliadoPage(item),
               child: ListTile(
-                  title: Text('Visitar ' + item.dados.tipname),
+                title: Text('Visitar ' + item.dados.tipname),
+                subtitle: Row(
+                  children: [
+                    if (pagamentoOK != null && pagamentoOK)...[
+                      Text('Pagamento OK\t'),
+                      FlatButton(
+                        color: Colors.red,
+                        child: Text('Remover', style: TextStyle(color: Colors.white)),
+                        onPressed: () => _popupRemoverAtivo(item),
+                      )
+                    ]
+                    else if (pagamentoOK != null)...[
+                      ElevatedButton(
+                        child: Text('Confirmar o pagamento'),
+                        onPressed: () => _popupAddAtivo(item),
+                      )
+                    ]
+                  ],
+                ),
               ),
               onClosed: (value) => setState(() {}),
             )
@@ -213,17 +250,91 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
   }
 
   Future<void> _onRefresh() async {
-    await getUsers.baixar();
+    await UserPro.baixarList();
     data.clear();
     setState(() {
       if (isFiliadosList) {
-        String meuId = Firebase.fUser.uid;
+        String meuId = FirebasePro.user.uid;
         data.addAll(getUsers.data.values.where((e) => e.seguindo.containsKey(meuId)));
-      }
-      else
+        data.sort((a, b) => a.dados.nome.toLowerCase().compareTo(b.dados.nome.toLowerCase()));
+      } else {
         data.addAll(getTipster.data);
-      _changeOrdem(_ordemCurrent, _ordemAsc);
+        _changeOrdem(_ordemCurrent, _ordemAsc);
+      }
     });
+  }
+
+  _popupAddAtivo(UserPro item) async {
+    var valor = _eu.seguidores[item.dados.id];
+    if (valor == MyStrings.DEFAULT)
+      valor = _eu.dados.precoPadrao;
+
+    var title = item.dados.nome;
+    var content = Text('Confirmar o pagamento deste Filiado?');
+    var result = await DialogBox.dialogCancelOK(context, title: title, content: [content]);
+    if (result.isPositive) {
+      _setInProgress(true);
+      Pagamento p = criarPagamento(item, valor);
+      await p.salvar();
+      _setInProgress(false);
+      setState(() {
+        _filiadosAtivos[item.dados.id] = p;
+      });
+    }
+  }
+
+  _popupRemoverAtivo(UserPro item) async {
+    Pagamento p = _filiadosAtivos[item.dados.id];
+    if (p != null) {
+      var title = item.dados.nome;
+      var content = [
+            Text('Remover este Filiado da lista de ativos?'),
+            IconButton(
+              icon: Icon(Icons.info, color: MyTheme.primary),
+              padding: EdgeInsets.zero,
+              onPressed: _popupInfoAtivos,
+            )
+      ];
+      var result = await DialogBox.dialogCancelOK(context, title: title, content: content);
+      if (result.isPositive) {
+        _setInProgress(true);
+        await p.delete();
+        _setInProgress(false);
+        setState(() {
+          _filiadosAtivos.remove(item.dados.id);
+        });
+      }
+    }
+  }
+
+  _popupInfoAtivos() {
+    var content = Text('Ativos são seus Filiados que realizaram o pagamento no último mês');
+    DialogBox.dialogOK(context, title: 'Info', content: [content]);
+  }
+
+  _saveQuantAtivos() async {
+    _setInProgress(true);
+    await FirebasePro.database
+        .child(FirebaseChild.PAGAMENTOS)
+        .child(_eu.dados.id)
+        .child(DataHora.onlyDate)
+        .child(FirebaseChild.ATIVOS)
+        .set(_eu.seguidores.length);
+    _setInProgress(false);
+  }
+
+  Pagamento criarPagamento(UserPro user, String valor) => Pagamento(
+      userOrigem: user,
+      userDestino: _eu,
+      data: DataHora.onlyDate,
+      valor: valor
+  );
+
+  _setInProgress(bool b) {
+    if(mounted)
+      setState(() {
+        inProgress = b;
+      });
   }
 
   //endregion

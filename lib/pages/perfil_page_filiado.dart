@@ -10,7 +10,7 @@ import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
 class PerfilFiliadoPage extends StatefulWidget {
-  final User user;
+  final UserPro user;
   PerfilFiliadoPage([this.user]);
   @override
   State<StatefulWidget> createState() => MyWidgetState(user);
@@ -23,8 +23,8 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
   static const String TAG = 'PerfilFiliadoPage';
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
-  User user;
-  User _eu;
+  UserPro user;
+  UserPro _eu;
   bool _isDadosAtualizados = false;
   bool _inProgress = false;
   bool _isMensalidadePadrao = false;
@@ -42,7 +42,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
   @override
   void initState() {
     super.initState();
-    _eu = Firebase.user;
+    _eu = FirebasePro.userPro;
     _precos = Import.getDropDownMenuItems(GoogleProductsID.precos.values.toList());
 
     _mensalidadePadrao = _eu.dados.precoPadrao;
@@ -67,16 +67,20 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
     bool isFiliado = _eu.seguidores.containsKey(user.dados.id);
     bool isFiliadoPendente = _eu.seguidoresPendentes.containsKey(user.dados.id);
 
+    var headerColor = MyTheme.darkModeOn ? MyTheme.dark2 : MyTheme.primaryLight;
     //endregion
 
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: headerHeight,
         automaticallyImplyLeading: false,
-        backgroundColor: MyTheme.primaryLight(),
+        backgroundColor: headerColor,
         title: Container(
           child: Column(children: [
-            MyLayouts.customAppBar(context),
+            MyLayouts.customAppBar(
+                context,
+                title: Titles.PERFIL_FILIADO
+            ),
             Padding(padding: EdgeInsets.only(top: 10)),
             MyLayouts.fotoEDados(user),
           ]),
@@ -114,23 +118,23 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
                       Expanded(child: ElevatedButton(
                           child: Text('Recusar'),
                           onPressed: () async {
-                            _setProgressBarVisible(true);
+                            _setInProgress(true);
                             if (await _eu.removeSolicitacao(user.dados.id))
                               setState(() {
                                 isFiliadoPendente = false;
                               });
-                            _setProgressBarVisible(false);
+                            _setInProgress(false);
                           })),
                       Padding(padding: EdgeInsets.only(right: 10)),
                       Expanded(child: ElevatedButton(
                           child: Text('Aceitar'),
                           onPressed: (/*Aceitar Filiado*/) async {
-                            _setProgressBarVisible(true);
+                            _setInProgress(true);
                             if (await _eu.aceitarSeguidor(user))
                               setState(() {
                                 isFiliado = true;
                               });
-                            _setProgressBarVisible(false);
+                            _setInProgress(false);
                           }))
                     ],
                   ),
@@ -149,11 +153,12 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
                         items: _precos,
                         value: _currentMensalidade,
                         icon: IconButton(
-                          icon: Icon(Icons.refresh, color: MyTheme.primary()),
+                          tooltip: 'Redefinir padrão',
+                          icon: Icon(Icons.refresh, color: MyTheme.textColorSpecial),
                           onPressed: () async {
                             var title = 'Redefinir padrão?';
                             var result = await DialogBox.dialogCancelOK(context, title: title);
-                            if (result.isOk) {
+                            if (result.isPositive) {
                               setState(() {
 //                                  _cMensalidadeValue.text =
                                 _currentMensalidade = _eu.dados.precoPadrao;
@@ -162,6 +167,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
                             }
                           },
                         ),
+                        style: TextStyle(color: MyTheme.textColorSpecial),
                         onChanged: (value) {
                           setState(() {
                             _currentMensalidade = value;
@@ -175,12 +181,12 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
                   ElevatedButton(
                       child: Text('Remover Filiado'),
                       onPressed: (/*Remover Filiado*/) async {
-                        _setProgressBarVisible(true);
+                        _setInProgress(true);
                         if (await _eu.removeSeguidor(user))
                           setState(() {
                             isFiliado = false;
                           });
-                        _setProgressBarVisible(false);
+                        _setInProgress(false);
                       }),
                 ]
             ]
@@ -200,7 +206,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
   //region Metodos
 
   _onSalvar() async {
-    _setProgressBarVisible(true);
+    _setInProgress(true);
 
     if (_mensalidadeAtual != _currentMensalidade) {
       String value = _isMensalidadePadrao ? UserTag.PRECO_PADRAO : _currentMensalidade;
@@ -208,15 +214,16 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
       Log.snackbar(MyTexts.DADOS_SALVOS);
     }
 
-    _setProgressBarVisible(false);
+    _setInProgress(false);
   }
   
   _updateUser() async {
     if (user == null)
       return;
-    var item = await getUsers.baixarUser(user.dados.id);
+    var item = await UserPro.baixar(user.dados.id);
     if (item != null) {
       getUsers.add(item);
+      if(!mounted) return;
       setState(() {
         user = item;
       });
@@ -224,7 +231,8 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
     _isDadosAtualizados = true;
   }
 
-  _setProgressBarVisible(bool visible) {
+  _setInProgress(bool visible) {
+    if(!mounted) return;
     setState(() {
       _inProgress = visible;
     });

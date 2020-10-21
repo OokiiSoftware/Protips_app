@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:protips/animations/container_transition.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/pagamento.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/pagamento_page.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
@@ -14,7 +13,7 @@ import 'package:protips/sub_pages/fragment_g_denuncias.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
 
 class PerfilTipsterPage extends StatefulWidget {
-  final User user;
+  final UserPro user;
   PerfilTipsterPage(this.user);
   @override
   State<StatefulWidget> createState() => MyWidgetState(user);
@@ -26,7 +25,7 @@ class MyWidgetState extends State<PerfilTipsterPage> {
   //region Variaveis
   static const String TAG = 'PerfilPage';
 
-  User _user;
+  UserPro _user;
   bool _isdadosAtualizados = false;
   bool _isPagamentoLoaded = false;
   bool _inProgress = false;
@@ -38,8 +37,8 @@ class MyWidgetState extends State<PerfilTipsterPage> {
   void initState() {
     super.initState();
     if (_user == null) return;
-    if (_user.isMyTipster)
-      _loadPagamento();
+    // if (_user.isMyTipster)
+    //   _loadPagamento();
   }
 
   @override
@@ -51,15 +50,15 @@ class MyWidgetState extends State<PerfilTipsterPage> {
     if (!_isdadosAtualizados)
       _updateUser();
 
-    var eu = Firebase.user;
-    bool isMyPerfil = _user.dados.id == Firebase.fUser.uid;
+    var eu = FirebasePro.userPro;
+    bool isMyPerfil = _user.dados.id == FirebasePro.user.uid;
     bool isTipster = _user.dados.isTipster;
     bool isPendente = _user.seguidoresPendentes.containsValue(eu.dados.id);
     bool isSeguindo = eu.seguindo.containsKey(_user.dados.id);
     bool isFilialPendente = eu.seguidoresPendentes.containsKey(_user.dados.id);
     bool isFilial = eu.seguidores.containsKey(_user.dados.id);
 
-    bool isAdminAndHasDenuncias = Firebase.isAdmin && _user.denuncias.length > 0;
+    bool isAdminAndHasDenuncias = FirebasePro.isAdmin && _user.denuncias.length > 0;
 
     List<Widget> tabItems = [];
     List<Widget> tabs = [];
@@ -85,9 +84,10 @@ class MyWidgetState extends State<PerfilTipsterPage> {
     double headerHeight = 250;
     if(isMyPerfil)
       headerHeight -= 50;
-    var itemTextStyle = TextStyle(color: MyTheme.textColor(), fontSize: 15);
+    var itemTextStyle = TextStyle(/*color: MyTheme.textColor, */fontSize: 15);
 
     //endregion
+    var headerColor = MyTheme.darkModeOn ? MyTheme.dark2 : MyTheme.primaryLight;
 
     return DefaultTabController(
       length: tabItems.length,
@@ -95,35 +95,27 @@ class MyWidgetState extends State<PerfilTipsterPage> {
         appBar: AppBar(
           toolbarHeight: headerHeight,
           automaticallyImplyLeading: false,
-          backgroundColor: MyTheme.primaryLight(),
+          backgroundColor: headerColor,
           title: Container(
             child: Column(children: [
               //AppBar
               MyLayouts.customAppBar(
                   context,
-                icon: ((_user.isMyTipster && _isPagamentoLoaded) || Firebase.isAdmin) ?
-                OpenContainerWrapper(
-                  tooltip: Firebase.isAdmin ? 'Admin Mode' : 'Realizar Pagamento',
-                  statefulWidget: PagamentoPage(_user),
-                  child: Container(
-                    color: MyTheme.primaryLight(),
-                    child: Icon(
-                        Icons.credit_card,
-                        color: Firebase.isAdmin ? Colors.red : Colors.white
-                    ),
-                  ),
-                  onClosed: (value) => setState(() {_isPagamentoLoaded = !value;}),
-                ) : null,
+                  title: isTipster ? Titles.PERFIL_TIPSTER : Titles.PERFIL_FILIADO
+                // icon: ((_user.isMyTipster && _isPagamentoLoaded) || FirebasePro.isAdmin) ?
+                // OpenContainerWrapper(
+                //   tooltip: FirebasePro.isAdmin ? 'Admin Mode' : 'Realizar Pagamento',
+                //   statefulWidget: PagamentoPage(_user),
+                //   child: Container(
+                //     color: MyTheme.primaryLight(),
+                //     child: Icon(
+                //         Icons.credit_card,
+                //         color: FirebasePro.isAdmin ? Colors.red : Colors.white
+                //     ),
+                //   ),
+                //   onClosed: (value) => setState(() {_isPagamentoLoaded = !value;}),
+                // ) : null,
               ),
-              // MyLayouts.customAppBar(
-              //     context,
-              //   icon: (_user.isMyTipster) ?
-              //   IconButton(
-              //     tooltip: 'Realizar Pagamento',
-              //     icon: Icon(Icons.credit_card),
-              //     onPressed: _isPagamentoLoaded ? _onPagarTipster: null,
-              //   ) : null,
-              // ),
               Padding(padding: EdgeInsets.only(top: 10)),
               //Foto e Dados
               MyLayouts.fotoEDados(_user),
@@ -246,7 +238,7 @@ class MyWidgetState extends State<PerfilTipsterPage> {
                   child: GestureDetector(
                     child: MyLayouts.fotoPostNetwork(item.foto),
                     onTap: () {
-                      MyLayouts.showPopupPostPerfil(context, item);
+                      DialogBox.popupPostPerfil(context, item);
                     },
                   )
               );
@@ -269,15 +261,15 @@ class MyWidgetState extends State<PerfilTipsterPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Divider(height: 2, thickness: 1, color: MyTheme.textColorInvert()),
+            Divider(height: 2, thickness: 1/*, color: MyTheme.textColorInvert*/),
             //Titulo
             if(item.titulo.isNotEmpty)
               Container(
                 alignment: Alignment.topCenter,
                 padding: EdgeInsets.all(10),
-                color: MyTheme.primary(),
+                color: MyTheme.primary,
                 child: Text(item.titulo,
-                    style: TextStyle(color: MyTheme.textColor(), fontSize: 20)
+                    style: TextStyle(/*color: MyTheme.textColor, */fontSize: 20)
                 ),
               ),
             //Foto
@@ -289,7 +281,8 @@ class MyWidgetState extends State<PerfilTipsterPage> {
                 padding: EdgeInsets.all(10),
                 color: MyTheme.transparentColor(),
                 child: Text(item.texto, style: TextStyle(
-                    color: MyTheme.textColorInvert(), fontSize: 20)),
+                    /*color: MyTheme.textColorInvert,*/
+                    fontSize: 20)),
               ),
           ],
         );
@@ -297,21 +290,13 @@ class MyWidgetState extends State<PerfilTipsterPage> {
     );
   }
 
-  User getArgs() {
-    var args = ModalRoute.of(context).settings.arguments;
-    if (args == null || !(args is User)) {
-      Navigator.pop(context);
-      return null;
-    }
-    return args;
-  }
-
   _updateUser() async {
     if (_user == null)
       return;
-    var item = await getUsers.baixarUser(_user.dados.id);
+    var item = await UserPro.baixar(_user.dados.id);
     if (item != null) {
       getUsers.add(item);
+      if(!mounted) return;
       setState(() {
         _user = item;
       });
@@ -321,12 +306,14 @@ class MyWidgetState extends State<PerfilTipsterPage> {
 
   _loadPagamento() async {
     bool result = await Pagamento.load(_user.dados.id);
+    if(!mounted) return;
     setState(() {
       _isPagamentoLoaded = !result;
     });
   }
 
   _setProgressBarVisible(bool visible) {
+    if(!mounted) return;
     setState(() {
       _inProgress = visible;
     });

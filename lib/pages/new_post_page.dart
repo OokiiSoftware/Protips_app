@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';
@@ -9,6 +10,7 @@ import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/pages/crop_page.dart';
 import 'package:path/path.dart' as path;
+import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 import 'package:random_string/random_string.dart';
@@ -59,7 +61,6 @@ class MyWidgetState extends State<NewPostPage> {
   bool _linkIsEmpty = false;
   //endregion
 
-  LinearProgressIndicator _progressBar;
 //  FloatingActionButton fabPostar;
   //endregion
 
@@ -85,9 +86,9 @@ class MyWidgetState extends State<NewPostPage> {
       _link.text = _currentPost.link;
       _campeonato.text = _currentPost.campeonato;
     }
-    _isBloqueadoPorDenuncias = Firebase.user.denuncias.length >= 5;
+    _isBloqueadoPorDenuncias = FirebasePro.userPro.denuncias.length >= 5;
     if (_isBloqueadoPorDenuncias) {
-      _isPostando = true;//o botão ficará indisponível
+      _setPostanto(true);//o botão ficará indisponível
     }
   }
 
@@ -97,7 +98,6 @@ class MyWidgetState extends State<NewPostPage> {
     _horarioMaximo.text = _currentHorarioMaximo;
     _horarioMinimo.text = _currentHorarioMinino;
 
-    _progressBar = LinearProgressIndicator(value: _progressBarValue);
     return WillPopScope(
       onWillPop: () async {
         _currentPost = _criarTip();
@@ -107,6 +107,8 @@ class MyWidgetState extends State<NewPostPage> {
         appBar: AppBar(
           title: Text(Titles.POST_TIP),
           actions: [
+            if (RunTime.semInternet)
+              MyLayouts.icAlertInternet,
             Tooltip(
               message: MyTexts.LIMPAR_TUDO,
               child: IconButton(
@@ -228,16 +230,16 @@ class MyWidgetState extends State<NewPostPage> {
                 Divider(height: 70),
               ]),
             ),
-            _progressBar,
+            LinearProgressIndicator(value: _progressBarValue),
           ],
         ),
         floatingActionButton:  FloatingActionButton.extended(
           label: Text(MyStrings.POSTAR),
-          backgroundColor: !_isPostando ? MyTheme.accent() : MyTheme.tintColor2(),
+          backgroundColor: !_isPostando ? MyTheme.accent : Colors.black26,
           onPressed: !_isPostando ? () {
             _postManager();
           } : _isBloqueadoPorDenuncias ? () {
-            Log.snackbar('Você tem muitas denúncias.\nEntre em contato com o Admin', isError: true);
+            Log.snackbar('Você tem muitas denúncias.\nEntre em contato com o suporte', isError: true);
           } : null,
         ),
       ),
@@ -254,15 +256,17 @@ class MyWidgetState extends State<NewPostPage> {
     double itemPaddingValue = 10;
     double itemHeight = 50;
 
+    var tintColor = MyTheme.cardColor2;
+
     //region Container que contem os textField
     var itemPadding = EdgeInsets.only(left: itemPaddingValue, right: itemPaddingValue, top: 7);
     var itemContentPadding = EdgeInsets.fromLTRB(12, 0, 12, 0);
 
-    var itemlBorder = OutlineInputBorder(borderSide: BorderSide(color: MyTheme.tintColor2()));
-    var itemDecoration = BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(5)), color: MyTheme.tintColor2());
-    var itemTextStyle = TextStyle(color: MyTheme.primaryDark(), fontSize: 14);
-    var itemPrefixStyle = TextStyle(color: MyTheme.textColorInvert());
-    var itemPrefixStyleErro = TextStyle(color: MyTheme.textColorError());
+    var itemlBorder = OutlineInputBorder(borderSide: BorderSide(color: MyTheme.transparentColor()));
+    var itemDecoration = BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(5)), color: tintColor);
+    var itemTextStyle = TextStyle(color: MyTheme.textColorSpecial, fontSize: 14);
+    var itemPrefixStyle = TextStyle();
+    var itemPrefixStyleErro = TextStyle(color: MyTheme.textColorError);
     //endregion
 
     //endregion
@@ -309,20 +313,17 @@ class MyWidgetState extends State<NewPostPage> {
   Future<void> _postManager() async {
     Post item = _criarTip();
     if(_verificar(item)) {
-      setState(() {
-        _progressBarValue = null;
-        _isPostando = true;
-      });
+      _setInProgress(true);
+      _setPostanto(true);
       if (await item.postar()) {
         if (_foto != null && _foto.existsSync())
           await _foto.delete();
         Navigator.pop(context);
       }
     }
-    setState(() {
-      _progressBarValue = 0;
-      _isPostando = false;
-    });
+
+    _setInProgress(false);
+    _setPostanto(false);
   }
   Post _criarTip() {
     Post item = Post();
@@ -336,7 +337,7 @@ class MyWidgetState extends State<NewPostPage> {
     item.oddMinima = _oddMinima.text;
     item.oddAtual = _oddAtual.text;
     item.unidade = _unidades.text;
-    item.idTipster = Firebase.fUser.uid;
+    item.idTipster = FirebasePro.user.uid;
     item.titulo = _titulo.text;
     item.descricao = _descricao.text;
     item.link = _link.text;
@@ -376,11 +377,24 @@ class MyWidgetState extends State<NewPostPage> {
       });
       return noError;
     } catch(e) {
-      Log.e(TAG, '_criarTip', e, false);
+      Log.e(TAG, '_criarTip', e);
       HapticFeedback.lightImpact();
 //      _PatternVibrate();
       return false;
     }
+  }
+
+  _setPostanto(bool b) {
+    if(!mounted) return;
+    setState(() {
+      _isPostando = b;
+    });
+  }
+  _setInProgress(bool b) {
+    if(!mounted) return;
+    setState(() {
+      _progressBarValue = b ? null : 0;
+    });
   }
 
   //endregion

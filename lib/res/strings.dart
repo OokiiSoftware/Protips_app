@@ -11,15 +11,19 @@ class MyResources {
   static const String app_whatsapp = '(83) 99632-5982';
   static const String company_email = 'okisoftware@gmail.com';
   static const String company_name = 'ŌkīSoftware';
+  static const String playStoryLink = 'https://play.google.com/store/apps/details?id=com.ookiisoftware.protips';
 
   static const String _merchantID = '07216026269368834349';
   static String get merchantID => _merchantID;
 
   //region stripe
-  static final String _stripeID = 'pk_live_51HbF49Kf3ZXGH4nWuoF0pffzesendEeLjyfNzTzwNKYuO0RJiR6Ied4PjWumH1CRj7b1gESIjq2ES9OsdD1FqV3K00Gq9HZWDP';
-  static final String _stripeIDTeste = 'pk_test_51HbF49Kf3ZXGH4nWCf91e4eawsBg5of1VQ8yYWZP6hTBgyAm4IlS8PxIwZJRop4ka0s9j9DqSFOBziGoNY03vhKM00FaBR9v2h';
+  static final String _stripeKey = 'pk_live_51HbF49Kf3ZXGH4nWuoF0pffzesendEeLjyfNzTzwNKYuO0RJiR6Ied4PjWumH1CRj7b1gESIjq2ES9OsdD1FqV3K00Gq9HZWDP';
+  static final String _stripeKeyTeste = 'pk_test_51HbF49Kf3ZXGH4nWCf91e4eawsBg5of1VQ8yYWZP6hTBgyAm4IlS8PxIwZJRop4ka0s9j9DqSFOBziGoNY03vhKM00FaBR9v2h';
+  static final String _stripeSecretKey = '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';
+  static final String _stripeSecretKeyTeste = 'sk_test_51HbF49Kf3ZXGH4nWyMvdzbsKIkitdVOSrUWwc822LWXzETjOcxtl8BDjswbCdHaWoLo7U4Ofe2FHxevAgcvSsGpq00iStHMHCX';
 
-  static String get stripeID => Aplication.isRelease ? _stripeID : _stripeIDTeste;
+  static String get stripeKey => Aplication.isRelease ? _stripeKey : _stripeKeyTeste;
+  static String get stripeSecretKey => Aplication.isRelease ? _stripeSecretKey : _stripeSecretKeyTeste;
   //endregion
 }
 
@@ -88,14 +92,6 @@ class GoogleProductsID {
     '290': '290,00',
     '295': '295,00',
   * */
-}
-
-class SharedPreferencesKey {
-  static const String EMAIL = "email";
-  static const String DIA_PAGAMENTO = "dia_pagamento";
-  static const String ULTIMO_TOKEM = "ultimo_tokem";
-  static const String ULTIMO_TUTORIAL_OK = "01";
-  static const String UPDATE_NOTIFICATION = "UPDATE_NOTIFICATION_1";
 }
 
 class MyTooltips {
@@ -184,12 +180,12 @@ class MyTexts {
   static const String BAIXAR_ATUALIZACAO = 'Baixar atualização';
   static const String solicitacao_tipster = 'Solicitação para ser um Tipster';
   static const String solicitacao_tipster_mensagem = 'entre em contato\nEmail:';
-  static const String solicitacao_filiado_mensagem = 'Não quero mais sem um Tipster na plataforma ProTips.';
-  static const String solicitacao_filiado = 'Cancelar minha conta';
+  static const String solicitacao_filiado_mensagem = 'Não quero mais ser um Tipster na plataforma ProTips';
+  static const String solicitacao_filiado = 'Cancelar conta';
   static const String EM_ANDAMENTO = 'Em Andamento';
 
   static const String DESENVOLVIDO_POR = "desenvolvido por";
-  static const String ABRIR_IMAGEM = 'Selecionar Imagem';
+  static const String ABRIR_IMAGEM = 'Trocar Foto';
   static const String SEGUNDO_PLANO = 'Segundo Plano';
   static const String CANCELAR_SOLICITACAO = 'Cancelar solicitação';
   static const String ANEXAR_IMAGEM = 'Anexar Imagem';
@@ -236,7 +232,7 @@ class MyMenus {
     ABRIR_WHATSAPP, DENUNCIAR
   ];
 
-  static Future<void> onCliked(BuildContext context, String acao, {User user}) async {
+  static Future<void> onCliked(BuildContext context, String acao, {UserPro user}) async {
     switch(acao) {
       case MyMenus.ABRIR_WHATSAPP:
         if (user != null)
@@ -259,6 +255,7 @@ class MyErros {
   static const ABRIR_WHATSAPP = 'Erro ao abrir WhatsApp';
   static const ERRO_GENERICO = 'Ocorreu um erro';
   static const PERFIL_USER_SALVO = 'Erro ao salvar os dados';
+  static const PAGAMENTO = 'Ops. Ocorreu um erro. Se o erro persistir entre em contato com o suporte.';
 }
 
 class Titles {
@@ -278,7 +275,8 @@ class Titles {
   static const DENUNCIA_POST = 'DENUNCIAR POST';
   static const PAGAMENTO = 'PAGAMENTO';
   static const CONFIGURACOES = 'CONFIGURAÇÕES';
-  static const CASH = 'MEUS GANHOS';
+  static const CASH = 'FINANCEIRO';
+  static const TELEFONE_PAGE = 'REGISTRAR TELEFONE';
 
   static const String MAIN = 'PROTIPS';
   static const String ABOUT = 'SOBRE NÓS';

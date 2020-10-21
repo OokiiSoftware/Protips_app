@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
@@ -81,7 +80,7 @@ class UserDados {
       if (!await _userUpdateInfo())
         return false;
 
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.USUARIO)
         .child(id)
         .child(FirebaseChild.DADOS)
@@ -106,7 +105,7 @@ class UserDados {
     Log.d(TAG, 'uploadUserPhoto', 'Iniciando', file.path);
 
     try {
-      final StorageReference ref = Firebase.storage
+      final StorageReference ref = FirebasePro.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.PERFIL)
           .child(id + '.jpg');
@@ -130,19 +129,13 @@ class UserDados {
   Future<bool> _userUpdateInfo() async {
     Log.d(TAG, 'uploadUserInfo', 'Iniciando');
 
-    int i = 0;
-    UserUpdateInfo userUpdateInfo = UserUpdateInfo();
-    if (foto!= null && foto.isNotEmpty) {
-      userUpdateInfo.photoUrl = foto;
-      i++;
-    }
-    if (nome!= null && nome.isNotEmpty) {
-      userUpdateInfo.displayName = nome;
-      i++;
-    }
     try {
-      if (i > 0)
-        await Firebase.fUser.updateProfile(userUpdateInfo);
+      if (foto!= null && foto.isNotEmpty) {
+        await FirebasePro.user.updateProfile(photoURL: foto);
+      }
+      if (nome!= null && nome.isNotEmpty) {
+        await FirebasePro.user.updateProfile(displayName: nome);
+      }
       Log.d(TAG, 'uploadUserInfo', 'OK');
       return true;
     } catch (e) {
@@ -152,7 +145,7 @@ class UserDados {
   }
 
   Future<bool> addIdentificador() async {
-    return await Firebase.databaseReference
+    return await FirebasePro.database
         .child(FirebaseChild.IDENTIFICADOR)
         .child(tipname)
         .set(id)

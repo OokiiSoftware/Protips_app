@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/strings.dart';
 import 'import.dart';
@@ -32,6 +32,7 @@ class FirebaseChild {
   static const String TAGS = 'tags';
   static const String LOGS = 'logs';
   static const String PAGAMENTOS = 'pagamentos';
+  static const String ATIVOS = 'ativos';
   static const String DENUNCIAS = 'denuncias';
   static const String COMPRAS_IDS = 'comprasIDs';
 
@@ -64,68 +65,42 @@ class FirebaseChild {
   static const String CARDS = 'cards';
 }
 
-class Firebase {
+class FirebasePro {
   //region Variaveis
-  static const String TAG = 'getFirebase';
+  static const String TAG = 'FirebasePro';
 
-  static FirebaseApp _firebaseApp;
-  static FirebaseUser _firebaseUser;
+  // static FirebaseApp _firebaseApp;
   static FirebaseStorage _storage = FirebaseStorage.instance;
-  static DatabaseReference _databaseReference = FirebaseDatabase.instance.reference();
+  static DatabaseReference _database = FirebaseDatabase.instance.reference();
   static FirebaseAuth _auth = FirebaseAuth.instance;
-  static NotificationManager _fcm;
   static GoogleSignIn _googleSignIn = GoogleSignIn();
-//  static Token _token;
+  // static NotificationManager _fcm;
 
-  static User _user;
+  static UserPro _userPro;
   static bool _isAdmin;
   static Map<String, bool> _admins = Map();// <id, isEnabled>
   //endregion
 
   //region Firebase App
 
-  static Future<FirebaseApp> app() async{
-    if (_firebaseApp == null) {
-      var iosOptions = FirebaseOptions(
-        googleAppID: '1:721419790842:ios:ac0829d013db5cad509c43',
-        gcmSenderID: '',
-        storageBucket: _dataUrl['storageBucket'],
-        databaseURL: _dataUrl['databaseURL'],
-      );
-      var androidOptions = FirebaseOptions(
-        googleAppID: '1:721419790842:android:84815debd1879d3d509c43',
-        apiKey: 'AIzaSyClZ-JCdZwUKQqVamI3C6LwRVWBmEP3x2A',
-        storageBucket: _dataUrl['storageBucket'],
-        databaseURL: _dataUrl['databaseURL'],
-      );
-
-      _firebaseApp = await FirebaseApp.configure(
-          name: MyResources.APP_NAME,
-          options: Platform.isIOS ? iosOptions : androidOptions
-      );
-    }
-
-    return _firebaseApp;
-  }
-
   static StorageReference get storage => _storage.ref();
 
   static FirebaseAuth get auth => _auth;
 
-  static DatabaseReference get databaseReference => _databaseReference;
+  static DatabaseReference get database => _database;
 
-  static Future<FirebaseUser> googleAuth() async {
+  static Future<bool> googleAuth() async {
     final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
     final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-    final AuthCredential credential = GoogleAuthProvider.getCredential(
+    final AuthCredential credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
     );
+    await _auth.signInWithCredential(credential);
 
-    final FirebaseUser user = (await _auth.signInWithCredential(credential)).user;
-    print("signed in " + user.displayName);
-    return user;
+    Log.d(TAG, 'signed in', user.displayName);
+    return true;
   }
 
   //endregion
@@ -133,25 +108,37 @@ class Firebase {
   //region Metodos
 
   static Future<FirebaseInitResult> init() async {
-    Log.d(TAG, 'init', 'Firebase Iniciando');
+    Log.d(TAG, 'init', 'Iniciando');
 
     const firebaseUser_Null = 'firebaseUser Null';
     try {
       await OfflineData.createPerfilDirectory();
       await OfflineData.createPostDirectory();
       await OfflineData.readDirectorys();
-      await app();
 
-      _firebaseUser = await _auth.currentUser();
-      if (_firebaseUser == null)
+      await Firebase.initializeApp(
+          name: MyResources.APP_NAME,
+          options: FirebaseOptions(
+            appId: _dataUrl[Platform.isAndroid ? 'appId-android' : 'appId-ios'],
+            messagingSenderId: _dataUrl['messagingSenderId'],
+            storageBucket: _dataUrl['storageBucket'],
+            databaseURL: _dataUrl['databaseURL'],
+            projectId: _dataUrl['projectId'],
+            apiKey: _dataUrl['apiKey'],
+          )
+      ).catchError((e) {
+        Log.e(TAG, 'init', 'initializeApp', e);
+      });
+
+      if (user == null || !user.emailVerified)
         throw new Exception(firebaseUser_Null);
 
-      _checkAdmin();
-      Log.d(TAG, 'init', 'Firebase OK');
+      await _checkAdmin();
+      Log.d(TAG, 'init', 'OK');
       return FirebaseInitResult.ok;
     } catch (e) {
       if (e.toString().contains(firebaseUser_Null)) {
-        Log.e(TAG, 'init', e, false);
+        Log.e2(TAG, 'init', e);
         return FirebaseInitResult.fUserNull;
       } else
         Log.e(TAG, 'init', e);
@@ -159,31 +146,21 @@ class Firebase {
     }
   }
 
-  static void initAdmin() async {
-    databaseReference.child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER).onValue.listen((event) async {
-      Map<dynamic, dynamic> map = event.snapshot.value;
-      if (map != null)
-        for(String key in map.keys) {
-          var item = await getUsers.get(key);
-          if (item != null)
-            getSolicitacoes.add(item);
-        }
-    });
-
+  static void initAdmin() {
+    getSolicitacoes.observe();
     getDenuncias.baixar();
     getErros.baixar();
   }
 
-  static void _checkAdmin() async {
+  static Future _checkAdmin() async {
     try {
-      var snapshot = await Firebase.databaseReference
-          .child(FirebaseChild.ADMINISTRADORES)/*.child(fUser().uid)*/.once();
+      var snapshot = await FirebasePro.database.child(FirebaseChild.ADMINISTRADORES).once();
       Map<dynamic, dynamic> map = snapshot.value;
       for (dynamic d in map.keys) {
         _admins[d] = map[d];
       }
-      if (_admins.containsKey(fUser.uid))
-        _isAdmin = map[fUser.uid] ?? false;
+      if (_admins.containsKey(user.uid))
+        _isAdmin = map[user.uid] ?? false;
       if (isAdmin)
         initAdmin();
     } catch (e) {
@@ -191,35 +168,38 @@ class Firebase {
     }
   }
 
-  static void initNotificationManager(BuildContext context) {
-    _fcm = NotificationManager(context);
-    _fcm.init();
-  }
+  // static void initNotificationManager(BuildContext context) {
+  //   _fcm = NotificationManager(context);
+  //   _fcm.init();
+  // }
 
   static void finalize() async {
-    _firebaseUser = null;
-    _isAdmin = false;
-//    _token = null;
-    getTipster.reset();
     getPosts.reset();
-    await _user.logout();
-    _fcm = null;
-    _user = null;
+    getTipster.reset();
+    auth.signOut();
+    _isAdmin = false;
+    logado = false;
+    _userPro = null;
+    await NotificationManager.instance?.finalize();
+    NotificationManager.instance = null;
   }
 
-  static Map get _dataUrl => {
+  static Map<String, String> get _dataUrl => {
+    'apiKey': 'AIzaSyClZ-JCdZwUKQqVamI3C6LwRVWBmEP3x2A',
     'databaseURL': 'https://protips-oki.firebaseio.com',
-    'storageBucket': 'gs://protips-oki.appspot.com'
+    'storageBucket': 'gs://protips-oki.appspot.com',
+    'messagingSenderId': '721419790842',
+    'projectId': 'protips-oki',
+    'appId-android': '1:721419790842:android:84815debd1879d3d509c43',
+    'appId-ios': '1:721419790842:ios:ac0829d013db5cad509c43',
   };
-
-//  static Token get token => _token;
 
   static bool get isAdmin => _isAdmin ?? false;
 
-  static NotificationManager get notificationManager => _fcm;
+  // static NotificationManager get notificationManager => _fcm;
 
-  static Future<List<User>> get admins async {
-    List<User> list = [];
+  static Future<List<UserPro>> get admins async {
+    List<UserPro> list = [];
     for(String uid in _admins.keys)
       if (_admins[uid])
         list.add(await getUsers.get(uid));
@@ -230,35 +210,29 @@ class Firebase {
 
   //region Usuario
 
-  static User get user {
-    if (_user == null)
-      _user = new User();
-    return _user;
+  static UserPro get userPro {
+    if (_userPro == null)
+      _userPro = new UserPro();
+    return _userPro;
   }
 
-  static FirebaseUser get fUser => _firebaseUser;
+  static User get user => auth.currentUser;
 
-  static void setUltinoEmail(String email) {
-    Aplication.sharedPref.setString(SharedPreferencesKey.EMAIL, email);
-  }
+  static String get ultinoEmail => Preferences.getString(PreferencesKey.EMAIL) ?? '';
+  static set ultinoEmail(String email) => Preferences.setString(PreferencesKey.EMAIL, email);
 
-  static String getUltinoEmail() {
-    return Aplication.sharedPref.getString(SharedPreferencesKey.EMAIL) ?? '';
-  }
-
-  static void setUser(User user) {
-    _user = user;
-  }
+  static set userPro(UserPro user) =>  _userPro = user;
+  static set logado(bool value) => Preferences.setBool(PreferencesKey.USER_LOGADO, value);
 
   static observMyFirebaseData() {
-    databaseReference
+    database
         .child(FirebaseChild.USUARIO)
-        .child(fUser.uid)
+        .child(user.uid)
         .onValue.listen((event) {
       try {
-        User user = User.fromJson(event.snapshot.value);
+        UserPro user = UserPro.fromJson(event.snapshot.value);
         if (user != null) {
-          setUser(user);
+          user = user;
           OfflineData.saveOfflineData();
         }
       } catch(e) {
@@ -270,19 +244,19 @@ class Firebase {
   static Future<bool> atualizarOfflineUser() async {
     const user_Null = 'user Null';
     try {
-      _user = await getUsers.baixarUser(_firebaseUser.uid);
-      if (_user == null)
+      _userPro = await UserPro.baixar(user.uid);
+      if (_userPro == null)
         throw new Exception(user_Null);
       return true;
     }catch(e) {
       if (e.toString().contains(user_Null))
-        Log.e(TAG, 'atualizarOfflineUser', e, false);
+        Log.e2(TAG, 'atualizarOfflineUser', e);
       else
         Log.e(TAG, 'atualizarOfflineUser', e);
       return false;
     }
   }
 
-//endregion
+  //endregion
 
 }

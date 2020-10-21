@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/pages/perfil_tipster_page.dart';
+import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/res/resources.dart';
 
 class FragmentSolicitacoes extends StatefulWidget {
@@ -14,7 +14,7 @@ class MyWidgetState extends State<FragmentSolicitacoes> with AutomaticKeepAliveC
   //region Variaveis
   static const String TAG = 'FragmentSolicitacoes';
 
-  List<User> _data = new List<User>();
+  List<UserPro> _data = new List<UserPro>();
 
   //endregion
 
@@ -56,7 +56,7 @@ class MyWidgetState extends State<FragmentSolicitacoes> with AutomaticKeepAliveC
           _data[index].isExpanded = !isExpanded;
         });
       },
-      children: _data.map<ExpansionPanel>((User item) {
+      children: _data.map<ExpansionPanel>((UserPro item) {
         double fotoUserSize = 50;
 
         return ExpansionPanel(
@@ -97,7 +97,7 @@ class MyWidgetState extends State<FragmentSolicitacoes> with AutomaticKeepAliveC
     );
   }
 
-  void _acao(User item) {
+  void _acao(UserPro item) {
     getSolicitacoes.remove(item.dados.id);
     setState(() {
       _data.remove(item);
@@ -105,7 +105,7 @@ class MyWidgetState extends State<FragmentSolicitacoes> with AutomaticKeepAliveC
   }
 
   Future<void> _onRefresh() async {
-//    await getUsers.baixar();
+   await getSolicitacoes.baixar();
     _data.clear();
     setState(() {
       _data.addAll(getSolicitacoes.data);

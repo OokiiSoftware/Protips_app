@@ -2,16 +2,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/pages/denuncia_page.dart';
-import 'package:protips/pages/perfil_tipster_page.dart';
+import 'package:protips/pages/perfil_page_tipster.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
 class FragmentInicio extends StatefulWidget {
-  final User user;
+  final UserPro user;
   FragmentInicio({this.user});
   @override
   State<StatefulWidget> createState() => MyWidgetState(user: user);
@@ -23,7 +25,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
   //region Variaveis
   static const String TAG = 'FragmentInicio';
 
-  User user;
+  UserPro user;
   List<Post> data;
   bool canOpenPerfil = false;
 
@@ -52,7 +54,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _onRefresh,
-        child: ListView.builder(
+        child: data.length == 0 ? teste : ListView.builder(
             itemCount: data.length,
             padding: EdgeInsets.only(bottom: 70),
             itemBuilder: (BuildContext context, int index) {
@@ -84,13 +86,28 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
 
   //region Metodos
 
+  Widget get teste {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: Text(
+          'Você não possui tips no dia selecionado. Siga ou filie-se a um tipster para obte-las.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+              fontSize: 25
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget itemLayout(Post item) {
     //region Variaveis
-    User user = getTipster.get(item.idTipster);
-    String meuId = Firebase.fUser.uid;
+    UserPro user = getTipster.get(item.idTipster);
+    String meuId = FirebasePro.user.uid;
     bool isMyPost = item.idTipster == meuId;
 
-    var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
+    var divider = Divider(height: 1, thickness: 1);
 
     double fotoUserSize = 40;
 
@@ -103,17 +120,25 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
         alignment: Alignment.center,
         child: Column(children: [
           //header
+          Divider(
+            // color: MyTheme.textSubtitleColor,
+            height: 1,
+            thickness: 1,
+          ),
           GestureDetector(
             child: Container(
-              color: moreGreens ? Colors.green[200] : (moreReds ? Colors.red[200] : MyTheme.tintColor2()),
+              color: moreGreens ? Colors.green[200] : (moreReds ? Colors.red[200] : MyTheme.cardColor),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   //Foto
                   Padding(
                       padding: EdgeInsets.all(10),
-                      child: item == null ?
-                      Image.asset(MyAssets.ic_person, color: Colors.black) :
+                      child: item != null ?
+                      Image.asset(MyAssets.ic_person,
+                          // color: MyTheme.tintColor,
+                        width: fotoUserSize,
+                      ) :
                       ClipRRect(
                           borderRadius: BorderRadius.circular(50),
                           child: MyLayouts.fotoUser(user.dados, iconSize: fotoUserSize)
@@ -158,7 +183,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
             },
           ),
           Divider(
-            color: MyTheme.accent(),
+            color: MyTheme.accent,
             height: 3,
             thickness: 3,
           ),
@@ -169,9 +194,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
             child: Text(item?.titulo, style: TextStyle(fontSize: 17)),
           ),
           //Foto
-          Container(
-              child: MyLayouts.fotoPost(item)
-          ),
+          Container(child: MyLayouts.fotoPost(item)),
           divider,
           //descricao
           if (item.descricao.isNotEmpty) Container(
@@ -225,8 +248,11 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
                 children: [
                   Text('\tEste Tip teve: '),
                   Tooltip(message: 'Green', child: FlatButton(
-                    child: Image.asset(MyAssets.ic_positivo, width: 30),
-                    color: item.bom.containsKey(meuId) ? Colors.black12 : Colors.white,
+                    child: Image.asset(
+                      MyAssets.ic_positivo,
+                      width: 30,
+                      color: item.bom.containsKey(meuId) ? Colors.green : Colors.black26,
+                    ),
                     onPressed: () async {
                       _setInProgress(true);
                       if (item.bom.containsKey(meuId))
@@ -238,9 +264,11 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
                     },
                   )),
                   Tooltip(message: 'Red', child: FlatButton(
-                    child: Image.asset(MyAssets.ic_negativo, width: 30),
-                    color: item.ruim.containsKey(meuId)
-                        ? Colors.black12 : Colors.white,
+                    child: Image.asset(
+                      MyAssets.ic_negativo,
+                      width: 30,
+                      color: item.ruim.containsKey(meuId) ? Colors.red : Colors.black26
+                    ),
                     onPressed: () async {
                       _setInProgress(true);
                       if (item.ruim.containsKey(meuId))
@@ -313,7 +341,9 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
   }
 
   Future<void> _onRefresh() async {
-    await getUsers.baixar();
+    await UserPro.baixarList();
+    if (user != null)
+      user = await getUsers.get(user.dados.id);
     _preencherLista();
     setState(() {});
   }
@@ -336,6 +366,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
     var lastDate = DateTime.now();
     final DateTime picked = await showDatePicker(
         context: context,
+        locale: Aplication.locale,
         initialDate: _dateTime,
         firstDate: DateTime(1950),
         lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day)
@@ -350,46 +381,19 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
   _onDelete(Post item) async {
     _setInProgress(false);
     String titulo = MyStrings.EXCLUIR;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(titulo),
-        content: Text(MyTexts.EXCLUIR_POST_PERMANENTE),
-        actions: [
-          FlatButton(
-            child: Text(MyStrings.CANCELAR),
-            onPressed: () {Navigator.pop(context);},
-          ),
-          FlatButton(
-            child: Text(MyStrings.SIM),
-            onPressed: () async {
-              Navigator.pop(context);
-              setState(() {
-                titulo = MyStrings.EXCLUIR;
-                _setInProgress(true);
-              });
-              if (await item.excluir()) {
-                setState(() {
-                  data.removeWhere((e) => e.id == item.id);
-                });
-                getPosts.remove(item.id);
-              } else {
-                setState(() {
-                  titulo = MyStrings.EXCLUIR + ': ' + MyErros.ERRO_GENERICO;
-                  _setInProgress(false);
-                });
-              }
-              },
-          ),
-        ],
-      )
-    );
-  }
-
-  _setInProgress(bool b) {
-    setState(() {
-      _inProgress = b;
-    });
+    var content = Text(MyTexts.EXCLUIR_POST_PERMANENTE);
+    var result = await DialogBox.dialogCancelOK(context, title: titulo, content: [content]);
+    if (result.isPositive) {
+      _setInProgress(true);
+      if (await item.excluir()) {
+        setState(() {
+          data.removeWhere((e) => e.id == item.id);
+        });
+      } else {
+        Log.snackbar(MyErros.ERRO_GENERICO, isError: true);
+      }
+      _setInProgress(false);
+    }
   }
 
   _preencherLista() async {
@@ -402,9 +406,8 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
       String data = _dateTime.toString();
       data = data.substring(0, data.indexOf(' '));
       list.addAll(await getPosts.data(data));
-    }
-    else {
-      String meuId = Firebase.fUser.uid;
+    } else {
+      String meuId = FirebasePro.user.uid;
       if (user.seguidores.containsKey(meuId)) {
         String dataPagamentoTemp = '';
         bool inserir = false;
@@ -418,7 +421,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
             list.add(item);
         }
       }
-      else if (Firebase.isAdmin || user.dados.id == meuId) {
+      else if (FirebasePro.isAdmin || user.dados.id == meuId) {
         list.addAll(user.postes.values);
       }
       else
@@ -428,6 +431,13 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
       data.addAll(list..sort((a, b) => b.data.compareTo(a.data)));
     });
     _setInProgress(false);
+  }
+
+  _setInProgress(bool b) {
+    if(!mounted) return;
+    setState(() {
+      _inProgress = b;
+    });
   }
 
   //endregion

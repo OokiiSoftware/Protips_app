@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/device.dart';
 
 class Token {
 

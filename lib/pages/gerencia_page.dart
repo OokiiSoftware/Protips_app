@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/pages/config_page.dart';
+import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_g_denuncias.dart';
@@ -42,13 +44,20 @@ class MyWidgetState extends State<GerenciaPage> with SingleTickerProviderStateMi
   Widget build(BuildContext context) {
     var navHeight = 50.0;
     return Scaffold(
-      appBar: AppBar(title: Text(_currentTitle)),
+      appBar: AppBar(
+        title: Text(_currentTitle),
+        actions: [
+          if (RunTime.semInternet)
+            MyLayouts.icAlertInternet,
+          MyLayouts.appBarActionsPadding,
+        ],
+      ),
       body: _tabBarView,
       bottomNavigationBar: Material(
-        color: MyTheme.primary(),
+        color: MyTheme.primary,
         child: TabBar(
             controller: _tabController,
-            indicatorColor: MyTheme.primary(),
+            indicatorColor: MyTheme.primary,
             tabs: [
               Container(
                 height: navHeight,

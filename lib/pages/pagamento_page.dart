@@ -7,11 +7,12 @@ import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/pagamento.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/res/resources.dart';
-import 'package:flutter_google_pay/flutter_google_pay.dart';
+// import 'package:flutter_google_pay/flutter_google_pay.dart';
 import 'package:protips/res/strings.dart';
+// import 'package:stripe_payment/stripe_payment.dart';
 
 class PagamentoPage extends StatefulWidget {
-  final User valor;
+  final UserPro valor;
   PagamentoPage(this.valor);
   @override
   State<StatefulWidget> createState() => MyWidgetState(valor);// MyWidgetState(valor);
@@ -23,7 +24,7 @@ class MyWidgetState extends State<PagamentoPage> {
 
   //region Variaveis
 
-  final User _user;
+  final UserPro _user;
 
   String _log = '';
 
@@ -38,6 +39,12 @@ class MyWidgetState extends State<PagamentoPage> {
   void initState() {
     super.initState();
     _checkGooglePay();
+    // StripePayment.setOptions(
+    //     StripeOptions(
+    //         publishableKey: MyResources.stripeKey,
+    //         merchantId: MyResources.merchantID
+    //     )
+    // );
   }
 
   @override
@@ -82,12 +89,6 @@ class MyWidgetState extends State<PagamentoPage> {
                     onTap: _makeStripePayment,
                   ),
                 ),
-
-                if(Firebase.isAdmin)
-                  ElevatedButton(
-                    child: Text('Google Pay [ADMIN TESTE]'),
-                    onPressed: _makeCustomPayment,
-                  ),
               ],
             ],
 
@@ -104,69 +105,88 @@ class MyWidgetState extends State<PagamentoPage> {
   //region Metodos
 
   _checkGooglePay() async {
-    bool release = Aplication.isRelease;
-    var environment = release ? 'production' : 'rest';
-    if (await FlutterGooglePay.isAvailable(environment)) {
-      setState(() {
-        _isAvailable = true;
-      });
-    } else {
-      _setLogError('Google Pay não disponível');
-    }
+    // bool release = Aplication.isRelease;
+    // var environment = release ? 'production' : 'rest';
+    // if (await FlutterGooglePay.isAvailable(environment)) {
+    //   setState(() {
+    //     _isAvailable = true;
+    //   });
+    // } else {
+    //   _setLogError('Google Pay não disponível');
+    // }
   }
 
   _makeStripePayment() async {
     _setLogError();
 
-    PaymentItem pm = PaymentItem(
-        stripeToken: MyResources.stripeID,
-        stripeVersion: "2020-03-02",
-        currencyCode: "brl",
-        amount: valor.replaceAll(',', '.'),
-        gateway: 'stripe');
-
-    FlutterGooglePay.makePayment(pm).then((Result result) {
-      if (result.status == ResultStatus.SUCCESS) {
-        _onSucesso();
-      } else if (result.error != null) {
-        _setLogError(result.error);
-        Log.e(TAG, '_makeStripePayment', result.error, 1);
-      }
-    }).catchError((e) {
-      _setLogError(e.toString());
-      Log.e(TAG, '_makeStripePayment', e, 0);
-    });
-  }
-
-  _makeCustomPayment() async {
-    ///docs https://developers.google.com/pay/api/android/guides/tutorial
-    PaymentBuilder pb = PaymentBuilder()
-      ..addGateway("stripe")
-      ..addTransactionInfo(valor, "BRL")
-      ..addAllowedCardAuthMethods(["PAN_ONLY", "CRYPTOGRAM_3DS"])
-      ..addAllowedCardNetworks(["AMEX", "DISCOVER", "JCB", "MASTERCARD", "VISA"])
-      ..addBillingAddressRequired(true)
-      ..addPhoneNumberRequired(true)
-      ..addShippingAddressRequired(true)
-      ..addShippingSupportedCountries(["BR"])
-      ..addMerchantInfo(MyResources.merchantID);
-
-    FlutterGooglePay.makeCustomPayment(pb.build()).then((Result result) {
-      if (result.status == ResultStatus.SUCCESS) {
-        _onSucesso();
-      } else if (result.error != null) {
-        _setLogError(result.error);
-        Log.e(TAG, '_makeCustomPayment', result.error, 1);
-      }
-    }).catchError((e) {
-      _setLogError('Desculpe. Ocorreu um erro.');
-      Log.e(TAG, '_makeCustomPayment', e, 0);
-    });
+    try {
+      // PaymentItem pm = PaymentItem(
+      //     stripeToken: MyResources.stripeKey,
+      //     stripeVersion: "2018-11-08",
+      //     currencyCode: "brl",
+      //     amount: valor.replaceAll(',', '.'),
+      //     gateway: 'stripe');
+      //
+      // Result result = await FlutterGooglePay.makePayment(pm);
+      //
+      // if (result.status == ResultStatus.SUCCESS) {
+      //   var json = result.data;
+      //   var jCard = json['card'];
+      //
+      //   CreditCard card = CreditCard(
+      //     addressCity: jCard['address_city'],
+      //     addressCountry: jCard['address_country'],
+      //     addressLine1: jCard['address_line1'],
+      //     addressLine2: jCard['address_line2'],
+      //     addressState: jCard['address_state'],
+      //     addressZip: jCard['address_zip'],
+      //     brand: jCard['brand'],
+      //     cardId: jCard['id'],
+      //     currency: jCard['currency'],
+      //     country: jCard['country'],
+      //     expMonth: jCard['exp_month'],
+      //     expYear: jCard['exp_year'],
+      //     funding: jCard['funding'],
+      //     last4: jCard['last4'],
+      //     name: jCard['name'],
+      //     cvc: jCard['cvc_check'],
+      //     number: jCard['number'],//TODO precisa dessa bosta
+      //     token: json['id'],
+      //   );
+      //   var created = json['created'];
+      //   Token token = Token(
+      //     tokenId: json['id'],
+      //     card: card,
+      //     created: created is int ? created.toDouble() : created,
+      //     livemode: json['livemode'],
+      //   );
+      //
+      //   try {
+      //     await StripePayment.createPaymentMethod(
+      //         PaymentMethodRequest(
+      //           token: token,
+      //           card: token.card,
+      //         )
+      //     );
+      //     _onSucesso();
+      //   } catch(e) {
+      //     _setLogError(MyErros.PAGAMENTO);
+      //     Log.e(TAG, 'makeStripePayment', 2, e);
+      //   }
+      //
+      // } else if (result.error != null) {
+      //   _setLogError(MyErros.PAGAMENTO);
+      //   Log.e(TAG, 'makeStripePayment', 1, result.error);
+      // }
+    } catch(e) {
+      _setLogError(MyErros.PAGAMENTO);
+      Log.e(TAG, 'makeStripePayment', 0, e);
+    }
   }
 
   _onSucesso() async {
       Pagamento p = Pagamento(
-          userOrigem: Firebase.user,
+          userOrigem: FirebasePro.userPro,
           userDestino: _user,
         data: DataHora.onlyDate,
         valor: valor
@@ -185,7 +205,7 @@ class MyWidgetState extends State<PagamentoPage> {
   }
 
   String get valor {
-    String valor = _user.seguidores[Firebase.fUser.uid] ?? '';
+    String valor = _user.seguidores[FirebasePro.user.uid] ?? '';
     if (valor.isEmpty || valor == MyStrings.DEFAULT) valor = _user.dados.precoPadrao;
     return valor;
   }

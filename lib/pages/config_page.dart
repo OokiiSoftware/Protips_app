@@ -1,10 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
+import 'package:protips/auxiliar/notification_manager.dart';
 import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/pages/pagamento_test_page.dart';
+import 'package:protips/res/dialog_box.dart';
+import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
@@ -27,10 +31,17 @@ class MyWidgetState extends State<ConfigPage> {
 
   @override
   Widget build(BuildContext context) {
-    var divider = Divider(color: MyTheme.primary());
+    var divider = Divider(color: MyTheme.primary);
 
     return Scaffold(
-      appBar: isAdmin ? null : AppBar(title: Text(Titles.CONFIGURACOES)),
+      appBar: isAdmin ? null : AppBar(
+          title: Text(Titles.CONFIGURACOES),
+        actions: [
+          if (RunTime.semInternet)
+            MyLayouts.icAlertInternet,
+          MyLayouts.appBarActionsPadding,
+        ],
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(50),
         child: Column(
@@ -45,16 +56,42 @@ class MyWidgetState extends State<ConfigPage> {
               ),
               ElevatedButton(
                 child: Text('Abrir tela de teste de Pagamento'),
-                onPressed: () => Navigate.to(context, PagamentoTestPage(10.0)),
+                onPressed: () => Navigate.to(context, PagamentoTestPage()),
               ),
               ElevatedButton(
                 child: Text('Enviar Tip de teste'),
                 onPressed: () {
-                  if (!Firebase.user.dados.isTipster) {
+                  if (!FirebasePro.userPro.dados.isTipster) {
                     Log.snackbar('Esta não é uma conta Tipster');
                     return;
                   }
-                  Post.criarTeste(isPublico: false).postar(isTeste: true);
+                  Post.criarTeste(isPublico: false).postar(isTeste: true, salvar: false);
+                },
+              ),
+              ElevatedButton(
+                child: Text('Enviar Notificação de teste'),
+                onPressed: () async {
+                  await NotificationManager.instance.sendDepuracaoTopic();
+                  Log.snackbar('Notificação enviada.');
+                },
+              ),
+              ElevatedButton(
+                child: Text('Abrir Play Story'),
+                onPressed: () {
+                  Import.openUrl(MyResources.playStoryLink, context);
+                },
+              ),
+
+              ElevatedButton(
+                child: Text('SnackBar'),
+                onPressed: () {
+                  Log.snackbar('Teste de snackbar');
+                },
+              ),
+              ElevatedButton(
+                child: Text('SnackBar Erro'),
+                onPressed: () {
+                  Log.snackbar('Teste de snackbar erro', isError: true);
                 },
               ),
             ]
@@ -82,36 +119,24 @@ class MyWidgetState extends State<ConfigPage> {
     int currentVersion = Aplication.appVersionInDatabase;
 
     controler.text = currentVersion.toString();
-    int newVersion = await showDialog(
-        context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Número da versão do app'),
-        content: TextField(
-          controller: controler,
-          keyboardType: TextInputType.number,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            labelText: 'Número inteiro'
-          ),
-        ),
-        actions: [
-          FlatButton(
-            child: Text(MyStrings.CANCELAR),
-            onPressed: () => Navigator.pop(context, currentVersion),
-          ),
-          FlatButton(
-            child: Text(MyStrings.OK),
-            onPressed: () => Navigator.pop(context, int.parse(controler.text)),
-          ),
-        ],
-      )
+    var title = 'Número da versão do app';
+    var content = TextField(
+      controller: controler,
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.done,
+      decoration: InputDecoration(
+          labelText: 'Número inteiro'
+      ),
     );
+    var result = await DialogBox.dialogCancelOK(context, title: title, content: [content]);
+    if (!result.isPositive) return;
+    int newVersion = int.parse(controler.text);
 
     if (newVersion != currentVersion) {
       Aplication.appVersionInDatabase = newVersion;
 
       _setInProgress(true);
-      await Firebase.databaseReference
+      await FirebasePro.database
           .child(FirebaseChild.VERSAO)
           .set(newVersion)
           .then((value) => Log.snackbar(MyTexts.DADOS_SALVOS))
@@ -121,6 +146,7 @@ class MyWidgetState extends State<ConfigPage> {
   }
 
   void _setInProgress(bool b) {
+    if(!mounted) return;
     setState(() {
       inProgress = b;
     });

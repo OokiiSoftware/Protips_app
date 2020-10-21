@@ -1,6 +1,26 @@
 import 'package:device_info/device_info.dart';
+import 'package:flutter/services.dart';
+import 'package:google_api_availability/google_api_availability.dart';
 import 'dart:io' show Platform;
 import 'log.dart';
+
+class Device {
+  static Map<String, dynamic> deviceData;
+
+  static String get name =>
+      (Platform.isAndroid ? deviceData['model'] : deviceData['name']) ?? '';
+
+  static Future<bool> checkGoogleServices([bool showDialog = false]) async {
+    GooglePlayServicesAvailability playStoreAvailability;
+    try {
+      playStoreAvailability = await GoogleApiAvailability.instance
+          .checkGooglePlayServicesAvailability(showDialog);
+    } on PlatformException {
+      playStoreAvailability = GooglePlayServicesAvailability.unknown;
+    }
+    return playStoreAvailability.value == GooglePlayServicesAvailability.success.value;
+  }
+}
 
 class DeviceInfo {
 

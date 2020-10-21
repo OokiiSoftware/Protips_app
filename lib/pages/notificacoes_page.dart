@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/notificacao.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/perfil_tipster_page.dart';
+import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:random_string/random_string.dart';
@@ -20,7 +21,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   static const String TAG = 'NotificacoesPage';
 
   List<Notificacao> _data = List<Notificacao>();
-  User user;
+  UserPro user;
   //endregion
 
   //region overrides
@@ -28,7 +29,7 @@ class MyWidgetState extends State<NotificacoesPage> {
   @override
   void initState() {
     super.initState();
-    user = Firebase.user;
+    user = FirebasePro.userPro;
     _addSeguidoresPendentes();
   }
 
@@ -37,6 +38,11 @@ class MyWidgetState extends State<NotificacoesPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(Titles.NOTIFICACOES),
+        actions: [
+          if (RunTime.semInternet)
+            MyLayouts.icAlertInternet,
+          MyLayouts.appBarActionsPadding,
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -91,16 +97,17 @@ class MyWidgetState extends State<NotificacoesPage> {
   }
 
   Future<void> _onRefresh() async {
-    user = Firebase.user;
+    user = FirebasePro.userPro;
     _data.clear();
     await _addSeguidoresPendentes();
+    if(!mounted) return;
     setState(() {});
   }
 
   _addSeguidoresPendentes() async {
     if (user.seguidoresPendentes.length > 0)
       for (String key in user.seguidoresPendentes.values) {
-        User item = await getUsers.get(key);
+        UserPro item = await getUsers.get(key);
         if (item== null)
           continue;
         String id = randomString(10);
@@ -111,19 +118,23 @@ class MyWidgetState extends State<NotificacoesPage> {
           FlatButton(
             child: Text('Recusar'.toUpperCase()),
             onPressed: () async {
-              if (await user.removeSolicitacao(item.dados.id))
+              if (await user.removeSolicitacao(item.dados.id)) {
+                if(!mounted) return;
                 setState(() {
                   _data.removeWhere((x) => x.id == id);
                 });
+              }
             },
           ),
           FlatButton(
             child: Text('Aceitar'.toUpperCase()),
             onPressed: () async {
-              if (await user.aceitarSeguidor(item))
+              if (await user.aceitarSeguidor(item)) {
+                if(!mounted) return;
                 setState(() {
                   _data.removeWhere((x) => x.id == id);
                 });
+              }
             },
           ),
         ]);
@@ -133,6 +144,7 @@ class MyWidgetState extends State<NotificacoesPage> {
               Navigate.to(context, PerfilTipsterPage(item));
         });
 
+        if(!mounted) return;
         setState(() {
           _data.add(n);
         });

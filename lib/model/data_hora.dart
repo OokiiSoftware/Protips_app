@@ -86,6 +86,7 @@ class DataHora {
     return value.substring(0, value.indexOf('.'));
   }
 
+  ///Retorna somente o mês e o ano => 2020-12
   static String get onlyDate {
     var value = now();
     return value.substring(0, value.indexOf(' ') -3);

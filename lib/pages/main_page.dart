@@ -1,9 +1,11 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
+import 'package:protips/auxiliar/notification_manager.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';
+import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
@@ -13,8 +15,9 @@ import 'package:protips/pages/users_page.dart';
 import 'package:protips/pages/gerencia_page.dart';
 import 'package:protips/pages/login_page.dart';
 import 'package:protips/pages/perfil_page.dart';
-import 'package:protips/pages/perfil_tipster_page.dart';
+import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/pages/tutorial_page.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
@@ -22,7 +25,6 @@ import 'package:protips/sub_pages/fragment_inicio.dart';
 import 'package:protips/sub_pages/fragment_perfil.dart';
 import 'package:protips/sub_pages/fragment_users_list.dart';
 import 'package:random_string/random_string.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MainPage extends StatefulWidget {
   MainPage({Key key}) : super(key: key);
@@ -49,6 +51,8 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   TabBarView _tabBarView;
   bool _isInicializado = false;
   bool _isTipster = false;
+
+  // bool semInternet = false;
   //endregion
 
   //region overrides
@@ -71,9 +75,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
     _tabController = TabController(length: _widgetOptions.length, initialIndex: _currentIndex, vsync: this);
     _tabController.addListener(() {
-      setState(() {
-        _onPageChanged(_tabController.index);
-      });
+      _onPageChanged(_tabController.index);
     });
     _tabBarView = TabBarView(children: _widgetOptions, controller: _tabController);
 
@@ -83,31 +85,36 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   @override
   Widget build(BuildContext context) {
     //region Variaveis
-    _user = Firebase.user.dados;
+    _user = FirebasePro.userPro.dados;
     _isTipster = _user.isTipster;
 
-    var navIconColor = MyTheme.tintColor();
-    var draewrIconColor = MyTheme.primaryDark();
-    var draewrTextStyle = TextStyle(color: draewrIconColor);
+    var draewrHeaderTextColor = Colors.white;
+    var draewrTextColor = MyTheme.textColorSpecial;
+    var draewrIconColor = MyTheme.textColorSpecial;
+    var draewrTextStyle = TextStyle(color: draewrTextColor);
+
+    var navIconColor = Colors.white;
     var navHeight = 40.0;
     //endregion
 
     if (!_isInicializado)
-      return MyLayouts.splashScreen();
+      return MyLayouts.splashScreen(RunTime.semInternet);
 
-    // sendPostTest();
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         title: Text(_currentTitle),
         actions: <Widget>[
+          if (RunTime.semInternet)
+            MyLayouts.icAlertInternet,
           if (_currentIndex == 1) IconButton(
+            tooltip: 'Pesquisar',
             icon: Icon(Icons.person_search_sharp),
             onPressed: () {
               showSearch(context: context, delegate: DataSearch());
             },
           ),
-          Padding(padding: EdgeInsets.only(right: 10))
+          MyLayouts.appBarActionsPadding,
         ],
       ),
       drawer: Drawer(
@@ -120,42 +127,45 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      MyTheme.primary(),
-                      MyTheme.primaryLight(),
+                      MyTheme.primary,
+                      MyTheme.primaryLight,
                     ]
                 ),
               ),
               child: Container(
                 child: Column(
                   children: [
+                    //Icone / Foto
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
                         width: 70,
                         height: 70,
                         child: _showUserDados ? ClipRRect(
-                          borderRadius: BorderRadius.circular(70),
-                          child: MyLayouts.fotoUser(_user)
+                            borderRadius: BorderRadius.circular(70),
+                            child: MyLayouts.fotoUser(_user)
                         ) : Image.asset(MyAssets.ic_launcher),
                       ),
                     ),
                     Spacer(),
+                    // Nome
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         _showUserDados ? _user.nome : MyResources.APP_NAME,
                         style: TextStyle(
-                          color: MyTheme.textColor(),
+                          color: draewrHeaderTextColor,
                           fontSize: 18,
                         ),
                       ),
                     ),
+                    // Email
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         _showUserDados ? _user.email : MyResources.app_email,
                         style: TextStyle(
-                          color: MyTheme.textSubtitleColor(),
+                          color: Colors.white60,
                           fontSize: 15,
                         ),
                       ),
@@ -165,14 +175,14 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
               ),
             ),
             //Atualização
-            ListTile(
-              leading: Icon(Icons.update, color: draewrIconColor),
-              title: Text(MyMenus.ATUALIZACAO, style: draewrTextStyle),
-              onTap: () {
-                _onAtualizarTap();
-                _closeDrawer(context);
-              },
-            ),
+            // ListTile(
+            //   leading: Icon(Icons.update, color: draewrIconColor),
+            //   title: Text(MyMenus.ATUALIZACAO, style: draewrTextStyle),
+            //   onTap: () {
+            //     _onAtualizarTap();
+            //     _closeDrawer(context);
+            //   },
+            // ),
             //Meus Posts
             if (_isTipster)...[
               ListTile(
@@ -188,11 +198,11 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 title: Text(MyMenus.MEUS_POSTS, style: draewrTextStyle),
                 onTap: () {
                   _closeDrawer(context);
-                  Navigate.to(context, PerfilTipsterPage(Firebase.user));
+                  Navigate.to(context, PerfilTipsterPage(FirebasePro.userPro));
                 },
               ),
-              ]
-             else ...[
+            ]
+            else ...[
               ListTile(
                 leading: Icon(Icons.group, color: draewrIconColor),
                 title: Text(MyMenus.MEUS_TIPSTERS, style: draewrTextStyle),
@@ -211,7 +221,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 Navigate.to(context,PerfilPage());
               },
             ),
-            if (Firebase.isAdmin)
+            if (FirebasePro.isAdmin)
               ListTile(
                 leading: Icon(Icons.whatshot, color: draewrIconColor),
                 title: Text(MyMenus.GERENCIA, style: draewrTextStyle),
@@ -252,10 +262,10 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       ),
       body: _tabBarView,
       bottomNavigationBar: Material(
-        color: MyTheme.primary(),
+        color: MyTheme.primary,
         child: TabBar(
             controller: _tabController,
-            indicatorColor: MyTheme.primary(),
+            indicatorColor: MyTheme.primary,
             tabs: [
               Tooltip(
                 message: Titles.nav_titles_main[0],
@@ -297,36 +307,32 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   //region Metodos
 
   Future<void> _init() async {
-    var result = await Firebase.init();
+    await Aplication.init();
+    _tempoDeInicializacao();
+    var result = await FirebasePro.init();
     try {
       if (result == FirebaseInitResult.fUserNull)
         throw Exception(FirebaseInitResult.fUserNull);
 
-      Aplication.init(context);
-
-      if (await OfflineData.readOfflineData()) {
-        User item = await getUsers.get(Firebase.fUser.uid);
-        if (item != null)
-          Firebase.setUser(item);
-        setState(() {
-          _isInicializado = true;
-        });
-      }
+      await readOfflineData();
 
       //Obtem os dados do usuário logado
-      if (!await Firebase.atualizarOfflineUser()) {
+      if (!await FirebasePro.atualizarOfflineUser()) {
         var result2 = await Navigate.to(context, PerfilPage());
         if (result2 == null) throw Exception(FirebaseInitResult.userNull);
          else Navigate.to(context, PerfilPage());
       }
 
-      _isTipster = Firebase.user.dados.isTipster;
+      _isTipster = FirebasePro.userPro.dados.isTipster;
       _verificarTutorial();
 
-      Firebase.observMyFirebaseData();
+      NotificationManager.instance = NotificationManager(context);
 
-      await getUsers.baixar();
+      FirebasePro.observMyFirebaseData();
 
+      await UserPro.baixarList();
+
+      if(!mounted) return;
       setState(() {
         _isInicializado = true;
       });
@@ -336,14 +342,23 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       _verificarDiaPagamento();
 
       _onAtualizarTap(false);
+      if(!mounted) return;
+      setState(() {
+        RunTime.semInternet = false;
+      });
 
+      _mostrarMsgDeAviso();
     } catch(e) {
       bool sendError = true;
       if (e.toString().contains(FirebaseInitResult.fUserNull.toString()))
         sendError = false;
       if (e.toString().contains(FirebaseInitResult.userNull.toString()))
         sendError = false;
-      Log.e(TAG, 'init', e, sendError);
+
+      if (sendError)
+        Log.e(TAG, 'init', e);
+      else
+        Log.e2(TAG, 'init', e);
       Navigate.toReplacement(context, LoginPage());
     }
   }
@@ -356,7 +371,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     p.isPublico = false;
     p.data = DataHora.now();
     p.descricao = 'desc';
-    p.idTipster = Firebase.fUser.uid;
+    p.idTipster = FirebasePro.user.uid;
     p.campeonato = 'camp';
     p.linha = 'linha';
     p.esporte = 'esport';
@@ -368,9 +383,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   }
 
   void _onLogoutTap() {
-    FirebaseAuth.instance.signOut();
-    Firebase.user.logout();
-    Firebase.finalize();
+    FirebasePro.finalize();
     Navigate.toReplacement(context, LoginPage());
   }
 
@@ -473,15 +486,14 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
          );
        }*/
       if (result)
-        Import.openUrl(resultData, context);
+        Import.openUrl(MyResources.playStoryLink, context);
     } else
     if (showMsg)
       Log.snackbar('Sem Atualização');
   }
 
   void _verificarTutorial() async {
-    var pref = await SharedPreferences.getInstance();
-    if(_isTipster && pref.getBool(SharedPreferencesKey.ULTIMO_TUTORIAL_OK) == null)
+    if(_isTipster && Preferences.getBool(PreferencesKey.ULTIMO_TUTORIAL_OK) == null)
       Navigate.to(context, TutorialPage());
   }
 
@@ -489,13 +501,54 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     DateTime hoje = DateTime.now();
     int dia = _user.diaPagamento;
     if (dia == hoje.day) {
-      Aplication.sharedPref.setBool(SharedPreferencesKey.DIA_PAGAMENTO, false);
+      Preferences.setBool(PreferencesKey.DIA_PAGAMENTO, false);
     }
   }
 
   void _closeDrawer(BuildContext context) {
     Navigator.pop(context);
     _showUserDados = !_showUserDados;
+  }
+
+  // Aviso que o app ta em fase de Testes
+  void _mostrarMsgDeAviso() async {
+    bool mostrei = Preferences.getBool(PreferencesKey.MSG_DE_TESTES) ?? false;
+    if (!mostrei) {
+      String title = 'AVISO';
+      String auxBtnText = 'Não mostrar novamente';
+      var content = Text('Estamos em fase se testes e estamos trabalhando para trazer essa plataforma até você de forma rápida e com segurança.\nPor favor, aguarde mais um pouco.\nFicaremos muito felizes se você permanecer conosco.');
+      var result = await DialogBox.dialogOK(context, title: title, content: [content], auxBtnText: auxBtnText);
+      if (result.isAux)
+        Preferences.setBool(PreferencesKey.MSG_DE_TESTES, true);
+    }
+  }
+
+  Future readOfflineData() async {
+    if (await OfflineData.readOfflineData()) {
+      UserPro item = await getUsers.get(FirebasePro.user.uid);
+      if (item != null)
+        FirebasePro.userPro = item;
+      if(!mounted) return;
+      setState(() {
+        _isInicializado = true;
+      });
+    }
+  }
+
+  void _tempoDeInicializacao() async {
+    int seconds = Aplication.isRelease ? 15 : 2;
+    await Future.delayed(Duration(seconds: seconds));
+    if(!mounted) return;
+    if (!_isInicializado)
+      setState(() {
+        RunTime.semInternet = true;
+      });
+    bool isLogado = Preferences.getBool(PreferencesKey.USER_LOGADO) ?? false;
+    if (isLogado) {
+      await Future.delayed(Duration(seconds: 5));
+      await readOfflineData();
+    } else
+      Navigate.toReplacement(context, LoginPage());
   }
 
   /*Future<bool> _openFile() async {
@@ -537,7 +590,7 @@ class DataSearch extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return PerfilTipsterPage(Firebase.user);
+    return PerfilTipsterPage(FirebasePro.userPro);
   }
 
   @override
@@ -545,7 +598,7 @@ class DataSearch extends SearchDelegate<String> {
     final list = query.isEmpty ? [] : sugestoes.where((x) => x.dados.nome.toLowerCase().startsWith(query.toLowerCase())).toList();
 
     return ListView.builder(itemBuilder: (context, index) {
-      User item = list[index];
+      UserPro item = list[index];
 
       return ListTile(
         leading: MyLayouts.iconFormatUser(
@@ -555,11 +608,11 @@ class DataSearch extends SearchDelegate<String> {
         title: RichText(
           text: TextSpan(
               text: item.dados.nome.substring(0, query.length),
-              style: TextStyle(color: MyTheme.textColorInvert(), fontWeight: FontWeight.bold),
+              style: TextStyle(/*color: MyTheme.textColorInvert, */fontWeight: FontWeight.bold),
               children: [
                 TextSpan(
                     text: item.dados.nome.substring(query.length),
-                    style: TextStyle(color: MyTheme.textColorInvert(0.5))
+                    style: TextStyle(/*color: MyTheme.textSubtitleColor*/)
                 )
               ]
           ),

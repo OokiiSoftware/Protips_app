@@ -26,8 +26,8 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
   bool emailNaoEncontrado = false;
   bool emailInvalido = false;
 
-  double progressBarValue = 0;
-  LinearProgressIndicator progressBar;
+  double _progressBarValue = 0;
+  // LinearProgressIndicator progressBar;
 
   @override
   Widget build(BuildContext context) {
@@ -35,32 +35,35 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
     double widthScreen = MediaQuery.of(context).size.width/1.3;//Tamanho da tela
     double itemHeight = 50;
 
+    var backColor = MyTheme.primaryLight;
+    var errorColor = MyTheme.textColorError;
+    var tintColor = Colors.white;
+    var textColor = Colors.white;
+
     var textfiedlBorder = OutlineInputBorder(
-        borderSide: BorderSide(color: MyTheme.primaryLight()),
+        borderSide: BorderSide(color: backColor),
         borderRadius: BorderRadius.circular(60)
     );
 
     var textfiedDecorationError = BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(60)),
-        color: MyTheme.primaryLight(),
+        color: backColor,
         boxShadow: [
-          BoxShadow(color: Colors.red, blurRadius: 3)
+          BoxShadow(color: errorColor, blurRadius: 3)
         ]
     );
     var textfiedDecoration = BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(60)),
-        color: MyTheme.primaryLight(),
+        color: backColor,
         boxShadow: [
-          BoxShadow(color: Colors.white, blurRadius: 3)
+          BoxShadow(color: tintColor, blurRadius: 3)
         ]
     );
 
     var textfiedPadding = EdgeInsets.only(left: 15, right: 10);
-    var textfiedLabelStyle = TextStyle(color: MyTheme.primary());
-    var textfiedLabeErrorlStyle = TextStyle(color: Colors.red);
-    var textfiedTextStyle = TextStyle(color: MyTheme.textColor());
-
-    progressBar = LinearProgressIndicator(value: progressBarValue, backgroundColor: MyTheme.primaryLight());
+    var textfiedLabelStyle = TextStyle(color: MyTheme.primary);
+    var textfiedLabeErrorlStyle = TextStyle(color: errorColor);
+    var textfiedTextStyle = TextStyle(color: textColor);
 
     if (!reload) {
       cEmail.text = email;
@@ -70,6 +73,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
     //endregion
 
     return Scaffold(
+      backgroundColor: backColor,
       appBar: AppBar(title: Text(Titles.RECUPERAR_SENHA)),
       body: Container(
         alignment: Alignment.center,
@@ -92,7 +96,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
                   child: Padding(
                     child: Text('Informe seu email',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: textColor,
                         fontSize: 22,
                       ),
                     ),
@@ -102,7 +106,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
                 //ProgressBar
                 Align(
                   child: Padding(
-                    child: progressBar,
+                    child: LinearProgressIndicator(value: _progressBarValue, backgroundColor: backColor),
                     padding: EdgeInsets.only(top: 5),
                   ),
                 ),
@@ -126,7 +130,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
                   hintStyle: textfiedLabelStyle,
                   labelText: emailNaoEncontrado ? 'Email não Registrado' : emailInvalido ? 'Email inválido' : null,
                   hintText: 'Email',
-                  icon: Icon(Icons.email, color: MyTheme.primaryDark()),
+                  icon: Icon(Icons.email, color: MyTheme.primaryDark),
                 ),
                 onTap: () {
                   setState(() {
@@ -150,7 +154,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
                 height: itemHeight,
                 margin: EdgeInsets.only(top: 10),
                 decoration: BoxDecoration(
-                    color: MyTheme.tintColor(),
+                    color: tintColor,
                     borderRadius: BorderRadius.all(Radius.circular(60))
                 ),
                 child: ButtonTheme(
@@ -159,7 +163,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
                   child: FlatButton(
                     child: Text('Enviar Email'.toUpperCase(),
                       style: TextStyle(
-                          color: MyTheme.primary(),
+                          color: MyTheme.primary,
                           fontSize: 20
                       ),
                     ),
@@ -170,7 +174,6 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
           ],
         ),
       ),
-      backgroundColor: MyTheme.primaryLight(),
     );
   }
 
@@ -180,32 +183,45 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
     if (email.isEmpty)
       return;
 
+    if(!mounted) return;
     setState(() {
-      progressBarValue = null;
       log = '';
     });
+    _setInProgress(true);
 
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      Log.d(TAG, 'enviarEmail', email);
+      if(!mounted) return;
       setState(() {
         log = 'Email enviado. Verifique sua caixa de entrada ou span e siga os passos que forem informados';
-        progressBarValue = 0;
       });
+      _setInProgress(false);
+      Log.d(TAG, 'enviarEmail', email);
     } catch (e) {
       bool sendError = true;
-      progressBarValue = 0;
-      if (e.toString().contains('ERROR_INVALID_EMAIL')) {
+      _setInProgress(false);
+      if (e.toString().contains('invalid-email')) {
         emailInvalido = true;
         sendError = false;
       }
-      if (e.toString().contains('ERROR_USER_NOT_FOUND')) {
+      if (e.toString().contains('user-not-found')) {
         emailNaoEncontrado = true;
         sendError = false;
       }
+      if(!mounted) return;
       setState(() {});
-      Log.e(TAG, 'enviarEmail', e, sendError);
+      if (sendError)
+        Log.e(TAG, 'enviarEmail', e);
+      else
+        Log.e2(TAG, 'enviarEmail', e);
     }
+  }
+
+  _setInProgress(bool b) {
+    if(!mounted) return;
+    setState(() {
+      _progressBarValue = b ? null : 0;
+    });
   }
 
 }

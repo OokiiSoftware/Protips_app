@@ -1,42 +1,40 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_api_availability/google_api_availability.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:package_info/package_info.dart';
+import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/error.dart';
+import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/auxiliar/device_info.dart';
+import 'package:protips/auxiliar/device.dart';
 import 'package:protips/res/strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'firebase.dart';
 import 'log.dart';
+import 'notification_manager.dart';
 
 class Aplication {
   static const String TAG = 'Aplication';
 
   static int appVersionInDatabase = 0;
   static PackageInfo packageInfo;
-  static SharedPreferences sharedPref;
 
-  static Future<void> init(BuildContext context) async {
+  static Future<void> init() async {
     packageInfo = await PackageInfo.fromPlatform();
-    Device._deviceData = await DeviceInfo.getDeviceInfo();
-    sharedPref = await SharedPreferences.getInstance();
-    Firebase.initNotificationManager(context);
+    Device.deviceData = await DeviceInfo.getDeviceInfo();
+    Preferences.instance = await SharedPreferences.getInstance();
   }
 
   static Future<String> buscarAtualizacao() async {
     Log.d(TAG, 'buscarAtualizacao', 'Iniciando');
-    int _value = await Firebase.databaseReference
+    int _value = await FirebasePro.database
         .child(FirebaseChild.VERSAO)
         .once()
         .then((value) => value.value)
@@ -71,24 +69,8 @@ class Aplication {
   }
 
   static bool get isRelease => bool.fromEnvironment('dart.vm.product');
-}
 
-class Device {
-  static Map<String, dynamic> _deviceData;
-
-  static String get name =>
-      (Platform.isAndroid ? _deviceData['model'] : _deviceData['name']) ?? '';
-
-  static Future<bool> checkGoogleServices([bool showDialog = false]) async {
-    GooglePlayServicesAvailability playStoreAvailability;
-    try {
-      playStoreAvailability = await GoogleApiAvailability.instance
-          .checkGooglePlayServicesAvailability(showDialog);
-    } on PlatformException {
-      playStoreAvailability = GooglePlayServicesAvailability.unknown;
-    }
-    return playStoreAvailability.value == GooglePlayServicesAvailability.success.value;
-  }
+  static Locale get locale => Locale('pt', 'BR');
 }
 
 class Navigate {
@@ -182,8 +164,12 @@ class Import {
 class EventListener {
   static onPostSend(Post item) async {
     getPosts.add(item);
-    Firebase.notificationManager.sendPostTopic(item);
+    await NotificationManager.instance.sendPostTopic(item);
     Log.snackbar('TIP Postado');
+  }
+  static onPostPerfilSend(PostPerfil item) {
+    FirebasePro.userPro.postPerfil[item.id] = item;
+    Log.snackbar('Postado no Perfil');
   }
 
   static onPostSendFail() async {
@@ -191,13 +177,38 @@ class EventListener {
   }
 
   static onPostDelete(Post item) {
-    Firebase.user.postes.remove(item.id);
+    FirebasePro.userPro.postes.remove(item.id);
+    getPosts.remove(item.id);
     Log.snackbar('TIP Excluido');
   }
+  static onPostPerfilDelete(PostPerfil item) {
+    FirebasePro.userPro.postPerfil.remove(item.id);
+    Log.snackbar('Post Excluido');
+  }
 
-  static onPagamentoConcluido(User user) async {
-    Firebase.notificationManager.sendPagamento(user);
+  static onSolicitacaoTipster(UserPro user) async {
+      await NotificationManager.instance.sendSolicitacaoTipsterTopic(user);
+  }
+  static onSolicitacaoTipsterAceita(UserPro user) async {
+    await NotificationManager.instance.sendSolicitacaoTipsterAceitaTopic(user);
+  }
+
+  static onSolicitacaoFiliado(UserPro user) async {
+      await NotificationManager.instance.sendSolicitacaoSeguidorTopic(user);
+  }
+
+  static onSolicitacaoFiliadoAceita(UserPro user) async {
+    await NotificationManager.instance.sendSolicitacaoAceitaSeguidorTopic(user);
+  }
+
+  static onPagamentoConcluido(UserPro user) async {
+    // await FirebasePro.notificationManager.sendPagamentoTopic(user);
     Log.snackbar('Pagamento concluido');
+  }
+
+  static onDenunciaAprovada(Denuncia item) async {
+    await NotificationManager.instance.sendDenunciaTopic(item);
+    await item.delete();
   }
 }
 
@@ -231,7 +242,7 @@ class OfflineData {
       File _pathUsers = _getUserFile(await _getDirectoryPath());
       if (await _pathUsers.exists()) {
         String data = await _pathUsers.readAsString();
-        getUsers.dd(jsonDecode(data));
+        getUsers.dd(UserPro.fromJsonList(jsonDecode(data)));
       }
       Log.d(TAG, 'readOfflineData', 'OK');
       return true;
@@ -335,24 +346,24 @@ class getUsers {
   static const String TAG = 'getUsers';
   static String localPath;
 
-  static Map<String, User> _data = new Map();
+  static Map<String, UserPro> _data = new Map();
 
-  static Map<String, User> get data => _data;
-  static Future<User> get(String key) async {
+  static Map<String, UserPro> get data => _data;
+  static Future<UserPro> get(String key) async {
     if (_data[key] == null) {
-      var item = await baixarUser(key);
+      var item = await UserPro.baixar(key);
       if (item != null)
         add(item);
     }
     return _data[key];
   }
 
-  static void add(User item) {
+  static void add(UserPro item) {
     _data[item.dados.id] = item;
-    if(item.dados.id == Firebase.user.dados.id)
-      Firebase.setUser(item);
+    if(item.dados.id == FirebasePro.userPro.dados.id)
+      FirebasePro.userPro = item;
   }
-  static void addAll(Map<String, User> items) {
+  static void addAll(Map<String, UserPro> items) {
     _data.addAll(items);
   }
   static void remove(String key) {
@@ -363,32 +374,7 @@ class getUsers {
     _data.clear();
   }
 
-  static Future<void> baixar() async {
-    try {
-      var snapshot = await Firebase.databaseReference.child(FirebaseChild.USUARIO).once();
-      Map<dynamic, dynamic> map = snapshot.value;
-      dd(map);
-      Log.d(TAG, 'baixa', 'OK');
-    } catch (e) {
-      Log.e(TAG, 'baixa', e);
-    }
-    saveFotosPerfilLocal();
-  }
-
-  static Future<User> baixarUser(String uid) async {
-    try {
-      var snapshot = await Firebase.databaseReference
-          .child(FirebaseChild.USUARIO).child(uid).once();
-      if (snapshot.value == null)
-        return null;
-      return User.fromJson(snapshot.value);
-    } catch (e) {
-      Log.e(TAG, 'baixarUser', e);
-      return null;
-    }
-  }
-
-  static void dd(Map<dynamic, dynamic> map) {
+  static void dd(Map<String, UserPro> map) {
     if (map == null) return;
 
     reset();
@@ -397,18 +383,14 @@ class getUsers {
 
     for (String key in map.keys) {
       try {
-        User item = User.fromJson(map[key]);
+        UserPro item = map[key];
         bool addTipster = item.dados.isTipster && !item.dados.isBloqueado && !item.solicitacaoEmAndamento();
 
         if (addTipster) {
           //Adiciona os Posts de quem eu sigo e meu Postes
-          if (Firebase.user.seguindo.containsKey(key) || key == Firebase.fUser.uid) {
+          if (FirebasePro.userPro.seguindo.containsKey(key) || key == FirebasePro.user.uid) {
             getPosts.addAll(item.postes.values.toList());
           } else {
-            // for (Post post in item.postes.values) {
-            //   if (post.isPublico)
-            //     getPosts.add(post);
-            // }
             getPosts.addAll(item.postes.values.where((e) => e.isPublico).toList());
           }
           getTipster.add(item);
@@ -419,13 +401,14 @@ class getUsers {
         continue;
       }
     }
+    Log.d(TAG, 'dd', 'OK', map.length);
   }
 
   static Future<void> saveFotosPerfilLocal() async {
     //Salva minha foto
-    await OfflineData.downloadFile(Firebase.user.dados.foto, localPath, Firebase.user.dados.fotoLocal, override: true);
+    await OfflineData.downloadFile(FirebasePro.userPro.dados.foto, localPath, FirebasePro.userPro.dados.fotoLocal, override: true);
     //Salva foto dos tipsters
-    for (User item in getTipster.data) {
+    for (UserPro item in getTipster.data) {
       try {
         await OfflineData.downloadFile(item.dados.foto, localPath, item.dados.fotoLocal, override: true);
       } catch(e) {
@@ -441,15 +424,15 @@ class getUsers {
 // ignore: camel_case_types
 class getTipster {
   static const String TAG = 'getUsers';
-  static Map<String, User> _data = new Map();
+  static Map<String, UserPro> _data = new Map();
 
-  static List<User> get data => _data.values.toList();
-  static User get(String key) => _data[key];
+  static List<UserPro> get data => _data.values.toList();
+  static UserPro get(String key) => _data[key];
 
-  static void add(User item) {
+  static void add(UserPro item) {
     _data[item.dados.id] = item;
   }
-  static void addAll(Map<String, User> items) {
+  static void addAll(Map<String, UserPro> items) {
     _data.addAll(items);
   }
   static void remove(String key) {
@@ -465,22 +448,57 @@ class getTipster {
 // Solicitações para ser um Tipster
 // ignore: camel_case_types
 class getSolicitacoes {
-  static Map<String, User> _data = new Map();
+  static const String TAG = 'getSolicitacoes';
+  static Map<String, UserPro> _data = new Map();
 
-  static List<User> get data => _data.values.toList();
+  static List<UserPro> get data => _data.values.toList();
 
   static void remove(String key) {
     _data.remove(key);
   }
 
-  static void add(User item) {
+  static void _add(UserPro item) {
     _data[item.dados.id] = item;
   }
 
-  static User get(String key) => _data[key];
+  static UserPro get(String key) => _data[key];
 
   static void reset() {
     _data.clear();
+  }
+
+  static void observe() async {
+    FirebasePro.database
+        .child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER)
+        .onValue.listen((event) async {
+      Map<dynamic, dynamic> map = event.snapshot.value;
+      if (map != null)
+        for(String key in map.keys) {
+          var item = await getUsers.get(key);
+          if (item != null)
+            _add(item);
+        }
+    });
+  }
+
+  static Future baixar() async {
+    Map<dynamic, dynamic> result = await FirebasePro.database
+        .child(FirebaseChild.SOLICITACAO_NOVO_TIPSTER)
+        .once().then((value) => value.value)
+        .catchError((ex) => null);
+    if (result != null) {
+      reset();
+      for (dynamic key in result.keys) {
+        try {
+          var e = await getUsers.get(key);
+          if(e != null)
+            _add(e);
+        } catch(e) {
+          Log.e(TAG, 'baixar', e);
+          continue;
+        }
+      }
+    }
   }
 }
 
@@ -488,28 +506,28 @@ class getSolicitacoes {
 // ignore: camel_case_types
 class getErros {
   static const String TAG = 'getErros';
-  static Map<String, Error> _data = new Map();
+  static Map<String, Erro> _data = new Map();
 
-  static List<Error> get data => _data.values.toList();
+  static List<Erro> get data => _data.values.toList();
 
   static void remove(String key) {
     _data.remove(key);
   }
 
-  static void add(Error item) {
+  static void add(Erro item) {
     _data[item.data] = item;
   }
 
-  static Error get(String key) => _data[key];
+  static Erro get(String key) => _data[key];
 
   static Future<void> baixar() async {
-    Map<dynamic, dynamic> result = await Firebase.databaseReference.child(FirebaseChild.LOGS)
+    Map<dynamic, dynamic> result = await FirebasePro.database.child(FirebaseChild.LOGS)
         .once().then((value) => value.value).catchError((ex) => null);
     if (result != null) {
       reset();
       for (dynamic item in result.values) {
         try {
-          Error e = Error.fromJson(item);
+          Erro e = Erro.fromJson(item);
           var e2 = _findSimilar(e);
           if(e2 != null)
             e2.similares.add(e.data);
@@ -523,7 +541,7 @@ class getErros {
     }
   }
 
-  static Error _findSimilar(Error e) {
+  static Erro _findSimilar(Erro e) {
     try {
       return _data.values.firstWhere((x) => x.metodo == e.metodo && x.classe == e.classe && x.valor == e.valor);
     } catch(e) {
@@ -555,7 +573,7 @@ class getDenuncias {
   static Denuncia get(String key) => _data[key];
 
   static Future<void> baixar() async {
-    Map<dynamic, dynamic> result = await Firebase.databaseReference.child(FirebaseChild.DENUNCIAS)
+    Map<dynamic, dynamic> result = await FirebasePro.database.child(FirebaseChild.DENUNCIAS)
         .once().then((value) => value.value).catchError((ex) => null);
     if (result != null) {
       reset();
@@ -612,7 +630,7 @@ class getPosts {
 
   static Future<Post> baixar(String postKey, String userId) async {
     if (_data[postKey] == null) {
-      var result = await Firebase.databaseReference.child(FirebaseChild.USUARIO)
+      var result = await FirebasePro.database.child(FirebaseChild.USUARIO)
       .child(userId).child(FirebaseChild.POSTES).child(postKey).once().then((value) => value.value);
       if (result != null) {
         Post item = Post.fromJson(result);
@@ -658,11 +676,11 @@ class getPosts {
   }
 
   static Future<String> loadPagamento(String tipsterID, String data) async {
-    var snapshot = await Firebase.databaseReference
+    var snapshot = await FirebasePro.database
         .child(FirebaseChild.PAGAMENTOS)
         .child(tipsterID)
         .child(data)
-        .child(Firebase.fUser.uid)
+        .child(FirebasePro.user.uid)
         .once();
 
     return snapshot.value;

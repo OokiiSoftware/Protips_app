@@ -1,7 +1,7 @@
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/log.dart';
 
-class Error {
+class Erro {
 
   bool isExpanded = false;
 
@@ -12,9 +12,9 @@ class Error {
   String data;
   List<String> _similares;
 
-  Error();
+  Erro();
 
-  Error.fromJson(Map map) {
+  Erro.fromJson(Map map) {
     classe = map['classe'];
     userId = map['userId'];
     metodo = map['metodo'];
@@ -31,7 +31,7 @@ class Error {
 
   Future<bool> salvar() async {
     try {
-      var result = await Firebase.databaseReference
+      var result = await FirebasePro.database
           .child(FirebaseChild.LOGS)
           .child(data)
           .set(toJson())
@@ -47,7 +47,7 @@ class Error {
 
   Future<bool> _delete(String key) async {
     try {
-      var result = await Firebase.databaseReference
+      var result = await FirebasePro.database
           .child(FirebaseChild.LOGS)
           .child(key)
           .remove()

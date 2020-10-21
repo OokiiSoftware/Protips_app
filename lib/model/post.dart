@@ -42,7 +42,6 @@ class Post {
     titulo = map['titulo'];
     link = map['link'];
     descricao = map['descricao'];
-//    texto = map['texto'];
     oddMaxima = map['odd_maxima'];
     oddMinima = map['odd_minima'];
     oddAtual = map['odd_atual'];
@@ -53,7 +52,6 @@ class Post {
     idTipster = map['id_tipster'];
     esporte = map['esporte'];
     linha = map['linha'];
-//    mercado = map['mercado'];
     campeonato = map['campeonato'];
     isPublico = map['isPublico'];
     ruim = map['ruim'];
@@ -84,10 +82,11 @@ class Post {
 
   static Map<String, Post> fromJsonList(Map map) {
     Map<String, Post> items = Map();
-    if (map == null)
-      return items;
+    if (map == null) return items;
+
     for (String key in map.keys)
       items[key] = Post.fromJson(map[key]);
+
     return items;
   }
 
@@ -105,7 +104,7 @@ class Post {
     item.oddMinima = '1';
     item.oddAtual = '1';
     item.unidade = '1';
-    item.idTipster = Firebase.fUser.uid;
+    item.idTipster = FirebasePro.user.uid;
     item.titulo = 'Tip de teste';
     item.descricao = 'descricao do tip';
     item.link = 'link';
@@ -115,23 +114,26 @@ class Post {
     return item;
   }
 
-  Future<bool> postar({bool isTeste = false}) async {
+  Future<bool> postar({bool isTeste = false, bool salvar = true}) async {
     Log.d(TAG, 'postar', 'Iniciando');
     var result = await _uploadPhoto();
     if (!isTeste && (result == null || !result))
       return false;
 
-    result = await Firebase.databaseReference
-        .child(FirebaseChild.USUARIO)
-        .child(idTipster)
-        .child(FirebaseChild.POSTES)
-        .child(data)
-        .set(toJson())
-        .then((value) => true)
-        .catchError((e) {
-          Log.e(TAG, 'postar', e);
-          return false;
-        });
+    if (salvar)
+      result = await FirebasePro.database
+          .child(FirebaseChild.USUARIO)
+          .child(idTipster)
+          .child(FirebaseChild.POSTES)
+          .child(data)
+          .set(toJson())
+          .then((value) => true)
+          .catchError((e) {
+            Log.e(TAG, 'postar', e);
+            return false;
+          });
+    else
+      result = true;
 
     if (result)
       EventListener.onPostSend(this);
@@ -145,7 +147,7 @@ class Post {
   Future<bool> addBom(String userId) async {
     if (bom.containsValue(userId))
       return true;
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -166,7 +168,7 @@ class Post {
   Future<bool> addRuim(String userId) async {
     if (ruim.containsValue(userId))
       return true;
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -187,7 +189,7 @@ class Post {
   Future<bool> removeBom(String userId) async {
     if (!bom.containsValue(userId))
     return null;
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -206,7 +208,7 @@ class Post {
   Future<bool> removeRuim(String userId) async {
     if (!ruim.containsValue(userId))
       return true;
-     var result = await Firebase.databaseReference
+     var result = await FirebasePro.database
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -223,7 +225,7 @@ class Post {
   }
 
   Future<bool> excluir() async {
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.USUARIO)
         .child(idTipster)
         .child(FirebaseChild.POSTES)
@@ -234,7 +236,7 @@ class Post {
 
     if (!result) return false;
 
-    result = await Firebase.storage
+    result = await FirebasePro.storage
         .child(FirebaseChild.USUARIO)
         .child(FirebaseChild.POSTES)
         .child(idTipster)
@@ -259,7 +261,7 @@ class Post {
     Log.d(TAG, 'uploadPhoto', 'file path: ' + file.path);
 
     try {
-      final StorageReference ref = Firebase.storage
+      final StorageReference ref = FirebasePro.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES)
           .child(idTipster)
@@ -279,7 +281,7 @@ class Post {
   }
 
   /// Retorna TRUE se o post pertece ao usuário logado
-  bool get isMyPost => idTipster == Firebase.fUser.uid;
+  bool get isMyPost => idTipster == FirebasePro.user.uid;
 
   //endregion
 

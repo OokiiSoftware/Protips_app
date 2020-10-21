@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:protips/auxiliar/log.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/theme.dart';
 
@@ -14,6 +15,8 @@ class MyWidgetState extends State<CadastroPage> {
   static const String TAG = 'CadastroPage';
 
   //region Variaveis
+  bool cadastroConcluido = false;
+
   bool nomeVazio = false;
   bool emailVazio = false;
   bool emailInvalido = false;
@@ -37,22 +40,30 @@ class MyWidgetState extends State<CadastroPage> {
   Widget build(BuildContext context) {
     //region Variaveis
     double itemHeight = 45;
+    var tintColor = Colors.white;
+    var textColor = Colors.white;
+    var backColor = MyTheme.primary;
 
     var itemContentPadding = EdgeInsets.fromLTRB(12, 0, 12, 0);
     var textfiedlBorder = OutlineInputBorder(
-        borderSide: BorderSide(color: MyTheme.tintColor()),
+        borderSide: BorderSide(color: tintColor),
       borderRadius: BorderRadius.circular(60)
     );
     var textfiedlBorderError = OutlineInputBorder(
-        borderSide: BorderSide(color: Colors.red),
+        borderSide: BorderSide(color: MyTheme.textColorError),
       borderRadius: BorderRadius.circular(60)
     );
 
     var textfiedPadding = EdgeInsets.symmetric(horizontal: 10);
-    var textfiedLabelStyle = TextStyle(color: MyTheme.primaryLight());
-    var textfiedTextStyle = TextStyle(color: MyTheme.textColor());
+    var textfiedLabelStyle = TextStyle(color: MyTheme.primaryLight);
+    var textfiedTextStyle = TextStyle(color: textColor);
 
-    var divider = Divider(height: 50, color: MyTheme.primary());
+    var divider = Divider(height: 50, color: backColor);
+
+    var textStyle = TextStyle(
+      color: textColor,
+      fontSize: 18,
+    );
 
     final textAction = TextInputAction.next;
 //    final focusEmail = FocusNode();
@@ -62,138 +73,146 @@ class MyWidgetState extends State<CadastroPage> {
     //endregion
 
     return Scaffold(
+      backgroundColor: backColor,
       body: SingleChildScrollView(
           padding: EdgeInsets.all(50),
-        child: Column(
-          children: [
-            Image.asset(MyAssets.ic_person, width: 100, height: 100),
-            // Texto
-            Padding(
-              child: Text('PUNTER | TIPSTER',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                ),
+          child: Column(
+            children: [
+              Image.asset(MyAssets.ic_person, width: 100, height: 100),
+              // Texto
+              Padding(
+                child: Text('PUNTER | TIPSTER', style: textStyle),
+                padding: EdgeInsets.only(top: 50),
               ),
-              padding: EdgeInsets.only(top: 50),
-            ),
-            divider,
-            // Nome
-            Container(
-              height: itemHeight,
-              padding: textfiedPadding,
-              child: TextField(
-                controller: cNome,
-                keyboardType: TextInputType.name,
-                textInputAction: textAction,
-                style: textfiedTextStyle,
-                decoration: InputDecoration(
-                  contentPadding: itemContentPadding,
-                  enabledBorder: nomeVazio ? textfiedlBorderError : textfiedlBorder,
-                  focusedBorder: nomeVazio ? textfiedlBorderError : textfiedlBorder,
-                  labelStyle: textfiedLabelStyle,
-                  labelText: 'Seu Nome',
+              divider,
+              if (cadastroConcluido)...[
+                Text('CADASTRO CONCLUIDO', style: textStyle),
+                divider,
+                Text('POR FAVOR\nVERIFIQUE SEU EMAIL', textAlign: TextAlign.center, style: textStyle),
+                Padding(padding: EdgeInsets.only(top: 80)),
+                FloatingActionButton(
+                  tooltip: 'VOLVAR',
+                  child: Icon(Icons.keyboard_backspace, color: tintColor),
+                  backgroundColor: MyTheme.accent,
+                  onPressed: () => Navigator.pop(context),
                 ),
-                onTap: () {
-                  setState(() {
-                    nomeVazio = false;
-                  });
-                },
-              ),
-            ),
-            // Email
-            Container(
-              height: itemHeight,
-              margin: EdgeInsets.only(top: 20),
-              padding: textfiedPadding,
-              child: TextField(
-                controller: cEmail,
-                textInputAction: textAction,
-                keyboardType: TextInputType.emailAddress,
-                style: textfiedTextStyle,
-                decoration: InputDecoration(
-                  contentPadding: itemContentPadding,
-                  enabledBorder: emailVazio || emailInvalido || emailUsado ? textfiedlBorderError : textfiedlBorder,
-                  focusedBorder: emailVazio || emailInvalido || emailUsado ? textfiedlBorderError : textfiedlBorder,
-                  suffixText: emailInvalido ? 'email inválido' : emailUsado ? 'email já cadastrado' : null,
-                  labelStyle: textfiedLabelStyle,
-                  labelText: 'Seu Email',
+              ] else...[
+                // Nome
+                Container(
+                  height: itemHeight,
+                  padding: textfiedPadding,
+                  child: TextField(
+                    controller: cNome,
+                    keyboardType: TextInputType.name,
+                    textInputAction: textAction,
+                    style: textfiedTextStyle,
+                    decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
+                      enabledBorder: nomeVazio ? textfiedlBorderError : textfiedlBorder,
+                      focusedBorder: nomeVazio ? textfiedlBorderError : textfiedlBorder,
+                      labelStyle: textfiedLabelStyle,
+                      labelText: 'Seu Nome',
+                    ),
+                    onTap: () {
+                      setState(() {
+                        nomeVazio = false;
+                      });
+                    },
+                  ),
                 ),
-                onTap: () {
-                  setState(() {
-                    emailVazio = false;
-                    emailUsado = false;
-                    emailInvalido = false;
-                  });
-                },
-              ),
-            ),
-            // Senha
-            Container(
-              height: itemHeight,
-              margin: EdgeInsets.only(top: 20),
-              padding: textfiedPadding,
-              child: TextField(
-                controller: cSenha,
-                textInputAction: textAction,
-                obscureText: true,
-                style: textfiedTextStyle,
-                decoration: InputDecoration(
-                  contentPadding: itemContentPadding,
-                  enabledBorder: senhaVazio || senhaFraca ? textfiedlBorderError : textfiedlBorder,
-                  focusedBorder: senhaVazio || senhaFraca ? textfiedlBorderError : textfiedlBorder,
-                  labelStyle: textfiedLabelStyle,
-                  suffixText: senhaFraca ? 'Senha fraca' : null,
-                  labelText: 'Senha',
+                // Email
+                Container(
+                  height: itemHeight,
+                  margin: EdgeInsets.only(top: 20),
+                  padding: textfiedPadding,
+                  child: TextField(
+                    controller: cEmail,
+                    textInputAction: textAction,
+                    keyboardType: TextInputType.emailAddress,
+                    style: textfiedTextStyle,
+                    decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
+                      enabledBorder: emailVazio || emailInvalido || emailUsado ? textfiedlBorderError : textfiedlBorder,
+                      focusedBorder: emailVazio || emailInvalido || emailUsado ? textfiedlBorderError : textfiedlBorder,
+                      suffixText: emailInvalido ? 'email inválido' : emailUsado ? 'email já cadastrado' : null,
+                      labelStyle: textfiedLabelStyle,
+                      labelText: 'Seu Email',
+                    ),
+                    onTap: () {
+                      setState(() {
+                        emailVazio = false;
+                        emailUsado = false;
+                        emailInvalido = false;
+                      });
+                    },
+                  ),
                 ),
-                onTap: () {
-                  setState(() {
-                    senhaVazio = false;
-                    senhaFraca = false;
-                  });
-                },
-              ),
-            ),
-            // Confirmar Senha
-            Container(
-              height: itemHeight,
-              margin: EdgeInsets.only(top: 20),
-              padding: textfiedPadding,
-              child: TextField(
-                controller: cConfirmSenha,
-                textInputAction: TextInputAction.done,
-                obscureText: true,
-                style: textfiedTextStyle,
-                decoration: InputDecoration(
-                  contentPadding: itemContentPadding,
-                  enabledBorder: confSenhaVazio || senhasDiferentes ? textfiedlBorderError : textfiedlBorder,
-                  focusedBorder: confSenhaVazio || senhasDiferentes ? textfiedlBorderError : textfiedlBorder,
-                  labelStyle: textfiedLabelStyle,
-                  suffixText: senhasDiferentes ? 'Senha diferente' : null,
-                  labelText: 'Confirmar Senha',
+                // Senha
+                Container(
+                  height: itemHeight,
+                  margin: EdgeInsets.only(top: 20),
+                  padding: textfiedPadding,
+                  child: TextField(
+                    controller: cSenha,
+                    textInputAction: textAction,
+                    obscureText: true,
+                    style: textfiedTextStyle,
+                    decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
+                      enabledBorder: senhaVazio || senhaFraca ? textfiedlBorderError : textfiedlBorder,
+                      focusedBorder: senhaVazio || senhaFraca ? textfiedlBorderError : textfiedlBorder,
+                      labelStyle: textfiedLabelStyle,
+                      suffixText: senhaFraca ? 'Senha fraca' : null,
+                      labelText: 'Senha',
+                    ),
+                    onTap: () {
+                      setState(() {
+                        senhaVazio = false;
+                        senhaFraca = false;
+                      });
+                    },
+                  ),
                 ),
-                onSubmitted: (v) {
-                  _onCadastroButtonPressed();
-                },
-                onTap: () {
-                  setState(() {
-                    confSenhaVazio = false;
-                    senhasDiferentes = false;
-                  });
-                },
-              ),
-            ),
-            divider,
-            //Rodape
-            FloatingActionButton(
-              child: Icon(Icons.forward, color: MyTheme.tintColor()),
-              backgroundColor: isLoading ? MyTheme.tintColor2() : MyTheme.accent(),
-              onPressed: isLoading ? null : _onCadastroButtonPressed,
-            )
-          ],
+                // Confirmar Senha
+                Container(
+                  height: itemHeight,
+                  margin: EdgeInsets.only(top: 20),
+                  padding: textfiedPadding,
+                  child: TextField(
+                    controller: cConfirmSenha,
+                    textInputAction: TextInputAction.done,
+                    obscureText: true,
+                    style: textfiedTextStyle,
+                    decoration: InputDecoration(
+                      contentPadding: itemContentPadding,
+                      enabledBorder: confSenhaVazio || senhasDiferentes ? textfiedlBorderError : textfiedlBorder,
+                      focusedBorder: confSenhaVazio || senhasDiferentes ? textfiedlBorderError : textfiedlBorder,
+                      labelStyle: textfiedLabelStyle,
+                      suffixText: senhasDiferentes ? 'Senha diferente' : null,
+                      labelText: 'Confirmar Senha',
+                    ),
+                    onSubmitted: (v) {
+                      _onCadastroButtonPressed();
+                    },
+                    onTap: () {
+                      setState(() {
+                        confSenhaVazio = false;
+                        senhasDiferentes = false;
+                      });
+                    },
+                  ),
+                ),
+                divider,
+                //Rodape
+                FloatingActionButton(
+                  child: Icon(Icons.forward, color: tintColor),
+                  backgroundColor: isLoading ? Colors.black26 : MyTheme.accent,
+                  onPressed: isLoading ? null : _onCadastroButtonPressed,
+                ),
+              ]
+            ],
         )
       ),
-      backgroundColor: MyTheme.primary(),
       floatingActionButton: isLoading ? CircularProgressIndicator() : Container(),
     );
   }
@@ -232,36 +251,46 @@ class MyWidgetState extends State<CadastroPage> {
     }
 
     _setInLoading(true);
-
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: senha);
-      Navigator.pop(context);
+      var result = await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: senha);
+      await result.user.sendEmailVerification();
+
+      setState(() {
+        cadastroConcluido = true;
+      });
+      _setInLoading(false);
     } catch (e) {
       HapticFeedback.lightImpact();
       bool sendError = true;
-      if (e.toString().contains('ERROR_INVALID_EMAIL')) {
+      String erro = e.toString();
+      if (erro.contains('invalid-email')) {
         emailVazio = true;
         sendError = false;
       }
-      if (e.toString().contains('ERROR_WEAK_PASSWORD')) {
+      if (erro.contains('weak-password')) {
         senhaFraca = true;
         sendError = false;
       }
-      if (e.toString().contains('ERROR_EMAIL_ALREADY_IN_USE')) {
+      if (erro.contains('email-already-in-use')) {
         emailUsado = true;
         sendError = false;
       }
-      if (e.toString().contains('ERROR_TOO_MANY_REQUESTS')) {
+      if (erro.contains('too-many-requests')) {
         sendError = false;
-        Log.snackbar('Bloqueamos os pedidos deste dispositivo devido a atividades incomuns. Tente novamente mais tarde.', isError: true);
+        var content = Text('Bloqueamos os pedidos deste dispositivo devido a atividades incomuns. Tente novamente mais tarde.');
+        DialogBox.dialogOK(context, content: [content]);
       }
       setState(() {});
       _setInLoading(false);
-      Log.e(TAG, 'Cadastro', e, sendError);
+      if (sendError)
+        Log.e(TAG, 'Cadastro', e);
+      else
+        Log.e2(TAG, 'Cadastro', e);
     }
   }
 
   _setInLoading(bool b) {
+    if(!mounted) return;
     setState(() {
       isLoading = b;
     });

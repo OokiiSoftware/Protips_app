@@ -8,13 +8,13 @@ import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/colored_tabbar.dart';
-import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
 import 'package:protips/pages/cash_page.dart';
 import 'package:protips/pages/crop_page.dart';
 import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/pages/notificacoes_page.dart';
 import 'package:protips/pages/new_post_page.dart';
+import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
@@ -31,13 +31,9 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
 
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
-  List<PostPerfil> _data = new List<PostPerfil>();
+  List<PostPerfil> _data = new List();
   bool hasNotificacao = false;
   bool inProgress = false;
-
-  User user/* = getFirebase.user()*/;
-
-//  double progressBarValue = 0;
 
   //endregion
 
@@ -49,6 +45,8 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
   @override
   void initState() {
     super.initState();
+    _data.clear();
+    _data.addAll(FirebasePro.userPro.postPerfilList);
   }
 
   @override
@@ -58,30 +56,28 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
     double itemFontSize = 15;
     double fotoSize = 90;
 
-    Color itemColor = MyTheme.primaryLight2();
-    var itemTextStyle = TextStyle(color: MyTheme.textColor(), fontSize: itemFontSize);
+    var itemColor = MyTheme.primaryLight2;
+    var headerColor = MyTheme.cardColor;
+    var itemTextStyle = TextStyle(fontSize: itemFontSize);
     var headItemPadding = Padding(padding: EdgeInsets.only(left: 5));
 
 //    double heightScreen = MediaQuery.of(context).size.height;
 
     double headerHeight = 180;
 
-    user = Firebase.user;
+    var user = FirebasePro.userPro;
     UserDados dados = user.dados;
 
     bool isTipster = dados.isTipster && !user.solicitacaoEmAndamento();
 
     _checkNotificacoes();
 
-    _data.clear();
-    _data.addAll(user.postPerfilList);
-
     var tabBar = [Tab(text: 'FERRAMENTAS')];
     var tabBarView = [_ferramentas(isTipster)];
 
     if (isTipster) {
       tabBar.add(Tab(text: 'PUBLICAÇÕES'));
-      tabBarView.add(_publicacoes(_data));
+      tabBarView.add(_publicacoes());
     }
 
     //endregion
@@ -92,15 +88,16 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
         appBar: AppBar(
           toolbarHeight: headerHeight,
           elevation: 0,
-          backgroundColor: MyTheme.primaryLight(),
+          backgroundColor: headerColor,
           title: Row(
             children: [
               //Foto
               OpenContainerWrapper(
                 tooltip: MyTooltips.EDITAR_PERFIL,
                 statefulWidget: PerfilPage(),
+                background: headerColor,
                 child: Container(
-                  color: MyTheme.primaryLight(),
+                  color: headerColor,
                   child: MyLayouts.iconFormatUser(
                     radius: 100,
                     child: MyLayouts.fotoUser(dados, iconSize: fotoSize),
@@ -110,7 +107,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
               ),
               Padding(padding: EdgeInsets.only(right: 15)),
               //Dados
-              Column(
+              Flexible(child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   //Nome
@@ -118,7 +115,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                     children: [
                       Icon(Icons.person, color: itemColor),
                       headItemPadding,
-                      Text(dados.nome, style: itemTextStyle)
+                      Flexible(child: Text(dados.nome, style: itemTextStyle))
                     ],
                   ),
                   //Email
@@ -126,7 +123,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                     children: [
                       Icon(Icons.email, color: itemColor),
                       headItemPadding,
-                      Text(dados.email, style: itemTextStyle)
+                      Flexible(child: Text(dados.email, style: itemTextStyle))
                     ],
                   ),
                   //TipName
@@ -134,10 +131,10 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                     children: [
                       Icon(Icons.language, color: itemColor),
                       headItemPadding,
-                      Text(dados.tipname, style: itemTextStyle)
+                      Flexible(child: Text(dados.tipname, style: itemTextStyle))
                     ],
                   ),
-                  //Punters
+                  //Filiados/Tipsters
                   Row(
                     children: [
                       Icon(Icons.group, color: itemColor),
@@ -148,13 +145,13 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                     ],
                   ),
                 ],
-              ),
+              ))
             ],
           ),
-          bottom: ColoredTabBar(tabs: tabBar, color: MyTheme.primary(), height: 40),
+          bottom: ColoredTabBar(tabs: tabBar, color: MyTheme.cardColor, height: 40),
         ),
         body: TabBarView(children: tabBarView),
-        floatingActionButton: inProgress ? CircularProgressIndicator() : Container(),
+        floatingActionButton: inProgress ? CircularProgressIndicator() : null,
       ),
     );
   }
@@ -163,7 +160,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
 
   //region Widgets
 
-  Widget _publicacoes(List<PostPerfil> data) {
+  Widget _publicacoes() {
     return CustomScrollView(
       slivers: [
         SliverPadding(
@@ -175,7 +172,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
               crossAxisSpacing: 2,
             ),
             delegate: SliverChildBuilderDelegate((context, index) {
-              var item = data[index];
+              var item = _data[index];
               return Stack(
                 alignment: AlignmentDirectional.topEnd,
                 children: [
@@ -185,7 +182,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                       child: GestureDetector(
                         child: MyLayouts.fotoPostNetwork(item.foto),
                         onTap: () {
-                          MyLayouts.showPopupPostPerfil(context, item);
+                          DialogBox.popupPostPerfil(context, item);
                         },
                       )
                   ),
@@ -194,12 +191,13 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                     icon: Container(
                       decoration: BoxDecoration(
                           boxShadow: [
-                            BoxShadow(color: MyTheme.textColorInvert(),
-                                offset: Offset(-5, 5),
-                                blurRadius: 40)
+                            BoxShadow(
+                                color: MyTheme.darkModeOn ? Colors.black : Colors.white,
+                                blurRadius: 30
+                            )
                           ]
                       ),
-                      child: Icon(Icons.delete, color: MyTheme.tintColor()),
+                      child: Icon(Icons.delete, /*color: MyTheme.tintColor*/),
                     ),
                     onPressed: () {
                       onPerfilPostDelete(item);
@@ -208,7 +206,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
                 ],
               );
             },
-                childCount: data.length
+                childCount: _data.length
             ),
           ),
         )
@@ -242,9 +240,12 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
       tooltip: MyTooltips.NOTIFICACOES,
       statefulWidget: NotificacoesPage(),
       child: Container(
-        color: MyTheme.primaryDark(),
+        color: MyTheme.cardSpecial,
         padding: EdgeInsets.all(20),
-        child: Image.asset(hasNotificacao ? MyAssets.ic_sms_2 : MyAssets.ic_sms),
+        child: Image.asset(
+          hasNotificacao ? MyAssets.ic_sms_2 : MyAssets.ic_sms,
+          color: hasNotificacao ? null : MyTheme.darkModeOn ? MyTheme.accent : null,
+        ),
       ),
       onClosed: (value) => _checkNotificacoes(),
     );
@@ -255,9 +256,10 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
       tooltip: MyTooltips.CASH,
       statefulWidget: CashPage(),
       child: Container(
-        color: MyTheme.primaryDark(),
+        color: MyTheme.cardSpecial,
         padding: EdgeInsets.all(20),
-        child: Image.asset(MyAssets.ic_cash),
+        child: Image.asset(MyAssets.ic_cash,
+          color: MyTheme.darkModeOn ? MyTheme.accent : Colors.white),
       ),
       onClosed: (value) => setState(() {}),
     );
@@ -278,13 +280,14 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
 
   Widget buttonF() {
     return Container(
-      color: MyTheme.primaryDark(),
+      color: MyTheme.cardSpecial,
       child: ButtonTheme(
         minWidth: double.infinity,
         height: double.infinity,
         child: FlatButton(
           padding: EdgeInsets.all(20),
-          child: Image.asset(MyAssets.ic_planilha),
+          child: Image.asset(MyAssets.ic_planilha,
+            color: MyTheme.darkModeOn ? MyTheme.accent : Colors.white,),
           onPressed: (){},
         ),
       ),
@@ -296,9 +299,10 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
       tooltip: MyTooltips.POSTAR_TIP,
       statefulWidget: NewPostPage(),
       child: Container(
-        color: MyTheme.primaryDark(),
+        color: MyTheme.cardSpecial,
         padding: EdgeInsets.all(20),
-        child: Image.asset(MyAssets.ic_lamp),
+        child: Image.asset(MyAssets.ic_lamp,
+          color: MyTheme.darkModeOn ? MyTheme.accent : Colors.white,),
       ),
       onClosed: (value) => setState(() {}),
     );
@@ -319,14 +323,15 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
   //Button newPerfilPost
   Widget buttonNewPerfilPost() {
     return Container(
-      color: MyTheme.primaryDark(),
+      color: MyTheme.cardSpecial,
       child: Tooltip(
         message: MyTooltips.POSTAR_NO_PERFIL,
         child: FlatButton(
           minWidth: double.infinity,
           height: double.infinity,
           padding: EdgeInsets.all(20),
-          child: Image.asset(MyAssets.ic_add),
+          child: Image.asset(MyAssets.ic_add,
+            color: MyTheme.darkModeOn ? MyTheme.accent : Colors.white,),
           onPressed: onPerfilPost,
         ),
       ),
@@ -342,107 +347,84 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
     if (result != null && result is File) {
       TextEditingController _titulo = TextEditingController();
       TextEditingController _legenda = TextEditingController();
-      showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: TextField(
-                controller: _titulo,
-                decoration: InputDecoration(hintText: MyStrings.TITULO),
-              ),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: [
-                    Image.file(result),
-                    TextField(
-                        controller: _legenda,
-                        decoration: InputDecoration(hintText: MyStrings.LEGENDA)
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                FlatButton(
-                  child: Text(MyStrings.CANCELAR),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-                FlatButton(
-                  child: Text(MyStrings.POSTAR),
-                  onPressed: () async {
-                    Navigator.of(context).pop();
-                    _setInProgress(true);
-                    PostPerfil post = new PostPerfil();
-                    post.id = randomString(10);
-                    post.foto = result.path;
-                    post.titulo = _titulo.text;
-                    post.texto = _legenda.text;
-                    post.idTipster = Firebase.fUser.uid;
-                    post.data = DataHora.now();
 
-                    if (await post.postar())
-                      setState(() {});
-                    else
-                      Log.snackbar(MyErros.ERRO_GENERICO, isError: true);
-                    _setInProgress(false);
-                  },
-                ),
-              ],
-            );
+      var content = [
+        TextField(
+          controller: _titulo,
+          decoration: InputDecoration(hintText: MyStrings.TITULO),
+        ),
+        Image.file(result),
+        TextField(
+            controller: _legenda,
+            decoration: InputDecoration(hintText: MyStrings.LEGENDA)
+        ),
+      ];
+      var resultDialog = await DialogBox.dialogCancelOK(context, content: content);
+      if (resultDialog.isPositive) {
+        PostPerfil post = new PostPerfil();
+        post.id = randomString(10);
+        post.foto = result.path;
+        post.titulo = _titulo.text;
+        post.texto = _legenda.text;
+        post.idTipster = FirebasePro.user.uid;
+        post.data = DataHora.now();
+
+        _setInProgress(true);
+        if (await post.postar()) {
+          if(!mounted) return;
+            setState(() {
+              _data.insert(0, post);
+            });
           }
-      );
+        else
+          Log.snackbar(MyErros.ERRO_GENERICO, isError: true);
+        _setInProgress(false);
+      }
     }
   }
 
   Future<void> onPerfilPostDelete(PostPerfil item) async {
-    await showDialog(
-        context: context,
-      builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(MyStrings.EXCLUIR),
-            content: Text(MyTexts.MSG_EXCLUIR_POST_PERFIL),
-            actions: [
-              FlatButton(
-                child: Text(MyStrings.CANCELAR),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-              FlatButton(
-                child: Text(MyStrings.SIM),
-                onPressed: () async {
-                  _setInProgress(true);
-                  Navigator.pop(context);
-                  bool result = await item.excluir();
-                  setState(() {
-                    if (result) {
-                      _data.remove(item);
-                      Firebase.user.postPerfil.remove(item.id);
-                    }
-                  });
-                  _setInProgress(false);
-                },
-              ),
-            ],
-          );
-      }
-    );
-  }
+    var title = MyStrings.EXCLUIR;
+    var content = [
+      Text(MyTexts.MSG_EXCLUIR_POST_PERFIL)
+    ];
+    var result = await DialogBox.dialogCancelOK(context, title: title, content: content);
+    if (result.isPositive) {
+      _setInProgress(true);
+      bool result = await item.excluir();
+      if(!mounted) return;
+      setState(() {
+        if (result) {
+          _data.remove(item);
+        }
+      });
+      _setInProgress(false);
+    }
 
-  // _onPerfilPage() async {
-  //   await Navigate.to(context, PerfilPage());
-  //   setState(() {});
-  // }
-  //
-  // _onNewPost() {
-  //   Navigate.to(context, NewPostPage());
-  // }
-  //
-  // _onCash() {
-  //   Navigate.to(context, CashPage());
-  // }
+    // await showDialog(
+    //     context: context,
+    //   builder: (BuildContext context) {
+    //       return AlertDialog(
+    //         title: Text(MyStrings.EXCLUIR),
+    //         content: Text(MyTexts.MSG_EXCLUIR_POST_PERFIL),
+    //         actions: [
+    //           FlatButton(
+    //             child: Text(MyStrings.CANCELAR),
+    //             onPressed: () {
+    //               Navigator.pop(context);
+    //             },
+    //           ),
+    //           FlatButton(
+    //             child: Text(MyStrings.SIM),
+    //             onPressed: () async {
+    //
+    //             },
+    //           ),
+    //         ],
+    //       );
+    //   }
+    // );
+  }
 
   _setInProgress(bool b) {
     setState(() {
@@ -452,7 +434,7 @@ class MyWidgetState extends State<FragmentPerfil> with AutomaticKeepAliveClientM
 
   _checkNotificacoes() {
     setState(() {
-      hasNotificacao = user.seguidoresPendentes.length > 0;
+      hasNotificacao = FirebasePro.userPro.seguidoresPendentes.length > 0;
     });
   }
 

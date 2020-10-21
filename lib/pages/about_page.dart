@@ -13,7 +13,10 @@ class MyWidgetState extends State<AboutPage> {
 
   @override
   Widget build(BuildContext context) {
-    var divider = Divider(height: 30, color: Colors.white);
+    var textColorSpecial = MyTheme.textColorSpecial;
+
+    var divider = Padding(padding: EdgeInsets.only(top: 30));
+
     return Scaffold(
       appBar: AppBar(title: Text(Titles.ABOUT)),
       body: SingleChildScrollView(
@@ -33,16 +36,23 @@ class MyWidgetState extends State<AboutPage> {
             divider,
             Text(MyStrings.CONTATOS),
             GestureDetector(
-              child: Text(MyResources.app_whatsapp, style: TextStyle(color: MyTheme.primary())),
+              child: Text(MyResources.app_whatsapp, style: TextStyle(color: textColorSpecial)),
               onTap: () {Import.openWhatsApp(MyResources.app_whatsapp, context);},
             ),
             GestureDetector(
-              child: Text(MyResources.app_email, style: TextStyle(color: MyTheme.primary())),
+              child: Text(MyResources.app_email, style: TextStyle(color: textColorSpecial)),
               onTap: () {Import.openEmail(MyResources.app_email, context);},
             ),
             Divider(height: 30),
             Text(MyStrings.POR),
-            Text(MyResources.company_name),
+            Padding(padding: EdgeInsets.only(top: 10)),
+            Tooltip(
+              message: MyResources.company_name,
+              child: Image.asset(MyAssets.ic_oki_logo,
+                width: 80,
+                height: 80,
+              ),
+            ),
           ]),
         ),
       ),

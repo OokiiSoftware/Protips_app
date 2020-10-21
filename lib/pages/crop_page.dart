@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:protips/auxiliar/log.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
-import 'package:protips/res/theme.dart';
 
 class CropImagePage extends StatefulWidget {
   final double aspect;
@@ -17,54 +16,71 @@ class CropImagePage extends StatefulWidget {
 }
 class _MyAppState extends State<CropImagePage> {
 
-  static const String TAG = 'CropImagePage';
-
-  double aspect;
   _MyAppState(this.aspect);
 
+  //region variaveis
+  static const String TAG = 'CropImagePage';
+
+  final double aspect;
   final picker = ImagePicker();
   final cropKey = GlobalKey<CropState>();
-  File _file;
-//  File _sample;
-  File _lastCropped;
 
+  File _file;
+  File _lastCropped;
   bool _inProgress = false;
+  //endregion
 
   @override
   void dispose() {
     super.dispose();
     _file?.delete();
-//    _sample?.delete();
   }
 
   @override
   void initState() {
     super.initState();
-    _openImage();
+    _onOpenImage();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SafeArea(
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          body: _file == null ? MyLayouts.splashScreen() : _buildCroppingImage(),
-          floatingActionButton: _inProgress ? CircularProgressIndicator() : null,
-        ),
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: _file == null ? MyLayouts.splashScreen() : _buildCroppingImage(),
+        floatingActionButton: _inProgress ? CircularProgressIndicator() : null,
       ),
     );
   }
 
   Widget _buildCroppingImage() {
     double aspectRatio = aspect;
+    var iconColor = Colors.white;
+    var textStyle = TextStyle(color: iconColor);
+
     return Column(
       children: <Widget>[
         Expanded(
           child: Crop.file(_file, key: cropKey, aspectRatio: aspectRatio),
         ),
-        Container(
+        BottomNavigationBar(
+          onTap: _onBottomNavItemTap,
+          items: [
+            BottomNavigationBarItem(
+                title: Text(MyStrings.CANCELAR, style: textStyle),
+                icon: Icon(Icons.close, color: Colors.red)
+            ),
+            BottomNavigationBarItem(
+                title: Text(MyTexts.ABRIR_IMAGEM, style: textStyle),
+                icon: Icon(Icons.insert_photo, color: iconColor)
+            ),
+            BottomNavigationBarItem(
+                title: Text(MyStrings.CONCLUIR, style: textStyle),
+                icon: Icon(Icons.check_circle, color: iconColor)
+            ),
+          ],
+        ),
+        /*Container(
           padding: const EdgeInsets.only(top: 20.0),
           alignment: AlignmentDirectional.center,
           child: Row(
@@ -73,13 +89,13 @@ class _MyAppState extends State<CropImagePage> {
               FlatButton(
                 child: Text(
                   MyStrings.CANCELAR,
-                  style: Theme.of(context).textTheme.button.copyWith(color: MyTheme.textColor()),
+                  style: Theme.of(context).textTheme.button.copyWith(color: MyTheme.textColor),
                 ),
                 onPressed: _cancelar,
               ),
               IconButton(
                 tooltip: MyTexts.ABRIR_IMAGEM,
-                color: MyTheme.tintColor(),
+                // color: MyTheme.tintColor,
                 icon: Icon(Icons.insert_photo),
                 onPressed: _openImage,
               ),
@@ -92,38 +108,49 @@ class _MyAppState extends State<CropImagePage> {
 //              ),
               IconButton(
                 tooltip: MyStrings.CONCLUIR,
-                color: MyTheme.tintColor(),
+                // color: MyTheme.tintColor,
                 icon: Icon(Icons.check_circle),
                 onPressed: _cropImage,
               ),
             ],
           ),
-        )
+        )*/
       ],
     );
   }
 
-  Future<void> _openImage() async {
-    final fileAux = await picker.getImage(source: ImageSource.gallery);
-    if (fileAux == null && _file == null)
-      _cancelar();
-    final File file = File(fileAux.path);
-//    final sample = await ImageCrop.sampleImage(
-//      file: file,
-//      preferredSize: context.size.longestSide.ceil(),
-//    );
+  _onBottomNavItemTap(position) {
+    switch(position) {
+      case 0:
+        _onCancelar();
+        break;
+      case 1:
+        _onOpenImage();
+        break;
+      case 2:
+        _onCropImage();
+        break;
+    }
+  }
 
-//    _sample?.delete();
+  Future<void> _onOpenImage() async {
+    final fileAux = await picker.getImage(
+        source: ImageSource.gallery,
+      imageQuality: 100
+    );
+    if (fileAux == null && _file == null)
+      _onCancelar();
+    final File file = File(fileAux.path);
+
     _file?.delete();
 
     setState(() {
-//      _sample = sample;
       _file = file;
     });
 
   }
 
-  Future<void> _cropImage() async {
+  Future<void> _onCropImage() async {
     File toReturn;
     _setInProgress(true);
     try {
@@ -155,7 +182,7 @@ class _MyAppState extends State<CropImagePage> {
     Navigator.pop(context, toReturn);
   }
 
-  void _cancelar() {
+  void _onCancelar() {
     Navigator.of(context).pop();
   }
 

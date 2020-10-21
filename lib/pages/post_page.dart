@@ -4,7 +4,7 @@ import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/perfil_tipster_page.dart';
+import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
@@ -55,11 +55,13 @@ class MyWidgetState extends State<PostPage> {
   //region Metodos
 
   Widget itemLayout(Post item) {
-    User user = getTipster.get(item.idTipster);
+    UserPro user = getTipster.get(item.idTipster);
     double fotoUserSize = 40;
-    bool isMyPost = item.idTipster == Firebase.fUser.uid;
+    bool isMyPost = item.idTipster == FirebasePro.user.uid;
 
-    var divider = Divider(color: MyTheme.textColorInvert(), height: 1, thickness: 1);
+    var divider = Divider(height: 1, thickness: 1);
+    bool moreGreens = item.bom.length > item.ruim.length;
+    bool moreReds = item.ruim.length > item.bom.length;
 
     return Container(
         alignment: Alignment.center,
@@ -67,7 +69,7 @@ class MyWidgetState extends State<PostPage> {
           //header
           GestureDetector(
             child: Container(
-              color: MyTheme.tintColor2(),
+              color: moreGreens ? Colors.green[200] : (moreReds ? Colors.red[200] : MyTheme.cardColor),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -118,14 +120,14 @@ class MyWidgetState extends State<PostPage> {
               ),
             ),
             onTap: () {
-              if (user.dados.id == Firebase.fUser.uid)
+              if (user.dados.id == FirebasePro.user.uid)
                 Navigate.to(context, PerfilPage());
               else
                 Navigate.to(context, PerfilTipsterPage(user));
             },
           ),
           Divider(
-            color: MyTheme.accent(),
+            color: MyTheme.accent,
             height: 3,
             thickness: 3,
           ),

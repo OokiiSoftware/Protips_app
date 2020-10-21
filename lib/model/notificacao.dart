@@ -75,7 +75,7 @@ class PushNotification {
   }
 
   Future<bool> enviar() async {
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.NOTIFICATIONS)
         .child(token)
         .child(timestamp)
@@ -87,7 +87,7 @@ class PushNotification {
     return result;
   }
   Future<bool> enviarTopic() async {
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.NOTIFICATIONS_TOPIC)
         .child(remetente)
         .child(timestamp)
@@ -95,12 +95,12 @@ class PushNotification {
         .then((value) => true)
         .catchError((e) => false);
 
-    Log.d(TAG, 'enviar', result);
+    Log.d(TAG, 'enviarTopic', result);
     return result;
   }
 
   Future<bool> delete() async {
-    var result = await Firebase.databaseReference
+    var result = await FirebasePro.database
         .child(FirebaseChild.NOTIFICATIONS)
 //        .child(para)
         .child(remetente)
@@ -127,7 +127,7 @@ class PushNotification {
     _topic = value;
   }
 
-  String get pagantes => _pagantes ?? null;
+  String get pagantes => _pagantes ?? '';
 
   set pagantes(String value) {
     _pagantes = value;
@@ -181,13 +181,20 @@ class NotificationActions {
   static const String SOLICITACAO_ACEITA_FILIALDO = 'SOLICITACAO_ACEITA_FILIALDO';
   static const String FILIALDO_REMOVIDO = 'FILIALDO_REMOVIDO';
   static const String PAGAMENTO_REALIZADO = 'PAGAMENTO_REALIZADO';
+  static const String DEPURACAO_TESTE = 'DEPURACAO_TESTE';
   static const String REALIZAR_PAGAMENTO = 'REALIZAR_PAGAMENTO';
   static const String ATUALIZACAO = 'ATUALIZACAO';
   static const String DENUNCIA = 'DENUNCIA';
 }
 
 class NotificationTopics {
-  static String receberTips(String uid) {
-    return 'receberTips_$uid';
-  }
+  static String solicitacaoTipsterAceita(String uid) => 'solicitacaoTipsterAceita_$uid';
+  static String solicitacaoFiliado(String uid) => 'solicitacaoFiliado_$uid';
+  static String solicitacaoAceita(String uid) => 'solicitacaoAceita_$uid';
+  static String pagamentoRecebido(String uid) => 'pagamentoRecebido_$uid';
+  static String receberTips(String uid) => 'receberTips_$uid';
+  static String denuncia(String uid) => 'denuncia_$uid';
+  static String get depuracao => 'depuracao';
+
+  static String get solicitacaoTipsterAdmin => 'solicitacaoTipster';
 }

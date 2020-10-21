@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:protips/res/theme.dart';
 
 // ignore: must_be_immutable
 class ColoredTabBar extends Container implements PreferredSizeWidget {
@@ -15,14 +16,14 @@ class ColoredTabBar extends Container implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double decorationSize = 3;
+    // final double decorationSize = 3;
     var tabTextStyle = TextStyle(fontSize: 20);
 
     return Container(
       height: height,
       color: color,
       child: Stack(children: [
-        Divider(height: decorationSize, thickness: decorationSize, color: Colors.white),
+        // Divider(height: decorationSize, thickness: decorationSize, color: MyTheme.cardSpecial),
         TabBar(
             tabs: tabs,
 //            indicatorWeight: 0.1,

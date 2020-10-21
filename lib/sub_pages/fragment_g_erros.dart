@@ -18,7 +18,7 @@ class MyWidgetState extends State<FragmentErros> with AutomaticKeepAliveClientMi
 
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
-  List<Error> _data = new List<Error>();
+  List<Erro> _data = new List<Erro>();
   bool isAtualizando = false;
   //endregion
 
@@ -66,7 +66,7 @@ class MyWidgetState extends State<FragmentErros> with AutomaticKeepAliveClientMi
             _data[index].isExpanded = !isExpanded;
           });
         },
-        children: _data.map<ExpansionPanel>((Error item) {
+        children: _data.map<ExpansionPanel>((Erro item) {
           return ExpansionPanel(
             headerBuilder: (BuildContext context, bool isExpanded) {
               return ListTile(
@@ -103,10 +103,10 @@ class MyWidgetState extends State<FragmentErros> with AutomaticKeepAliveClientMi
 
   Future<void> _deleteAll() async {
     var result = await DialogBox.dialogCancelOK(context, title: 'Excluir todos os dados?');
-    if (result.isOk)
+    if (result.isPositive)
     try {
       _setAtualizando(true);
-      var result = await Firebase.databaseReference
+      var result = await FirebasePro.database
           .child(FirebaseChild.LOGS)
           .remove()
           .then((value) => true)

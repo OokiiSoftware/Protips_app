@@ -4,13 +4,12 @@ import 'package:protips/model/denuncia.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user.dart';
-import 'package:protips/pages/perfil_tipster_page.dart';
+import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/pages/post_page.dart';
 import 'package:protips/auxiliar/firebase.dart';
 
-// ignore: must_be_immutable
 class FragmentDenunciasG extends StatefulWidget {
-  User user;
+  final UserPro user;
   FragmentDenunciasG([this.user]);
   @override
   State<StatefulWidget> createState() => MyWidgetState(user);
@@ -21,7 +20,7 @@ class MyWidgetState extends State<FragmentDenunciasG> with AutomaticKeepAliveCli
   //region Variaveis
   static const String TAG = 'FragmentErros';
 
-  User user;
+  UserPro user;
   List<Denuncia> _data = new List<Denuncia>();
 
   bool _inProgress = false;
@@ -37,7 +36,7 @@ class MyWidgetState extends State<FragmentDenunciasG> with AutomaticKeepAliveCli
   @override
   void initState() {
     super.initState();
-    _isAdmin = Firebase.isAdmin;
+    _isAdmin = FirebasePro.isAdmin;
     _preencherList();
   }
 
@@ -84,7 +83,7 @@ class MyWidgetState extends State<FragmentDenunciasG> with AutomaticKeepAliveCli
               title: Row(children: [
                 if (user == null || !item.isUser) Tooltip(message: 'Visualizar', child: IconButton(icon: Icon(Icons.visibility), onPressed: () async {
                   if (item.isUser) {
-                    User user = await getUsers.get(item.idUser);
+                    UserPro user = await getUsers.get(item.idUser);
                     Navigate.to(context, PerfilTipsterPage(user));
                   } else {
                     Post post = await getPosts.baixar(item.itemKey, item.idUser);
@@ -157,11 +156,11 @@ class MyWidgetState extends State<FragmentDenunciasG> with AutomaticKeepAliveCli
   _preencherList() {
     _data.clear();
     setState(() {
-      _data.addAll(user == null ? getDenuncias.data : user.denuncias.values);
+      _data.addAll(user == null ? getDenuncias.data : user.denuncias.values.toList());
     });
   }
 
-  void _setAtualizando(bool b) {
+  _setAtualizando(bool b) {
     setState(() {
       _inProgress = b;
     });

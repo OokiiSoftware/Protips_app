@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
@@ -12,7 +13,7 @@ import 'package:protips/res/theme.dart';
 
 // ignore: must_be_immutable
 class DenunciaPage extends StatefulWidget {
-  User user;
+  UserPro user;
   Post post;
   // ignore: non_constant_identifier_names
   DenunciaPage.User(this.user);
@@ -26,9 +27,10 @@ class MyWidgetState extends State<DenunciaPage> {
 
   MyWidgetState(this.user, this.post);
 
+  //region variaveis
   static const String TAG = 'DenunciaPage';
 
-  User user;
+  UserPro user;
   Post post;
   bool _isUser = false;
   bool _isEnviando = false;
@@ -37,14 +39,24 @@ class MyWidgetState extends State<DenunciaPage> {
 
   TextEditingController cAssunto = TextEditingController();
   TextEditingController cTexto = TextEditingController();
+  //endregion
 
   @override
   Widget build(BuildContext context) {
     _readArgs(context);
-    var hintStyle = TextStyle(color: _dadosEmpty ? Colors.red : Colors.black26);
+    var hintStyle = TextStyle();
+    var hintStyleError = TextStyle(color: MyTheme.textColorError);
+    var textStyle = TextStyle(color: MyTheme.textColorSpecial);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isUser ? Titles.DENUNCIA_USER : Titles.DENUNCIA_POST)),
+      appBar: AppBar(
+          title: Text(_isUser ? Titles.DENUNCIA_USER : Titles.DENUNCIA_POST),
+        actions: [
+          if (RunTime.semInternet)
+            MyLayouts.icAlertInternet,
+            MyLayouts.appBarActionsPadding,
+        ],
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 30),
         child: Column(children: [
@@ -53,16 +65,18 @@ class MyWidgetState extends State<DenunciaPage> {
 
           TextField(
             controller: cAssunto,
+            style: textStyle,
             decoration: InputDecoration(
-              hintStyle: hintStyle,
+              hintStyle: _dadosEmpty ? hintStyleError : hintStyle,
               hintText: 'Assunto'
             ),
             onTap: _onTextFieldTap,
           ),
           TextField(
             controller: cTexto,
+            style: textStyle,
             decoration: InputDecoration(
-                hintStyle: hintStyle,
+                hintStyle: _dadosEmpty ? hintStyleError : hintStyle,
               hintText: 'Descreva aqui o motivo da denúncia'
             ),
             onTap: _onTextFieldTap,
@@ -75,13 +89,15 @@ class MyWidgetState extends State<DenunciaPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
           label: Text('Enviar'),
-          backgroundColor: _isEnviando ? MyTheme.tintColor2() : MyTheme.accent(),
+          backgroundColor: _isEnviando ? Colors.black26 : MyTheme.accent,
           onPressed: _isEnviando ? null : () {_sendManager(context);},
       )
     );
   }
 
-  Widget _itemLayoutUser(User item) {
+  //region metodos
+
+  Widget _itemLayoutUser(UserPro item) {
     return ListTile(
         leading: MyLayouts.iconFormatUser(
             radius: 50,
@@ -103,14 +119,14 @@ class MyWidgetState extends State<DenunciaPage> {
   _sendManager(BuildContext context) async {
     Denuncia d = _criarItem();
     if (_verificarItem(d)) {
-      _setEnviando(true);
+      _setInProgress(true);
       if (await d.salvar()) {
         Log.snackbar('Enviado');
         Navigator.pop(context);
       } else
         Log.snackbar('Ocorreu um erro', isError: true);
     }
-    _setEnviando(false);
+    _setInProgress(false);
   }
 
   Denuncia _criarItem() {
@@ -121,7 +137,7 @@ class MyWidgetState extends State<DenunciaPage> {
     d.isUser = _isUser;
     d.idUser = _isUser ? user.dados.id : post.idTipster;
     d.itemKey = post?.data;//data é o key de um post
-    d.idDenunciante = Firebase.fUser.uid;
+    d.idDenunciante = FirebasePro.user.uid;
     return d;
   }
 
@@ -134,24 +150,28 @@ class MyWidgetState extends State<DenunciaPage> {
     return ok;
   }
 
-  _setEnviando(bool b) {
-    setState(() {
-      _isEnviando = b;
-      progressBarValue = b ? null : 0;
-    });
-  }
-
   _onTextFieldTap() {
     setState(() {
       _dadosEmpty = false;
     });
   }
 
-  void _readArgs(BuildContext context) {
+  _readArgs(BuildContext context) {
     if (user == null && post == null) {
       Navigator.pop(context);
       return;
     }
     _isUser = user != null;
   }
+
+  _setInProgress(bool b) {
+    if(!mounted) return;
+    setState(() {
+      _isEnviando = b;
+      progressBarValue = b ? null : 0;
+    });
+  }
+
+  //endregion
+
 }

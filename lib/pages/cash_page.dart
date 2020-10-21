@@ -1,11 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/pagamento.dart';
 import 'package:protips/model/user.dart';
+import 'package:protips/pages/users_page.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 
@@ -15,17 +17,19 @@ class CashPage extends StatefulWidget {
 }
 class MyWidgetState extends State<CashPage> {
 
-  static const String TAG = 'CashPage';
-
   //region Variaveis
+  static const String TAG = 'CashPage';
+  static const ATIVOS = FirebaseChild.ATIVOS;
+
+  String _currentData = DataHora.onlyDate;
   bool _inProgress = false;
   double _total = 0.0;
   DateTime _dateTime;
-  String _currentData = '';
-  User _user = Firebase.user;
-  List<User> _data = [];
+  UserPro _user = FirebasePro.userPro;
+  List<UserPro> _data = [];
 
   Map<dynamic, dynamic> _pagamentosMap = Map();
+  String currentAtivos = '0';
   //endregion
 
   //region override
@@ -34,17 +38,35 @@ class MyWidgetState extends State<CashPage> {
   void initState() {
     super.initState();
     _dateTime = DateTime.now();
-    _currentData = DataHora.onlyDate;
     _loadPagamentos();
   }
 
   @override
   Widget build(BuildContext context) {
-    var tableTextStyle = TextStyle(fontSize: 16);
+    var titleText = TextStyle(
+      fontSize: 20,
+      // color: MyTheme.textSubtitleColor,
+      fontWeight: FontWeight.bold,
+    );
+    var tableTextStyle = TextStyle(
+      fontSize: 18,
+      // color: MyTheme.textSubtitleColor,
+    );
+
     return Scaffold(
-      appBar: AppBar(title: Text(Titles.CASH)),
+      appBar: AppBar(
+        title: Center(child: Text(Titles.CASH)),
+        actions: [
+          if (RunTime.semInternet)
+            MyLayouts.icAlertInternet,
+          IconButton(
+            tooltip: 'Filiados',
+            icon: Icon(Icons.group),
+            onPressed: _onMenuFiliados,
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
-        // padding: EdgeInsets.all(10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -52,11 +74,40 @@ class MyWidgetState extends State<CashPage> {
               padding: EdgeInsets.all(10),
               alignment: Alignment.center,
               color: Colors.black12,
-              child:  Text('Mês de $_dateMesName',
-                style: TextStyle(fontSize: 18), textAlign: TextAlign.center,
+              child: Text(_dateMesName.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: titleText,
               ),
             ),
-            Center(child: DataTable(
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: Row(
+                children: [
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Receita Total'.toUpperCase(), style: tableTextStyle),
+                      Text('Disponível Para Saque'.toUpperCase(), style: tableTextStyle),
+                      Text('Taxa de Administração'.toUpperCase(), style: tableTextStyle),
+                      Text('Filiados Ativos'.toUpperCase(), style: tableTextStyle),
+                      Text('Inscritos'.toUpperCase(), style: tableTextStyle),
+                    ],
+                  )),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('R\$ ${_total.toStringAsFixed(2)}', style: tableTextStyle),
+                      Text('R\$ ${(_total /** 0.9*/).toStringAsFixed(2)}', style: tableTextStyle),
+                      Text('R\$ ${(_total * 0/*.1*/).toStringAsFixed(2)}', style: tableTextStyle),
+                      Text(_data.length.toString(), style: tableTextStyle),
+                      Text(currentAtivos, style: tableTextStyle),
+                    ],
+                  )
+                ],
+              ),
+            ),
+            
+            /*DataTable(
               headingRowHeight: 20,
               dataRowHeight: 25,
               columns: [
@@ -77,17 +128,17 @@ class MyWidgetState extends State<CashPage> {
                   DataCell(Text('R\$ ${(_total * 0.1).toStringAsFixed(2)}', style: tableTextStyle)),
                 ]),
               ],
-            )),
-            Divider(),
+            ),*/
             Container(
               padding: EdgeInsets.all(10),
               alignment: Alignment.center,
               color: Colors.black12,
-              child:  Text('Filiados que realizaram o pagamento no mês de $_dateMesName',
-                style: TextStyle(fontSize: 16), textAlign: TextAlign.center,
+              child:  Text('Filiados Ativos'.toUpperCase(),
+                textAlign: TextAlign.center,
+                style: titleText,
               ),
             ),
-            for (User user in _data)...[
+            for (UserPro user in _data)...[
               ListTile(
                 leading: MyLayouts.iconFormatUser(child: MyLayouts.fotoUser(user.dados), radius: 70),
                 title: Text(user.dados.nome),
@@ -108,7 +159,8 @@ class MyWidgetState extends State<CashPage> {
             child: Text(_dateTime.day.toString()),
           )
         ],
-      ), onPressed: _onFloatingAtionPressed),
+      ),
+          onPressed: _onFloatingAtionPressed),
     );
   }
 
@@ -118,14 +170,14 @@ class MyWidgetState extends State<CashPage> {
 
   Map get _currentMap => _pagamentosMap[_currentData] ?? Map();
 
-  double _pagamentoValue(User user) {
-    if (_currentMap[user.dados.id] == null)
+  double _pagamentoValue(UserPro user) {
+    if (user == null || _currentMap[user.dados.id] == null)
       return 0.0;
     return double.parse(_currentMap[user.dados.id].toString().replaceAll(',', '.') ?? '0');
   }
 
   String get _dateMesName {
-    final DateFormat formatter = DateFormat('MMMM');
+    final DateFormat formatter = DateFormat('MMMM', 'pt');
     return formatter.format(_dateTime);
   }
 
@@ -133,6 +185,9 @@ class MyWidgetState extends State<CashPage> {
     var lastDate = DateTime.now();
     final DateTime picked = await showDatePicker(
         context: context,
+        helpText: 'Selecione qualquer dia em um Mês',
+        confirmText: 'Este Mês',
+        locale: Aplication.locale,
         initialDate: _dateTime,
         firstDate: DateTime(2020),
         lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day)
@@ -148,9 +203,18 @@ class MyWidgetState extends State<CashPage> {
     }
   }
 
+  _onMenuFiliados() async {
+    await Navigate.to(context, UsersPage());
+    _setInProgress(true);
+    await _loadPagamentos();
+    _setInProgress(false);
+  }
+
   _loadPagamentos() async {
     _setInProgress(true);
     var result = await Pagamento.loadAll(_user.dados.id);
+
+    if(!mounted) return;
     setState(() {
       _pagamentosMap = result;
     });
@@ -160,11 +224,17 @@ class MyWidgetState extends State<CashPage> {
   }
 
   _loadUsers() async {
-    var list = List<User>();
+    var list = List<UserPro>();
     for (var key in _currentMap.keys) {
-      list.add(await getUsers.get(key));
+      if (key == ATIVOS) continue;
+
+      var user = await getUsers.get(key);
+      if (user != null)
+      list.add(user);
     }
     _data.clear();
+
+    if(!mounted) return;
     setState(() {
       _data.addAll(list);
     });
@@ -172,8 +242,10 @@ class MyWidgetState extends State<CashPage> {
 
   _somarPagamentos() {
     var total = 0.0;
+    currentAtivos = _currentMap[ATIVOS]?.toString() ?? '-';
     for (var value in _currentMap.values) {
-      total += double.parse(value.toString().replaceAll(',', '.'));
+      if (value is String)
+        total += double.parse(value.toString().replaceAll(',', '.'));
     }
     setState(() {
       _total = total;
@@ -181,6 +253,7 @@ class MyWidgetState extends State<CashPage> {
   }
 
   _setInProgress(bool b) {
+    if(!mounted) return;
     setState(() {
       _inProgress = b;
     });

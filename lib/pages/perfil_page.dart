@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:image_crop/image_crop.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';
@@ -14,6 +15,7 @@ import 'package:protips/auxiliar/input_formatter.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/user.dart';
 import 'package:protips/model/user_dados.dart';
+import 'package:protips/pages/cadastro_telefone_page.dart';
 import 'package:protips/pages/crop_page.dart';
 import 'package:protips/res/dialog_box.dart';
 import 'package:protips/res/resources.dart';
@@ -61,7 +63,7 @@ class MyWidgetState extends State<PerfilPage> {
   //region DropdownMenuItem
   List<DropdownMenuItem<String>> _dropDownEstados;
   List<DropdownMenuItem<String>> _dropDownPrivacidade;
-  List<DropdownMenuItem<String>> _precos;
+  List<DropdownMenuItem<String>> _dropDownPrecos;
   String _currentPreco;
   String _currentEstado;
   String _currentPrivacidade;
@@ -72,8 +74,8 @@ class MyWidgetState extends State<PerfilPage> {
   String dateNascimentoValue;
   String souUm = ' ';
 
-  User user = Firebase.user;
-  FirebaseUser fUser = Firebase.fUser;
+  UserPro userPro = FirebasePro.userPro;
+  User user = FirebasePro.user;
 
   //endregion
 
@@ -81,47 +83,56 @@ class MyWidgetState extends State<PerfilPage> {
 
   @override
   void initState() {
-    //region variaveis
-    var dados = user.dados;
+    try {
+      //region variaveis
+      var dados = userPro.dados;
 
-    _precos = Import.getDropDownMenuItems(GoogleProductsID.precos.values.toList());
-    _dropDownEstados = Import.getDropDownMenuItems(Arrays.estados);
-    _dropDownPrivacidade = Import.getDropDownMenuItems(Arrays.privacidade);
-    _currentEstado = dados.endereco.estado;
-    _currentPrivacidade = _dropDownPrivacidade[dados.isPrivado ? 1 : 0].value;//0 = Publico
-    souUm = !user.solicitacaoEmAndamento() ? dados.isTipster ? MyStrings.TIPSTER : MyStrings.FILIADO : MyTexts.EM_ANDAMENTO;
+      _dropDownPrecos = Import.getDropDownMenuItems(GoogleProductsID.precos.values.toList());
+      _dropDownPrivacidade = Import.getDropDownMenuItems(Arrays.privacidade);
+      _dropDownEstados = Import.getDropDownMenuItems(Arrays.estados);
 
-    dateNascimentoValue = dados.nascimento.toString();
-    isPrimeiroLogin = dados.tipname.isEmpty;
+      _currentPrivacidade = Arrays.privacidade[dados.isPrivado ? 1 : 0];//0 = Publico
+      souUm = !userPro.solicitacaoEmAndamento() ? dados.isTipster ? MyStrings.TIPSTER : MyStrings.FILIADO : MyTexts.EM_ANDAMENTO;
 
-    selectedDate = DateTime.tryParse(dateNascimentoValue) ?? DateTime.now();
+      dateNascimentoValue = dados.nascimento.toString();
+      isPrimeiroLogin = dados.tipname.isEmpty;
 
-    String nome = dados.nome;
-    String foto = dados.foto;
-    String email = dados.email;
-    String phone = dados.telefone;
-    String tipname = dados.tipname;
-    String descricao = dados.descricao;
-    String precoPadrao = dados.precoPadrao;
-    if (nome.isEmpty) nome = fUser.displayName ?? '';
-    if (foto.isEmpty) foto = fUser.photoUrl ?? '';
-    if (email.isEmpty) email = fUser.email ?? '';
-    if (phone.isEmpty) phone = fUser.phoneNumber ?? '';
+      selectedDate = DateTime.tryParse(dateNascimentoValue) ?? DateTime.now();
+
+      String nome = dados.nome;
+      String foto = dados.foto;
+      String email = dados.email;
+      String phone = dados.telefone;
+      String tipname = dados.tipname;
+      String estado = dados.endereco.estado;
+      String descricao = dados.descricao;
+      String precoPadrao = dados.precoPadrao;
+      if (nome.isEmpty) nome = user.displayName ?? '';
+      if (foto.isEmpty) foto = user.photoURL ?? '';
+      if (email.isEmpty) email = user.email ?? '';
+      if (phone.isEmpty) phone = user.phoneNumber ?? '';
 //    if (tipname.isEmpty) tipname = '';
 //    if (descricao.isEmpty) descricao = '';
 
 //    currentPhoto = foto;
 
-    _nome.text = nome;
-    _fotoWeb = foto;
-    _email.text = email;
-    _telefone.text = phone;
-    _tipName.text = tipname;
-    _descricao.text = descricao;
-    //endregion
-    if (precoPadrao.isEmpty)
-      precoPadrao = GoogleProductsID.precos['10'];
-    _currentPreco = precoPadrao;
+      _nome.text = nome;
+      _fotoWeb = foto;
+      _email.text = email;
+      _telefone.text = phone;
+      _tipName.text = tipname;
+      _descricao.text = descricao;
+      //endregion
+      if (precoPadrao.isEmpty)
+        precoPadrao = GoogleProductsID.precos['10'];
+      if (estado.isEmpty)
+        estado = Arrays.estados[0];
+      _currentEstado = estado;
+      _currentPreco = precoPadrao;
+    } catch(e) {
+      Log.e(TAG, 'initState', e);
+    }
+
     super.initState();
   }
 
@@ -138,7 +149,7 @@ class MyWidgetState extends State<PerfilPage> {
     var itemMargin = EdgeInsets.only(top: containerMargin);
     var itemDecoration = BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(5)),
-        color: MyTheme.primary(),
+        color: MyTheme.primary,
     );
     //endregion
 
@@ -150,7 +161,7 @@ class MyWidgetState extends State<PerfilPage> {
       onWillPop: () async {
         bool back = true;
         if (isPrimeiroLogin) {
-          back = await showDialog(
+          back = await showDialog(//TODO
               context: context,
             builder: (context) => AlertDialog(
               title: Text('Você não concluiu seu cadastro'),
@@ -170,13 +181,16 @@ class MyWidgetState extends State<PerfilPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(Titles.MEU_PERFIL, style: TextStyle(
-              color: MyTheme.textColor(), fontWeight: FontWeight.bold)),
+          title: Text(Titles.MEU_PERFIL,
+              style: TextStyle(/*color: MyTheme.textColor, */fontWeight: FontWeight.bold)
+          ),
           actions: [
+            if (RunTime.semInternet)
+              MyLayouts.icAlertInternet,
             FlatButton(
               child: Text(MyStrings.SALVAR,
                   style: TextStyle(fontWeight: FontWeight.bold)),
-              textColor: MyTheme.textColor(),
+              textColor: Colors.white,
               onPressed: !inProgress ? () {
                 _salvarUserManager(context);
               } : null,
@@ -208,7 +222,7 @@ class MyWidgetState extends State<PerfilPage> {
                         radius: 100,
                         child: GestureDetector(
                           child: _fotoLocal == null ?
-                          MyLayouts.fotoUser(user.dados) :
+                          MyLayouts.fotoUser(userPro.dados) :
                           Image.file(_fotoLocal),
                           onTap: () {
                             _openCropImage();
@@ -236,7 +250,7 @@ class MyWidgetState extends State<PerfilPage> {
               //Email
               _customTextField(_email, TextInputType.emailAddress, MyStrings.EMAIL, readOnly: true),
               //Telefone
-              _customTextField(_telefone, TextInputType.phone, MyStrings.TELEFONE),
+              _customTextField(_telefone, TextInputType.phone, MyStrings.TELEFONE, /*readOnly: true, onTap: _onPhonePress*/),
               //Nascimento
               _customTextField(_nascimento, TextInputType.datetime, MyStrings.NASCIMENTO, dataIdadeMinima: _nascimentoIdadeMinima, readOnly: true,
                   onTap: () {
@@ -249,30 +263,20 @@ class MyWidgetState extends State<PerfilPage> {
                 margin: itemMargin,
                 padding: itemPadding,
                 alignment: Alignment.bottomLeft,
-                child: Text('Outros dados'),
+                child: Text('Outros dados', style: TextStyle(/*color: MyTheme.textSubtitleColor*/)),
               ),
               //Descrição
               _customTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO),
               //Sou Um
               _customTextField(_souUm, TextInputType.name, MyTexts.SOU_UM, readOnly: true),
               //Preco Padrao
-              if (user.dados.isTipster)
-                _customDropdownButton(_precos, _currentPreco, MyTexts.PRECO_PADRAO, onChanged: (value) {
+              if (userPro.dados.isTipster)
+                _customDropdownButton(_dropDownPrecos, _currentPreco, MyTexts.PRECO_PADRAO, onChanged: (value) {
                   setState(() {
                     _currentPreco = value;
                   });
                 }),
-//                _customTextField(_precoPadrao, TextInputType.number, MyTexts.PRECO_PADRAO, isMoeda: true,
-//                    suffixIcon: IconButton(
-//                      tooltip: 'Info',
-//                      icon: Icon(Icons.info, color: MyTheme.primary()),
-//                      onPressed: () {
-//                        var title = 'Este é um preço padrão';
-//                        var content = Text('Você poderá atribuir preços diferentes para cada filiado como desejar.');
-//                        MyLayouts.dialogOK(context, title: title, content: content);
-//                      },
-//                )),
-              //Estado
+              // //Estado
               _customDropdownButton(_dropDownEstados, _currentEstado, MyStrings.ESTADO,
                   onChanged: (String value) {
                     Log.d(TAG, 'DropDown', 'Selected item: $value');
@@ -280,7 +284,7 @@ class MyWidgetState extends State<PerfilPage> {
                       _currentEstado = value;
                     });
                   }),
-              //Privacidade
+              // //Privacidade
               _customDropdownButton(_dropDownPrivacidade, _currentPrivacidade, MyStrings.PRIVACIDADE,
                   onChanged: (String value) {
                     Log.d(TAG, 'DropDown', 'Selected item: $value');
@@ -289,19 +293,19 @@ class MyWidgetState extends State<PerfilPage> {
                     });
                   }),
               //Denuncias
-              if (user.denuncias.length > 0)
+              if (userPro.denuncias.length > 0)
                 GestureDetector(
                     child: Container(
                       height: 40,
                       alignment: Alignment.center,
                       margin: EdgeInsets.only(top: containerMargin),
                       decoration: itemDecoration,
-                      child: Text('Você tem ${user.denuncias.length} denúncias',
+                      child: Text('Você tem ${userPro.denuncias.length} denúncias',
                           style: TextStyle(color: Colors.yellow)),
                     ),
                     onTap: () {
                       DialogBox.dialogOK(context,
-                          content: FragmentDenunciasG(user),
+                          content: [FragmentDenunciasG(userPro)],
                           contentPadding: EdgeInsets.zero
                       );
                     }
@@ -315,8 +319,7 @@ class MyWidgetState extends State<PerfilPage> {
                     margin: EdgeInsets.only(top: containerMargin),
                     decoration: itemDecoration,
                     child: Text(
-                        !user.solicitacaoEmAndamento() ? user.dados
-                            .isTipster ?
+                        !userPro.solicitacaoEmAndamento() ? userPro.dados.isTipster ?
                         MyTexts.CANCELAR_CONTA_TIPSTER.toUpperCase() :
                         MyTexts.QUERO_SER_TIPSTER.toUpperCase() :
                         MyTexts.CANCELAR_SOLICITACAO.toUpperCase(),
@@ -331,7 +334,7 @@ class MyWidgetState extends State<PerfilPage> {
         floatingActionButton: inProgress ? Container(
           margin: EdgeInsets.only(top: 70),
           child: CircularProgressIndicator(),
-        ) : Container(),
+        ) : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       ),
     );
@@ -351,11 +354,9 @@ class MyWidgetState extends State<PerfilPage> {
     var itemPadding = EdgeInsets.only(left: itemPaddingValue, right: itemPaddingValue, top: 5);
     var itemContentPadding = EdgeInsets.fromLTRB(12, 0, 12, 0);
 
-//    var itemlBorder = OutlineInputBorder(borderSide: BorderSide(color: MyTheme.tintColor()));
-//    var itemDecoration = BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(5)), color: MyTheme.tintColor(),);
-    var itemTextStyle = TextStyle(color: MyTheme.primaryDark());
-    var itemPrefixStyle = TextStyle(color: MyTheme.textColorInvert());
-    var itemPrefixStyleErro = TextStyle(color: MyTheme.textColorError());
+    var itemTextStyle = TextStyle(color: MyTheme.textColorSpecial);
+    var itemPrefixStyle = TextStyle();
+    var itemPrefixStyleErro = TextStyle(color: MyTheme.textColorError);
     //endregion
 
     //endregion
@@ -364,7 +365,6 @@ class MyWidgetState extends State<PerfilPage> {
       height: 50,
       margin: EdgeInsets.only(top: containerMarginTop),
       padding: itemPadding,
-//      decoration: itemDecoration,
       child: TextField(
         controller: _controller,
         keyboardType: _inputType,
@@ -382,10 +382,8 @@ class MyWidgetState extends State<PerfilPage> {
         ],
         decoration: InputDecoration(
           contentPadding: itemContentPadding,
-//          enabledBorder: itemlBorder,
-//          focusedBorder: itemlBorder,
           suffixIcon: suffixIcon,
-          labelStyle: (valueIsEmpty??false) || (tipNameExiste??false) || (dataIdadeMinima??false) ? itemPrefixStyleErro : itemPrefixStyle,
+          labelStyle: (valueIsEmpty??false) || (tipNameExiste ?? false) || (dataIdadeMinima??false) ? itemPrefixStyleErro : itemPrefixStyle,
           labelText: tipNameExiste == null ? (dataIdadeMinima ?? false ? prefixText + ' ' + MyTexts.IDADE_MINIMA : prefixText) : (tipNameExiste ? prefixText + ' ' + MyStrings.EXISTE : prefixText),
         ),
         onTap: onTap,
@@ -400,7 +398,6 @@ class MyWidgetState extends State<PerfilPage> {
 
     //region Container que contem os textField
     var itemPaddingDropDown = EdgeInsets.only(left: itemPaddingValue + 10, right: itemPaddingValue + 10);
-
     var itemMargin = EdgeInsets.only(top: containerMarginTop);
 
     //endregion
@@ -412,11 +409,15 @@ class MyWidgetState extends State<PerfilPage> {
       padding: itemPaddingDropDown,
       child: Row(
         children: [
-          Text(prefixText + '\t'),
+          Padding(
+            padding: EdgeInsets.only(right: 10),
+            child: Text(prefixText, /*style: TextStyle(color: MyTheme.textSubtitleColor)*/),
+          ),
           DropdownButton(
             items: items,
             value: _currenValue,
             onChanged: onChanged,
+            style: TextStyle(color: MyTheme.textColorSpecial),
           )
         ],
       ),
@@ -432,10 +433,8 @@ class MyWidgetState extends State<PerfilPage> {
     if (await _verificarDados(dados)) {
       bool resultOK = await dados.salvar();
       if (resultOK) {
-        user.dados = dados;
-//        getFirebase.setUser(user);
+        userPro.dados = dados;
         await OfflineData.saveOfflineData();
-//        currentPhoto = user.dados.foto;
         if (isPrimeiroLogin) {
           await dados.addIdentificador();
           Navigator.pop(context, true);
@@ -451,6 +450,7 @@ class MyWidgetState extends State<PerfilPage> {
   }
 
   void _resetErros() {
+    if(!mounted) return;
     setState(() {
       _nomeIsEmpyt = false;
       _tipNameExixte = false;
@@ -459,12 +459,18 @@ class MyWidgetState extends State<PerfilPage> {
     });
   }
 
+  ///TODO Implementar futuramente [onPhonePress]
+  onPhonePress() async {
+    var result = await Navigate.to(context, CadastroTelefonePage(numero: _telefone.text));
+    if (result != null) {}
+  }
+
   UserDados _criarUser() {
     DataHora data = DataHora();
     data.setData(_nascimento.text);
 
     UserDados dados = UserDados();
-    dados.id = Firebase.fUser.uid;
+    dados.id = FirebasePro.user.uid;
     dados.nome = _nome.text;
     dados.email = _email.text;
     dados.tipname = _tipName.text;
@@ -476,13 +482,14 @@ class MyWidgetState extends State<PerfilPage> {
     dados.endereco.estado = _currentEstado;
     dados.precoPadrao = _currentPreco;
 
-    dados.isTipster = user.dados.isTipster;
-    dados.isBloqueado = user.dados.isBloqueado;
+    dados.isTipster = userPro.dados.isTipster;
+    dados.isBloqueado = userPro.dados.isBloqueado;
     return dados;
   }
 
   Future<bool> _verificarDados(UserDados dados) async {
     bool voltar = false;
+    if(!mounted) return false;
     setState(() {
       if (dados.nome.trim().isEmpty) {
         voltar = _nomeIsEmpyt = true;
@@ -513,12 +520,15 @@ class MyWidgetState extends State<PerfilPage> {
   }
 
   Future<bool> _verificarTipname(String tipName) async {
-    return await Firebase.databaseReference
+    return await FirebasePro.database
         .child(FirebaseChild.IDENTIFICADOR)
         .child(tipName)
         .once()
         .then((value) => value.value != null)
-        .catchError((e) => null);
+        .catchError((e) {
+          Log.e(TAG, 'verificarTipname', e);
+          return false;
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -540,23 +550,22 @@ class MyWidgetState extends State<PerfilPage> {
 
   void _openCropImage() async {
      var result = await Navigate.to(context, CropImagePage(1/1));
-
-     setState(() {
-       if (result == null) {
-         Log.d(TAG, '_openCropImage', 'result Null');
-         return;
-       } else if (result is File) {
-         Log.d(TAG, '_openCropImage result OK', result.path);
+     if (result == null) {
+       Log.d(TAG, '_openCropImage', 'result Null');
+       return;
+     } else if (result is File) {
+       setState(() {
          _fotoLocal = result;
-       } else {
-         Log.d(TAG, '_openCropImage', 'result Error');
-       }
-     });
+       });
+       Log.d(TAG, '_openCropImage result OK', result.path);
+     } else {
+       Log.d(TAG, '_openCropImage', 'result Error');
+     }
   }
 
   void _solicitarAlterarCategoria() {
-    bool b = user.solicitacaoEmAndamento();
-    if (user.dados.isTipster && !b) {
+    bool b = userPro.solicitacaoEmAndamento();
+    if (userPro.dados.isTipster && !b) {
       _solicitarSerFiliado();
     } else {
       _solicitarSerTipster(b);
@@ -565,21 +574,23 @@ class MyWidgetState extends State<PerfilPage> {
 
 
   void _solicitarSerFiliado() async {
-    var title = MyTexts.solicitacao_filiado;
+    var title = '${MyTexts.solicitacao_filiado}?';
     var content = Text(MyTexts.solicitacao_filiado_mensagem);
 
-    var result = await DialogBox.dialogCancelOK(context, title: title, content: content);
+    var result = await DialogBox.dialogSimNao(context, title: title, content: [content]);
 
-    if (result.isOk) {
-      if (await user.habilitarTipster(false)) {
-        getTipster.remove(user.dados.id);
-        getPosts.removeAll(user.dados.id);
+    if (result.isPositive) {
+      _setInProgress(true);
+      if (await userPro.habilitarTipster(false)) {
+        getTipster.remove(userPro.dados.id);
+        getPosts.removeAll(userPro.dados.id);
       }
-      try {
-        setState(() {
-          souUm = MyStrings.FILIADO;
-        });
-      } catch(ignored) {}
+      _setInProgress(false);
+
+      if(!mounted) return;
+      setState(() {
+        souUm = MyStrings.FILIADO;
+      });
     }
   }
 
@@ -589,55 +600,58 @@ class MyWidgetState extends State<PerfilPage> {
     String whatsapp = MyResources.app_whatsapp;
     String email = MyResources.app_email;
 
-    var content = SingleChildScrollView(
-      child: ListBody(
-        children: <Widget>[
-          Text(mensagem),
-          GestureDetector(
-            child: Text(email, style: TextStyle(color: MyTheme.primary())),
-            onTap: () {Import.openEmail(email, context);},
-          ),
-          Text(MyStrings.whatsapp),
-          GestureDetector(
-            child: Text(whatsapp, style: TextStyle(color: MyTheme.primary())),
-            onTap: () {Import.openWhatsApp(whatsapp, context);},
-          )
-        ],
-      ),
-    );
+    var content = [
+        Text(mensagem),
+        GestureDetector(
+          child: Text(email, style: TextStyle(color: MyTheme.primary)),
+          onTap: () {Import.openEmail(email, context);},
+        ),
+        Text(MyStrings.whatsapp),
+        GestureDetector(
+          child: Text(whatsapp, style: TextStyle(color: MyTheme.primary)),
+          onTap: () {Import.openWhatsApp(whatsapp, context);},
+        ),
+        if (solicitei)...[
+          Divider(),
+          Text('Clique em (Cancelar) para cancelar sua solicitação'),
+        ]
+      ];
 
     var result = await DialogBox.dialogCancelOK(context, title: title, content: content);
 
-    if (result.isOk)
-      solicitacao(solicitei);
-    else if (result.isCancel)
-      solicitacaoCancelar(solicitei);
+    _setInProgress(true);
+    if (result.isPositive)
+      await solicitacao(solicitei);
+    else if (result.isNegative)
+      await solicitacaoCancelar(solicitei);
+    _setInProgress(false);
   }
 
-  Future<void> solicitacao(bool solicitei) async{
+  Future<void> solicitacao(bool solicitei) async {
     if (!solicitei)
-       if (await user.solicitarSerTipster())
-         try {
-           setState(() {
-             soliciteiSerTipster = true;
-           });
-         } catch(ignored) {}
+      if (await userPro.solicitarSerTipster()) {
+        if (!mounted) return;
+          setState(() {
+            soliciteiSerTipster = true;
+          });
+      }
   }
 
   Future<void> solicitacaoCancelar(bool solicitei) async {
     if (solicitei)
-     if (await user.solicitarSerTipsterCancelar())
+     if (await userPro.solicitarSerTipsterCancelar()) {
+       if(!mounted) return;
         setState(() {
           soliciteiSerTipster = false;
         });
+     }
   }
 
   void _setInProgress(bool b) {
-    try {
-      setState(() {
-        inProgress = b;
-      });
-    } catch(ignored) {}
+    if(!mounted) return;
+    setState(() {
+      inProgress = b;
+    });
   }
 
   //endregion
