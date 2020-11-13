@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/log.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/my_icons.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
@@ -86,7 +86,7 @@ class MyWidgetState extends State<RecuperarSenhaPage> {
               children: <Widget>[
                 //Icone
                 Align(
-                  child: Image.asset(MyAssets.ic_launcher,
+                  child: Image.asset(MyIcons.ic_launcher,
                     width: 130,
                     height: 130,
                   ),

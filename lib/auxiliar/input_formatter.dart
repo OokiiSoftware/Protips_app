@@ -25,6 +25,9 @@ class TextInputFormatterPhone extends TextInputFormatter {
       selection: new TextSelection.collapsed(offset: selectionIndex),
     );
   }*/
+
+  static TextInputFormatterPhone instance = TextInputFormatterPhone();
+
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     final int newTextLength = newValue.text.length;
@@ -57,6 +60,8 @@ class TextInputFormatterPhone extends TextInputFormatter {
 }
 
 class TextInputFormatterMoney extends TextInputFormatter {
+  static TextInputFormatterMoney instance = TextInputFormatterMoney();
+
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     if(newValue.selection.baseOffset == 0) {
@@ -77,6 +82,8 @@ class TextInputFormatterMoney extends TextInputFormatter {
 }
 
 class TextInputFormatterCPF extends TextInputFormatter {
+  static TextInputFormatterCPF instance = TextInputFormatterCPF();
+
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     final int newTextLength = newValue.text.length;

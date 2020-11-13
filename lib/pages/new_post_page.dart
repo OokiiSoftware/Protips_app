@@ -10,7 +10,7 @@ import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/pages/crop_page.dart';
 import 'package:path/path.dart' as path;
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 import 'package:random_string/random_string.dart';
@@ -24,8 +24,8 @@ class MyWidgetState extends State<NewPostPage> {
   //region Variaveis
   static const String TAG = 'NewPostPage';
   static Post _currentPost;
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
+  bool _isAvancado = Config.postAvancado;
   bool _isPublico = false;
   bool _isPostando = false;
   bool _isBloqueadoPorDenuncias;
@@ -59,9 +59,11 @@ class MyWidgetState extends State<NewPostPage> {
   bool _unidadesIsEmpty = false;
   bool _esporteIsEmpty = false;
   bool _linkIsEmpty = false;
+  bool _descricaoIsEmpty = false;
   //endregion
 
-//  FloatingActionButton fabPostar;
+  GlobalKey iconAvancadoKey = GlobalKey();
+
   //endregion
 
   //region overrides
@@ -90,6 +92,7 @@ class MyWidgetState extends State<NewPostPage> {
     if (_isBloqueadoPorDenuncias) {
       _setPostanto(true);//o botão ficará indisponível
     }
+    _mostrarDicaInicial();
   }
 
   @override
@@ -101,6 +104,7 @@ class MyWidgetState extends State<NewPostPage> {
     return WillPopScope(
       onWillPop: () async {
         _currentPost = _criarTip();
+        Log.removeTooltip(iconAvancadoKey);
         return true;
       },
       child: Scaffold(
@@ -108,7 +112,13 @@ class MyWidgetState extends State<NewPostPage> {
           title: Text(Titles.POST_TIP),
           actions: [
             if (RunTime.semInternet)
-              MyLayouts.icAlertInternet,
+              Layouts.icAlertInternet,
+            IconButton(
+              key: iconAvancadoKey,
+              tooltip: _isAvancado ? 'Tip Avançado' : 'Tip Simples',
+              icon: Icon(_isAvancado ? Icons.wb_incandescent : Icons.wb_incandescent_outlined),
+              onPressed: _isAvancadoChanged,
+            ),
             Tooltip(
               message: MyTexts.LIMPAR_TUDO,
               child: IconButton(
@@ -133,7 +143,7 @@ class MyWidgetState extends State<NewPostPage> {
                   setState(() {});
                 },
               ),
-            )
+            ),
           ],
         ),
         body: Stack(
@@ -141,93 +151,83 @@ class MyWidgetState extends State<NewPostPage> {
             SingleChildScrollView(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Column(children: [
-                //Titulo
-                _CustomTextField(_titulo, TextInputType.name, MyStrings.TITULO, inputAction: TextInputAction.done, valueIsEmpty: _tituloIsEmpty, onTap: () {setState(() {_tituloIsEmpty = false;});}),
-                //Anexo
-                _CustomTextField(_anexo, TextInputType.name, MyTexts.ANEXAR_IMAGEM, readOnly: true, valueIsEmpty: _anexoIsEmpty, onTap: () async {
-                  var file = await Navigate.to(context, CropImagePage());
-                  if(file != null && file is File && await file.exists()) {
-                    _foto = file;
-                    setState(() {
-                      _anexoIsEmpty = false;
-                      _anexo.text = path.basename(_foto.path);
-                    });
-                  }
-                }),
-                //Descrição
-                _CustomTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO),
-                //Odd
-                Row(children: [
-                  //Minima
-                  Expanded(child: _CustomTextField(_oddMinima, TextInputType.number, MyStrings.ODD_MINIMA)),
-                  rowSpacing,
-                  //Maxima
-                  Expanded(child: _CustomTextField(_oddMaxima, TextInputType.number, MyStrings.ODD_MAXIMA)),
-                ]),
-                //Unidades
-                Row(children: [
-                  //Odd Atual
-                  Expanded(child: _CustomTextField(_oddAtual, TextInputType.number, MyStrings.ODD_ATUAL, valueIsEmpty: _oddAtualIsEmpty, onTap: () {setState(() {_oddAtualIsEmpty = false;});})),
-                  rowSpacing,
+                if(_isAvancado)...[
+                  //Titulo
+                  _customTextField(_titulo, TextInputType.name, MyStrings.TITULO, inputAction: TextInputAction.done, valueIsEmpty: _tituloIsEmpty, onTap: () {setState(() {_tituloIsEmpty = false;});}),
+                  //Anexo
+                  _textFAnexo,
+                  //Descrição
+                  _textFDescricao,
+                  //Odd
+                  Row(children: [
+                    //Minima
+                    Expanded(child: _customTextField(_oddMinima, TextInputType.number, MyStrings.ODD_MINIMA)),
+                    rowSpacing,
+                    //Maxima
+                    Expanded(child: _customTextField(_oddMaxima, TextInputType.number, MyStrings.ODD_MAXIMA)),
+                  ]),
                   //Unidades
-                  Expanded(child: _CustomTextField(_unidades, TextInputType.number, MyStrings.UNIDADES, inputAction: TextInputAction.done, valueIsEmpty: _unidadesIsEmpty, onTap: () {setState(() {_unidadesIsEmpty = false;});})),
-                ]),
-                //Horarios
-                Row(children: [
-                  //Minimo
-                  Expanded(child: _CustomTextField(_horarioMinimo, TextInputType.number, MyTexts.HORARIO_MINIMO, readOnly: true, onTap: () async {
-                    var result = await _setHorario(_currentHorarioMinino);
-                    if (result != null) {
-                      setState(() {
-                        _currentHorarioMinino = result.format(context);
-                      });
-                    }
-                  })),
-                  rowSpacing,
-                  //Maximo
-                  Expanded(child: _CustomTextField(_horarioMaximo, TextInputType.number, MyTexts.HORARIO_MAXIMO, readOnly: true, onTap: () async {
-                    var result = await _setHorario(_currentHorarioMaximo);
-                    if (result != null) {
-                      setState(() {
-                        _currentHorarioMaximo = result.format(context);
-                      });
-                    }
-                  })),
-                ]),
-                //Horarios Labels
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      //Minimo
-                      Expanded(child: Text(MyTexts.HORARIO_MINIMO_ENTRADA, textAlign: TextAlign.center)),
-                      //Maximo
-                      Expanded(child: Text(MyTexts.HORARIO_MAXIMO_ENTRADA, textAlign: TextAlign.center)),
-                    ]),
-                //Esporte / Linha
-                Row(children: [
-                  Expanded(child: _CustomTextField(_esporte, TextInputType.name, MyStrings.ESPORTE, valueIsEmpty: _esporteIsEmpty, onTap: () {setState(() {_esporteIsEmpty = false;});})),
-                  rowSpacing,
-                  Expanded(child: _CustomTextField(_linha, TextInputType.name, MyStrings.LINHA)),
-                ]),
-                //Link
-                _CustomTextField(_link, TextInputType.url, MyStrings.LINK, valueIsEmpty: _linkIsEmpty, onTap: () {setState(() {_linkIsEmpty = false;});}),
-                //Campeonato / Tip Publico
-                Row(children: [
-                  Expanded(child: _CustomTextField(_campeonato, TextInputType.name, MyStrings.CAMPEONATO)),
-                  rowSpacing,
-                  Expanded(child: CheckboxListTile(
-                      title: Text(MyTexts.TIP_PUBLICO),
-                      value: _isPublico,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      onChanged: (bool value) {
+                  Row(children: [
+                    //Odd Atual
+                    Expanded(child: _customTextField(_oddAtual, TextInputType.number, MyStrings.ODD_ATUAL, valueIsEmpty: _oddAtualIsEmpty, onTap: () {setState(() {_oddAtualIsEmpty = false;});})),
+                    rowSpacing,
+                    //Unidades
+                    Expanded(child: _customTextField(_unidades, TextInputType.number, MyStrings.UNIDADES, inputAction: TextInputAction.done, valueIsEmpty: _unidadesIsEmpty, onTap: () {setState(() {_unidadesIsEmpty = false;});})),
+                  ]),
+                  //Horarios
+                  Row(children: [
+                    //Minimo
+                    Expanded(child: _customTextField(_horarioMinimo, TextInputType.number, MyTexts.HORARIO_MINIMO, readOnly: true, onTap: () async {
+                      var result = await _setHorario(_currentHorarioMinino);
+                      if (result != null) {
                         setState(() {
-                          _isPublico = value;
+                          _currentHorarioMinino = result.format(context);
                         });
                       }
-                  )),
-                ]),
-                Divider(height: 70),
+                    })),
+                    rowSpacing,
+                    //Maximo
+                    Expanded(child: _customTextField(_horarioMaximo, TextInputType.number, MyTexts.HORARIO_MAXIMO, readOnly: true, onTap: () async {
+                      var result = await _setHorario(_currentHorarioMaximo);
+                      if (result != null) {
+                        setState(() {
+                          _currentHorarioMaximo = result.format(context);
+                        });
+                      }
+                    })),
+                  ]),
+                  //Horarios Labels
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        //Minimo
+                        Expanded(child: Text(MyTexts.HORARIO_MINIMO_ENTRADA, textAlign: TextAlign.center)),
+                        //Maximo
+                        Expanded(child: Text(MyTexts.HORARIO_MAXIMO_ENTRADA, textAlign: TextAlign.center)),
+                      ]),
+                  //Esporte / Linha
+                  Row(children: [
+                    Expanded(child: _customTextField(_esporte, TextInputType.name, MyStrings.ESPORTE, valueIsEmpty: _esporteIsEmpty, onTap: () {setState(() {_esporteIsEmpty = false;});})),
+                    rowSpacing,
+                    Expanded(child: _customTextField(_linha, TextInputType.name, MyStrings.LINHA)),
+                  ]),
+                  //Link
+                  _textFLink,
+                  //Campeonato / Tip Publico
+                  Row(children: [
+                    Expanded(child: _customTextField(_campeonato, TextInputType.name, MyStrings.CAMPEONATO)),
+                    rowSpacing,
+                    Expanded(child: _cbPublico),
+                  ]),
+                ]
+                else...[
+                  _textFAnexo,
+                  _textFLink,
+                  _textFDescricao,
+                  _cbPublico,
+                ]
+                // Divider(height: 70),
               ]),
             ),
             LinearProgressIndicator(value: _progressBarValue),
@@ -250,23 +250,26 @@ class MyWidgetState extends State<NewPostPage> {
 
   //region Metodos
 
-  // ignore: non_constant_identifier_names
-  Widget _CustomTextField(TextEditingController _controller, TextInputType _inputType, String labelText, {bool valueIsEmpty = false, TextInputAction inputAction = TextInputAction.next, bool readOnly = false, void onTap()}) {
+  Widget _customTextField(TextEditingController _controller, TextInputType _inputType, String labelText, {bool valueIsEmpty = false, TextInputAction inputAction = TextInputAction.next, bool readOnly = false, void onTap()}) {
     //region Variaveis
     double itemPaddingValue = 10;
     double itemHeight = 50;
 
-    var tintColor = MyTheme.cardColor2;
+    var tintColor = MyTheme.darkModeOn ? MyTheme.cardColor2 : Color.fromRGBO(222, 229, 237, 1);
 
     //region Container que contem os textField
     var itemPadding = EdgeInsets.only(left: itemPaddingValue, right: itemPaddingValue, top: 7);
     var itemContentPadding = EdgeInsets.fromLTRB(12, 0, 12, 0);
 
-    var itemlBorder = OutlineInputBorder(borderSide: BorderSide(color: MyTheme.transparentColor()));
-    var itemDecoration = BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(5)), color: tintColor);
+    var itemlBorder = OutlineInputBorder(
+      borderSide: BorderSide(color: MyTheme.transparentColor()),
+    );
+    var itemDecoration = BoxDecoration(
+      color: tintColor,
+      borderRadius: BorderRadius.all(Radius.circular(5)),
+    );
     var itemTextStyle = TextStyle(color: MyTheme.textColorSpecial, fontSize: 14);
-    var itemPrefixStyle = TextStyle();
-    var itemPrefixStyleErro = TextStyle(color: MyTheme.textColorError);
+    var itemPrefixStyle = TextStyle(color: valueIsEmpty ? MyTheme.textColorError : null);
     //endregion
 
     //endregion
@@ -286,12 +289,54 @@ class MyWidgetState extends State<NewPostPage> {
           contentPadding: itemContentPadding,
           enabledBorder: itemlBorder,
           focusedBorder: itemlBorder,
-          labelStyle: valueIsEmpty ? itemPrefixStyleErro : itemPrefixStyle,
+          labelStyle: itemPrefixStyle,
           labelText: labelText.toUpperCase(),
         ),
         onTap: onTap,
       ),
     );
+  }
+
+  Widget get _textFAnexo {
+    return _customTextField(_anexo, TextInputType.name, MyTexts.ANEXAR_IMAGEM, readOnly: true, valueIsEmpty: _anexoIsEmpty, onTap: () async {
+      var file = await Navigate.to(context, CropImagePage());
+      if(file != null && file is File && await file.exists()) {
+        _foto = file;
+        setState(() {
+          _anexoIsEmpty = false;
+          _anexo.text = path.basename(_foto.path);
+        });
+      }
+    });
+  }
+  Widget get _textFLink {
+    return _customTextField(_link, TextInputType.url, MyStrings.LINK,
+        valueIsEmpty: _linkIsEmpty,
+        onTap: () => setState(() {_linkIsEmpty = false;})
+    );
+  }
+  Widget get _textFDescricao {
+    return _customTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO_TIPS,
+        valueIsEmpty: _descricaoIsEmpty,
+        onTap: () => setState(() {_descricaoIsEmpty = false;})
+    );
+  }
+  Widget get _cbPublico {
+    return CheckboxListTile(
+        title: Text(MyTexts.TIP_PUBLICO),
+        value: _isPublico,
+        controlAffinity: ListTileControlAffinity.leading,
+        onChanged: (bool value) {
+          setState(() {
+            _isPublico = value;
+          });
+        }
+    );
+  }
+
+  _mostrarDicaInicial() async {
+    await Future.delayed(Duration(seconds: 1)); // espera um tempo pra tela ser montada
+    Log.tooltip(context, iconAvancadoKey, 'Modo de edição');
   }
 
   Future<TimeOfDay> _setHorario(String currentItemData) async {
@@ -350,30 +395,39 @@ class MyWidgetState extends State<NewPostPage> {
     try{
       bool noError = true;
       setState(() {
-        if (item.titulo.isEmpty) {
-          _tituloIsEmpty = true;
-          noError = false;
+        if(_isAvancado) {
+          if (item.titulo.isEmpty) {
+            _tituloIsEmpty = true;
+            noError = false;
+          }
+          if (item.oddAtual.isEmpty) {
+            _oddAtualIsEmpty = true;
+            noError = false;
+          }
+          if (item.unidade.isEmpty) {
+            _unidadesIsEmpty = true;
+            noError = false;
+          }
+          if (item.esporte.isEmpty) {
+            _esporteIsEmpty = true;
+            noError = false;
+          }
+          if (item.link.isEmpty) {
+            _linkIsEmpty = true;
+            noError = false;
+          }
+        } else {
+          if (item.descricao.isEmpty) {
+            _descricaoIsEmpty = true;
+            noError = false;
+          }
         }
+
         if (item.foto.isEmpty) {
           _anexoIsEmpty = true;
           noError = false;
         }
-        if (item.oddAtual.isEmpty) {
-          _oddAtualIsEmpty = true;
-          noError = false;
-        }
-        if (item.unidade.isEmpty) {
-          _unidadesIsEmpty = true;
-          noError = false;
-        }
-        if (item.esporte.isEmpty) {
-          _esporteIsEmpty = true;
-          noError = false;
-        }
-        if (item.link.isEmpty) {
-          _linkIsEmpty = true;
-          noError = false;
-        }
+
       });
       return noError;
     } catch(e) {
@@ -382,6 +436,15 @@ class MyWidgetState extends State<NewPostPage> {
 //      _PatternVibrate();
       return false;
     }
+  }
+
+  _isAvancadoChanged() {
+    setState(() {
+      _isAvancado = !_isAvancado;
+    });
+    String dica = _isAvancado ? 'Tip Avançado' : 'Tip Simples';
+    Log.tooltip(context, iconAvancadoKey, dica);
+    Config.postAvancado = _isAvancado;
   }
 
   _setPostanto(bool b) {

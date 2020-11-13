@@ -12,6 +12,7 @@ class OpenContainerWrapper extends StatelessWidget {
     @required this.child,
     @required this.statefulWidget,
     this.background = Colors.transparent,
+    this.radius = 0.0,
   });
 
   final ClosedCallback<bool> onClosed;
@@ -19,6 +20,7 @@ class OpenContainerWrapper extends StatelessWidget {
   final Widget child;
   final String tooltip;
   final Color background;
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +29,7 @@ class OpenContainerWrapper extends StatelessWidget {
       openElevation: 0,
       closedColor: background,
       openColor: background,
-      closedShape: RoundedRectangleBorder(),
+      closedShape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(radius))),
       transitionType: ContainerTransitionType.fadeThrough,
       transitionDuration: Duration(milliseconds: 500),
       openBuilder: (BuildContext context, VoidCallback _) => statefulWidget,

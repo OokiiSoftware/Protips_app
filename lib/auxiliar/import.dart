@@ -4,74 +4,17 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:package_info/package_info.dart';
-import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/error.dart';
 import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/post.dart';
-import 'package:protips/model/user.dart';
-import 'package:protips/auxiliar/device.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/res/strings.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'firebase.dart';
 import 'log.dart';
 import 'notification_manager.dart';
-
-class Aplication {
-  static const String TAG = 'Aplication';
-
-  static int appVersionInDatabase = 0;
-  static PackageInfo packageInfo;
-
-  static Future<void> init() async {
-    packageInfo = await PackageInfo.fromPlatform();
-    Device.deviceData = await DeviceInfo.getDeviceInfo();
-    Preferences.instance = await SharedPreferences.getInstance();
-  }
-
-  static Future<String> buscarAtualizacao() async {
-    Log.d(TAG, 'buscarAtualizacao', 'Iniciando');
-    int _value = await FirebasePro.database
-        .child(FirebaseChild.VERSAO)
-        .once()
-        .then((value) => value.value)
-        .catchError((e) {
-      Log.e(TAG, 'buscarAtualizacao', e);
-      return -1;
-    });
-    String url;
-
-    Log.d(TAG, 'buscarAtualizacao', 'Web Version', _value, 'Local Version', packageInfo.buildNumber);
-    appVersionInDatabase = _value;
-    int appVersion = int.parse(packageInfo.buildNumber);
-
-    if (_value > appVersion) {
-      url = 'https://play.google.com/store/apps/details?id=com.ookiisoftware.protips';
-//      String folder = Platform.isAndroid ? FirebaseChild.APK : FirebaseChild.IOS;
-//      String ext = Platform.isAndroid ? '.apk' : '';
-//      String fileName = MyStrings.APP_NAME + '_' + _value.toString() + ext;
-//      Log.d(TAG, 'buscarAtualizacao', 'fileName', fileName);
-//      try {
-//        url = await getFirebase.storage()
-//            .child(FirebaseChild.APP)
-//            .child(folder)
-//            .child(fileName)
-//            .getDownloadURL();
-//      } catch(e) {
-//        Log.e(TAG, 'buscarAtualizacao', e);
-//      }
-    }
-
-    return url;
-  }
-
-  static bool get isRelease => bool.fromEnvironment('dart.vm.product');
-
-  static Locale get locale => Locale('pt', 'BR');
-}
 
 class Navigate {
   static dynamic to(BuildContext context, StatefulWidget widget) async {
@@ -121,7 +64,7 @@ class Import {
     } catch(e) {
       if (context != null)
         Log.snackbar(MyErros.ABRIR_LINK, isError: true);
-      Log.e(TAG, 'openUrl', e);
+      Log.e2(TAG, 'openUrl', e);
     }
   }
 
@@ -141,22 +84,37 @@ class Import {
     } catch(e) {
       if (context != null)
         Log.snackbar(MyErros.ABRIR_EMAIL, isError: true);
-      Log.e(TAG, 'openUrl', e);
+      Log.e(TAG, 'openEmail', e);
     }
   }
 
   static void openWhatsApp(String numero, [BuildContext context]) async {
     try {
       numero = numero.replaceAll(' ', '').replaceAll('(', '').replaceAll(')', '').replaceAll('-', '');
-      var whatsappUrl ="whatsapp://send?phone=55$numero";
-      if (await canLaunch(whatsappUrl))
-        await launch(Uri.encodeFull(whatsappUrl));
+      var link ="whatsapp://send?phone=55$numero";
+      if (await canLaunch(link))
+        await launch(Uri.encodeFull(link));
       else
         throw Exception(MyErros.ABRIR_WHATSAPP);
     } catch(e) {
       if (context != null)
         Log.snackbar(MyErros.ABRIR_WHATSAPP, isError: true);
-      Log.e(TAG, 'openUrl', e);
+      Log.e(TAG, 'openWhatsApp', e);
+    }
+  }
+
+  static void openInstagram(String usuario, [BuildContext context]) async {
+    try {
+      usuario = usuario.replaceAll('@', '');
+      var link ="https://www.instagram.com/$usuario/";
+      if (await canLaunch(link))
+        await launch(Uri.encodeFull(link));
+      else
+        throw Exception(MyErros.ABRIR_INSTAGRAM);
+    } catch(e) {
+      if (context != null)
+        Log.snackbar(MyErros.ABRIR_INSTAGRAM, isError: true);
+      Log.e(TAG, 'openInstagram', e);
     }
   }
 }
@@ -381,18 +339,24 @@ class getUsers {
     getPosts.reset();
     getTipster.reset();
 
+    String meuID = FirebasePro.user.uid;
     for (String key in map.keys) {
       try {
         UserPro item = map[key];
         bool addTipster = item.dados.isTipster && !item.dados.isBloqueado && !item.solicitacaoEmAndamento();
 
         if (addTipster) {
+          var list;
           //Adiciona os Posts de quem eu sigo e meu Postes
-          if (FirebasePro.userPro.seguindo.containsKey(key) || key == FirebasePro.user.uid) {
-            getPosts.addAll(item.postes.values.toList());
-          } else {
-            getPosts.addAll(item.postes.values.where((e) => e.isPublico).toList());
+          if (item.filiados.containsKey(meuID) || key == meuID) {
+            list = item.postes.values.toList();
+          } else if (item.seguidores.containsKey(meuID)) {
+            list = item.postes.values.where((e) => e.isPublico).toList();
           }
+          if (list != null) {
+            getPosts.addAll(list);
+          }
+
           getTipster.add(item);
         }
         add(item);
@@ -617,9 +581,9 @@ class getPosts {
     var list = _data.values.where((e) => e.data.contains(data)).toList()..sort((a, b) => b.data.compareTo(a.data));
     var result = List<Post>();
     for (var item in list) {
-      if (item.isMyPost)
+      if (item.isMyPost || item.isPublico)
         result.add(item);
-      else{
+      else {
         var pagamento = await loadPagamento(item.idTipster, data.substring(0, data.length-3));
         if (pagamento != null) result.add(item);
       }

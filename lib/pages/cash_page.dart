@@ -1,14 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:protips/auxiliar/aplication.dart';
 import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/pagamento.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/pages/users_page.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 
 class CashPage extends StatefulWidget {
@@ -58,7 +59,7 @@ class MyWidgetState extends State<CashPage> {
         title: Center(child: Text(Titles.CASH)),
         actions: [
           if (RunTime.semInternet)
-            MyLayouts.icAlertInternet,
+            Layouts.icAlertInternet,
           IconButton(
             tooltip: 'Filiados',
             icon: Icon(Icons.group),
@@ -140,7 +141,7 @@ class MyWidgetState extends State<CashPage> {
             ),
             for (UserPro user in _data)...[
               ListTile(
-                leading: MyLayouts.iconFormatUser(child: MyLayouts.fotoUser(user.dados), radius: 70),
+                leading: Layouts.clipRRectFormatUser(child: Layouts.fotoUser(user.dados), radius: 70),
                 title: Text(user.dados.nome),
                 subtitle: Text('R\$: ${_pagamentoValue(user).toStringAsFixed(2)}'),
               )

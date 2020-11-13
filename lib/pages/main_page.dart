@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/aplication.dart';
 import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/notification_manager.dart';
@@ -8,9 +9,10 @@ import 'package:protips/auxiliar/log.dart';
 import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/post.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/model/user_dados.dart';
 import 'package:protips/pages/about_page.dart';
+import 'package:protips/pages/config_page.dart';
 import 'package:protips/pages/users_page.dart';
 import 'package:protips/pages/gerencia_page.dart';
 import 'package:protips/pages/login_page.dart';
@@ -18,7 +20,8 @@ import 'package:protips/pages/perfil_page.dart';
 import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/pages/tutorial_page.dart';
 import 'package:protips/res/dialog_box.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
+import 'package:protips/res/my_icons.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_inicio.dart';
@@ -60,7 +63,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   @override
   void dispose() {
     super.dispose();
-    _tabController.dispose();
+    _tabController?.dispose();
   }
 
   @override
@@ -98,7 +101,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     //endregion
 
     if (!_isInicializado)
-      return MyLayouts.splashScreen(RunTime.semInternet);
+      return Layouts.splashScreen(RunTime.semInternet);
 
     return Scaffold(
       appBar: AppBar(
@@ -106,7 +109,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
         title: Text(_currentTitle),
         actions: <Widget>[
           if (RunTime.semInternet)
-            MyLayouts.icAlertInternet,
+            Layouts.icAlertInternet,
           if (_currentIndex == 1) IconButton(
             tooltip: 'Pesquisar',
             icon: Icon(Icons.person_search_sharp),
@@ -114,7 +117,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
               showSearch(context: context, delegate: DataSearch());
             },
           ),
-          MyLayouts.appBarActionsPadding,
+          Layouts.appBarActionsPadding,
         ],
       ),
       drawer: Drawer(
@@ -127,8 +130,13 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      MyTheme.primary,
-                      MyTheme.primaryLight,
+                      if (MyTheme.darkModeOn)...[
+                        Colors.grey[900],
+                        Colors.grey[850]
+                      ] else...[
+                        MyTheme.primary,
+                        MyTheme.primaryLight,
+                      ]
                     ]
                 ),
               ),
@@ -143,8 +151,8 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                         height: 70,
                         child: _showUserDados ? ClipRRect(
                             borderRadius: BorderRadius.circular(70),
-                            child: MyLayouts.fotoUser(_user)
-                        ) : Image.asset(MyAssets.ic_launcher),
+                            child: Layouts.fotoUser(_user)
+                        ) : Image.asset(MyIcons.ic_launcher),
                       ),
                     ),
                     Spacer(),
@@ -194,7 +202,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 },
               ),
               ListTile(
-                leading: Icon(Icons.lightbulb_outline, color: draewrIconColor), //Image.asset(MyIcons.ic_lamp_p, ,/* width: drawerIconSize - 5*/),
+                leading: Icon(MyIcons.lightbulb, color: draewrIconColor),
                 title: Text(MyMenus.MEUS_POSTS, style: draewrTextStyle),
                 onTap: () {
                   _closeDrawer(context);
@@ -257,12 +265,22 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 _onLogoutTap();
               },
             ),
+            Divider(color: draewrIconColor),
+            // Config
+            ListTile(
+              leading: Icon(Icons.settings, color: draewrIconColor),
+              title: Text(MyMenus.CONFIG, style: draewrTextStyle),
+              onTap: () {
+                _closeDrawer(context);
+                _onConfigTap();
+              },
+            ),
           ],
         ),
       ),
       body: _tabBarView,
       bottomNavigationBar: Material(
-        color: MyTheme.primary,
+        color: MyTheme.darkModeOn ? Colors.grey[900] : MyTheme.primary,
         child: TabBar(
             controller: _tabController,
             indicatorColor: MyTheme.primary,
@@ -307,24 +325,18 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
   //region Metodos
 
   Future<void> _init() async {
-    await Aplication.init();
     _tempoDeInicializacao();
-    var result = await FirebasePro.init();
     try {
-      if (result == FirebaseInitResult.fUserNull)
-        throw Exception(FirebaseInitResult.fUserNull);
-
-      await readOfflineData();
-
       //Obtem os dados do usuário logado
       if (!await FirebasePro.atualizarOfflineUser()) {
         var result2 = await Navigate.to(context, PerfilPage());
         if (result2 == null) throw Exception(FirebaseInitResult.userNull);
-         else Navigate.to(context, PerfilPage());
+        else Navigate.to(context, PerfilPage());
       }
 
       _isTipster = FirebasePro.userPro.dados.isTipster;
       _verificarTutorial();
+      _verificarArguments();
 
       NotificationManager.instance = NotificationManager(context);
 
@@ -339,7 +351,6 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 
       await OfflineData.saveOfflineData();
       await getPosts.saveFotosLocal();
-      _verificarDiaPagamento();
 
       _onAtualizarTap(false);
       if(!mounted) return;
@@ -361,6 +372,61 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
         Log.e2(TAG, 'init', e);
       Navigate.toReplacement(context, LoginPage());
     }
+  }
+  Future<void> _initOld() async {
+    // _tempoDeInicializacao();
+    // var result = await FirebasePro.init();
+    // try {
+    //   if (result == FirebaseInitResult.fUserNull)
+    //     throw Exception(FirebaseInitResult.fUserNull);
+    //
+    //   await readOfflineData();
+    //
+    //   //Obtem os dados do usuário logado
+    //   if (!await FirebasePro.atualizarOfflineUser()) {
+    //     var result2 = await Navigate.to(context, PerfilPage());
+    //     if (result2 == null) throw Exception(FirebaseInitResult.userNull);
+    //      else Navigate.to(context, PerfilPage());
+    //   }
+    //
+    //   _isTipster = FirebasePro.userPro.dados.isTipster;
+    //   _verificarTutorial();
+    //   _verificarArguments();
+    //
+    //   NotificationManager.instance = NotificationManager(context);
+    //
+    //   FirebasePro.observMyFirebaseData();
+    //
+    //   await UserPro.baixarList();
+    //
+    //   if(!mounted) return;
+    //   setState(() {
+    //     _isInicializado = true;
+    //   });
+    //
+    //   await OfflineData.saveOfflineData();
+    //   await getPosts.saveFotosLocal();
+    //
+    //   _onAtualizarTap(false);
+    //   if(!mounted) return;
+    //   setState(() {
+    //     RunTime.semInternet = false;
+    //   });
+    //
+    //   _mostrarMsgDeAviso();
+    // } catch(e) {
+    //   bool sendError = true;
+    //   if (e.toString().contains(FirebaseInitResult.fUserNull.toString()))
+    //     sendError = false;
+    //   if (e.toString().contains(FirebaseInitResult.userNull.toString()))
+    //     sendError = false;
+    //
+    //   if (sendError)
+    //     Log.e(TAG, 'init', e);
+    //   else
+    //     Log.e2(TAG, 'init', e);
+    //   Navigate.toReplacement(context, LoginPage());
+    // }
   }
 
   /// TODO Usado somente pra testes
@@ -492,18 +558,33 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       Log.snackbar('Sem Atualização');
   }
 
+  void _onConfigTap() async {
+    await Navigate.to(context, ConfigPage());
+    setState(() {
+
+    });
+  }
+
   void _verificarTutorial() async {
-    if(_isTipster && Preferences.getBool(PreferencesKey.ULTIMO_TUTORIAL_OK) == null)
+    if(_isTipster && !Preferences.getBool(PreferencesKey.ULTIMO_TUTORIAL_OK))
       Navigate.to(context, TutorialPage());
   }
 
-  void _verificarDiaPagamento() async {
-    DateTime hoje = DateTime.now();
-    int dia = _user.diaPagamento;
-    if (dia == hoje.day) {
-      Preferences.setBool(PreferencesKey.DIA_PAGAMENTO, false);
-    }
+  void _verificarArguments() async {
+    // bool abrirConfigPage = Preferences.getBool(PreferencesKey.ABRIR_CONFIG_PAGE);
+    // if (abrirConfigPage) {
+    //   await Preferences.setBool(PreferencesKey.ABRIR_CONFIG_PAGE, false);
+    //   Navigate.to(context, ConfigPage());
+    // }
   }
+
+  // void _verificarDiaPagamento() async {
+  //   DateTime hoje = DateTime.now();
+  //   int dia = _user.diaPagamento;
+  //   if (dia == hoje.day) {
+  //     Preferences.setBool(PreferencesKey.DIA_PAGAMENTO, false);
+  //   }
+  // }
 
   void _closeDrawer(BuildContext context) {
     Navigator.pop(context);
@@ -523,17 +604,14 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     }
   }
 
-  Future readOfflineData() async {
-    if (await OfflineData.readOfflineData()) {
-      UserPro item = await getUsers.get(FirebasePro.user.uid);
-      if (item != null)
-        FirebasePro.userPro = item;
-      if(!mounted) return;
-      setState(() {
-        _isInicializado = true;
-      });
-    }
-  }
+  // Future readOfflineData() async {
+  //   {
+  //     if(!mounted) return;
+  //     setState(() {
+  //       _isInicializado = true;
+  //     });
+  //   }
+  // }
 
   void _tempoDeInicializacao() async {
     int seconds = Aplication.isRelease ? 15 : 2;
@@ -546,7 +624,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
     bool isLogado = Preferences.getBool(PreferencesKey.USER_LOGADO) ?? false;
     if (isLogado) {
       await Future.delayed(Duration(seconds: 5));
-      await readOfflineData();
+      // await readOfflineData();
     } else
       Navigate.toReplacement(context, LoginPage());
   }
@@ -569,14 +647,22 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
 class DataSearch extends SearchDelegate<String> {
 
   final sugestoes = getTipster.data;
+  final List<UserPro> listResults = [];
 
   @override
   String get searchFieldLabel => MyStrings.PESQUISAR;
 
   @override
-  List<Widget> buildActions(BuildContext context) {
-    return [IconButton(icon: Icon(Icons.clear), onPressed: () {query = '';})];
+  ThemeData appBarTheme(BuildContext context) {
+    return ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: MyTheme.primary,
+    );
   }
+
+  @override
+  List<Widget> buildActions(BuildContext context)
+    => [IconButton(icon: Icon(Icons.clear), onPressed: () {query = '';})];
 
   @override
   Widget buildLeading(BuildContext context) {
@@ -590,29 +676,35 @@ class DataSearch extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return PerfilTipsterPage(FirebasePro.userPro);
+    if (listResults.length == 0) {
+      Navigator.pop(context);
+      return Layouts.splashScreen();
+    }
+    return PerfilTipsterPage(listResults[0]);
   }
+
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final list = query.isEmpty ? [] : sugestoes.where((x) => x.dados.nome.toLowerCase().startsWith(query.toLowerCase())).toList();
+    listResults.clear();
+    listResults.addAll(query.isEmpty ? [] : sugestoes.where((x) => x.dados.nome.toLowerCase().startsWith(query.toLowerCase())).toList());
 
     return ListView.builder(itemBuilder: (context, index) {
-      UserPro item = list[index];
+      UserPro item = listResults[index];
 
       return ListTile(
-        leading: MyLayouts.iconFormatUser(
+        leading: Layouts.clipRRectFormatUser(
             radius: 50,
-            child: MyLayouts.fotoUser(item.dados)
+            child: Layouts.fotoUser(item.dados)
         ),
         title: RichText(
           text: TextSpan(
               text: item.dados.nome.substring(0, query.length),
-              style: TextStyle(/*color: MyTheme.textColorInvert, */fontWeight: FontWeight.bold),
+              style: TextStyle(color: MyTheme.transparentColor(1), fontWeight: FontWeight.bold),
               children: [
                 TextSpan(
                     text: item.dados.nome.substring(query.length),
-                    style: TextStyle(/*color: MyTheme.textSubtitleColor*/)
+                    style: TextStyle(color: MyTheme.transparentColor(0.5))
                 )
               ]
           ),
@@ -623,14 +715,13 @@ class DataSearch extends SearchDelegate<String> {
         },
       );
     },
-      itemCount: list.length,
+      itemCount: listResults.length,
     );
   }
 
 }
 
-/*
-  //BottomAppBar com detalhe no botão flutuante
+/* //BottomAppBar com detalhe no botão flutuante
 
   extendBody: true
   floatingActionButton: FloatingActionButton(),

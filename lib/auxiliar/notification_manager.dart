@@ -8,10 +8,11 @@ import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/notificacao.dart';
 import 'package:protips/model/post.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/pages/gerencia_page.dart';
 import 'package:protips/res/strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'aplication.dart';
 import 'firebase.dart';
 import 'log.dart';
 
@@ -130,8 +131,8 @@ class NotificationManager {
     try {
       String pagantes = '';
 
-      Log.d(TAG, 'sendPostTopic', 'seguidores', user.seguidores.keys);
-      for (String key in user.seguidores.keys) {
+      Log.d(TAG, 'sendPostTopic', 'seguidores', user.filiados.keys);
+      for (String key in user.filiados.keys) {
         if(item.isPublico)
           pagantes += '$key,';
         else {
@@ -155,17 +156,23 @@ class NotificationManager {
   Future<bool> _sendPostTopicAux(Post item, String destinos) async {
     Log.d(TAG, 'sendPostTopicAux', 'destino', destinos);
     try {
-      String body = MyStrings.ESPORTE + ': ' + item.esporte;
-      body += '\n'+ MyStrings.ODD_ATUAL + ': ' + item.oddAtual;
+      String body = '';// MyStrings.ESPORTE + ': ' + item.esporte;
 
-      if (item.campeonato.isNotEmpty)
-        body += '\n'+ MyStrings.CAMPEONATO + ': ' + item.campeonato;
+      if(item.esporte.isNotEmpty) {
+        body = MyStrings.ESPORTE + ': ' + item.esporte;
+        body += '\n'+ MyStrings.ODD_ATUAL + ': ' + item.oddAtual;
 
-      if (item.oddMinima.isNotEmpty && item.oddMaxima.isNotEmpty)
-        body += '\n'+ MyStrings.ODD + ': ' + item.oddMinima + ' - ' + item.oddMaxima;
+        if (item.campeonato.isNotEmpty)
+          body += '\n'+ MyStrings.CAMPEONATO + ': ' + item.campeonato;
 
-      if (item.horarioMinimo.isNotEmpty && item.horarioMaximo.isNotEmpty)
-        body += '\n'+ MyStrings.HORARIO + ': ' + item.horarioMinimo + ' - ' + item.horarioMaximo;
+        if (item.oddMinima.isNotEmpty && item.oddMaxima.isNotEmpty)
+          body += '\n'+ MyStrings.ODD + ': ' + item.oddMinima + ' - ' + item.oddMaxima;
+
+        if (item.horarioMinimo.isNotEmpty && item.horarioMaximo.isNotEmpty)
+          body += '\n'+ MyStrings.HORARIO + ': ' + item.horarioMinimo + ' - ' + item.horarioMaximo;
+      }
+      else
+        body = item.descricao;
 
       PushNotification notificacao = PushNotification();
       notificacao.remetente = meuID;
@@ -569,7 +576,7 @@ class NotificationManager {
 
   _showNotification(PushNotification notification) async {
     try {
-      var android = AndroidNotificationDetails('ProtipsChannelId', 'ProtipsChannelName', 'ProtipsChannelDescription');
+      var android = AndroidNotificationDetails('ProtipsChannelId', 'ProtipsChannelName', 'ProtipsChannelDescription', icon: 'ic_notification');
       var iOS = IOSNotificationDetails();
       var platform = NotificationDetails(android, iOS);
       await flutterLocalNotificationsPlugin.show(0, notification.title, notification.body, platform, payload: notification.action);
@@ -595,7 +602,7 @@ class NotificationManager {
 
     for (String key in user.seguindo.keys) {
       UserPro user = await getUsers.get(key);
-      if (user == null || !user.seguidores.containsKey(meuID)) {
+      if (user == null || !user.filiados.containsKey(meuID)) {
         await _fcm.unsubscribeFromTopic(NotificationTopics.receberTips(key));
       } else {
         await _fcm.subscribeToTopic(NotificationTopics.receberTips(key));

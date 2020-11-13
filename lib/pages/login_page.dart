@@ -12,7 +12,7 @@ import 'package:protips/pages/cadastro_page.dart';
 import 'package:protips/pages/main_page.dart';
 import 'package:protips/pages/recuperar_senha_page.dart';
 import 'package:protips/res/dialog_box.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/my_icons.dart';
 import 'package:protips/res/theme.dart';
 
 class LoginPage extends StatefulWidget{
@@ -97,7 +97,7 @@ class MyWidgetState extends State<LoginPage> {
           divider,
           //Top (Logo)
           //Icone
-          Image.asset(MyAssets.ic_launcher, width: 130, height: 130),
+          Image.asset(MyIcons.ic_launcher, width: 130, height: 130),
 
           //Texto Bem Vindo
           Padding(
@@ -252,7 +252,7 @@ class MyWidgetState extends State<LoginPage> {
                     Container(
                       color: Colors.white,
                       padding: EdgeInsets.all(5),
-                      child: Image.asset(MyAssets.ic_google),
+                      child: Image.asset(MyIcons.ic_google),
                     ),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20),

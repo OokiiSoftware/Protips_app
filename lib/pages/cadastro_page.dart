@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:protips/auxiliar/log.dart';
 import 'package:protips/res/dialog_box.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/my_icons.dart';
 import 'package:protips/res/theme.dart';
 
 class CadastroPage extends StatefulWidget{
@@ -78,7 +78,7 @@ class MyWidgetState extends State<CadastroPage> {
           padding: EdgeInsets.all(50),
           child: Column(
             children: [
-              Image.asset(MyAssets.ic_person, width: 100, height: 100),
+              Image.asset(MyIcons.ic_person, width: 100, height: 100),
               // Texto
               Padding(
                 child: Text('PUNTER | TIPSTER', style: textStyle),

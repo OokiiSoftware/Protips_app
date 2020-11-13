@@ -6,8 +6,8 @@ import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/denuncia.dart';
 import 'package:protips/model/post.dart';
-import 'package:protips/model/user.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/model/user_pro.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
@@ -53,8 +53,8 @@ class MyWidgetState extends State<DenunciaPage> {
           title: Text(_isUser ? Titles.DENUNCIA_USER : Titles.DENUNCIA_POST),
         actions: [
           if (RunTime.semInternet)
-            MyLayouts.icAlertInternet,
-            MyLayouts.appBarActionsPadding,
+            Layouts.icAlertInternet,
+            Layouts.appBarActionsPadding,
         ],
       ),
       body: SingleChildScrollView(
@@ -99,9 +99,9 @@ class MyWidgetState extends State<DenunciaPage> {
 
   Widget _itemLayoutUser(UserPro item) {
     return ListTile(
-        leading: MyLayouts.iconFormatUser(
+        leading: Layouts.clipRRectFormatUser(
             radius: 50,
-            child: MyLayouts.fotoUser(item.dados)
+            child: Layouts.fotoUser(item.dados)
         ),
         title: Text(item.dados.nome),
         subtitle: Text(item.dados.descricao),
@@ -110,7 +110,7 @@ class MyWidgetState extends State<DenunciaPage> {
 
   Widget _itemLayoutPost(Post item) {
     return ListTile(
-      leading: MyLayouts.fotoPost(item),
+      leading: Layouts.fotoPost(item),
       title: Text(item.titulo),
       subtitle: Text(item.descricao),
     );

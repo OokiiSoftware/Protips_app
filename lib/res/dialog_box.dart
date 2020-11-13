@@ -4,6 +4,8 @@ import 'package:protips/model/post_perfil.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 
+import 'layouts.dart';
+
 class DialogResult {
   static int none = 0;
   static int positive = 1;
@@ -135,7 +137,7 @@ class DialogBox {
             contentPadding: EdgeInsets.zero,
             insetPadding: EdgeInsets.all(10),
             content: GestureDetector(
-              child: MyLayouts.fotoPostNetwork(item.foto),
+              child: Layouts.fotoPostNetwork(item.foto),
               onTapUp: (value) {
                 Navigator.pop(context);
               },

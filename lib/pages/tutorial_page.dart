@@ -131,9 +131,9 @@ class Page extends StatelessWidget {
                         textAlign: textAlign
                     ),
                   ] else if (_currentPosition == 1)...[
-                    Image.asset(MyAssets.img_tutorial)
+                    Image.asset(Assets.img_tutorial),
                   ] else if (_currentPosition == 2)...[
-                    Image.asset(MyAssets.img_tutorial_2),
+                    Image.asset(Assets.img_tutorial_2),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       child: Text(

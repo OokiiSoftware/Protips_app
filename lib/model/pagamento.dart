@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:protips/model/data_hora.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';

@@ -1,14 +1,17 @@
+import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/aplication.dart';
 import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/notification_manager.dart';
 import 'package:protips/auxiliar/log.dart';
+import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/pages/pagamento_test_page.dart';
 import 'package:protips/res/dialog_box.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
@@ -25,9 +28,20 @@ class MyWidgetState extends State<ConfigPage> {
   //region Variaveis
   bool isAdmin;
   bool inProgress = false;
+
+  List<DropdownMenuItem<String>> _dropDownThema;
+  String _currentThema;
+
   //endregion
 
   //region overrides
+
+  @override
+  void initState() {
+    super.initState();
+    _dropDownThema = Import.getDropDownMenuItems(Arrays.thema);
+    _currentThema = Preferences.getString(PreferencesKey.THEME, padrao: Arrays.thema[0]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +52,8 @@ class MyWidgetState extends State<ConfigPage> {
           title: Text(Titles.CONFIGURACOES),
         actions: [
           if (RunTime.semInternet)
-            MyLayouts.icAlertInternet,
-          MyLayouts.appBarActionsPadding,
+            Layouts.icAlertInternet,
+          Layouts.appBarActionsPadding,
         ],
       ),
       body: SingleChildScrollView(
@@ -47,6 +61,19 @@ class MyWidgetState extends State<ConfigPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Theme
+            Row(
+              children: [
+                Text('Tema'),
+                Padding(padding: EdgeInsets.only(right: 10)),
+                DropdownButton(
+                  value: _currentThema,
+                  items: _dropDownThema,
+                  onChanged: _onThemeChanged,
+                ),
+              ],
+            ),
+            divider,
             if (isAdmin)...[
               Text('Admin Área'),
               divider,
@@ -95,14 +122,11 @@ class MyWidgetState extends State<ConfigPage> {
                 },
               ),
             ]
-            else...[
-
-            ]
           ],
         ),
       ),
-      floatingActionButton: inProgress ? CircularProgressIndicator() :
-      FloatingActionButton.extended(label: Text(MyStrings.SALVAR), onPressed: _onSalvar),
+      floatingActionButton: inProgress ? CircularProgressIndicator() : null
+      /*FloatingActionButton.extended(label: Text(MyStrings.SALVAR), onPressed: _onSalvar)*/,
     );
   }
 
@@ -110,8 +134,18 @@ class MyWidgetState extends State<ConfigPage> {
 
   //region Metodos
 
-  void _onSalvar() async {
+  void onSalvar() async {
     Log.snackbar(MyTexts.DADOS_SALVOS);
+  }
+
+  void _onThemeChanged(String value) async {
+    setState(() {
+      _currentThema = value;
+    });
+    await Preferences.setString(PreferencesKey.THEME, value);
+    Brightness brightness = MyTheme.getBrilho(value);
+    await DynamicTheme.of(context).setBrightness(brightness);
+    // _setThemeLog(value);
   }
 
   void _setAppVersao() async {

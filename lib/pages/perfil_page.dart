@@ -13,12 +13,12 @@ import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';
 import 'package:protips/auxiliar/input_formatter.dart';
 import 'package:protips/model/data_hora.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/model/user_dados.dart';
 import 'package:protips/pages/cadastro_telefone_page.dart';
 import 'package:protips/pages/crop_page.dart';
 import 'package:protips/res/dialog_box.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_g_denuncias.dart';
@@ -181,12 +181,10 @@ class MyWidgetState extends State<PerfilPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(Titles.MEU_PERFIL,
-              style: TextStyle(/*color: MyTheme.textColor, */fontWeight: FontWeight.bold)
-          ),
+          title: Text(Titles.MEU_PERFIL),
           actions: [
             if (RunTime.semInternet)
-              MyLayouts.icAlertInternet,
+              Layouts.icAlertInternet,
             FlatButton(
               child: Text(MyStrings.SALVAR,
                   style: TextStyle(fontWeight: FontWeight.bold)),
@@ -218,11 +216,11 @@ class MyWidgetState extends State<PerfilPage> {
                       width: 90,
                       height: 90,
 //                    margin: EdgeInsets.only(bottom: 10),
-                      child: MyLayouts.iconFormatUser(
+                      child: Layouts.clipRRectFormatUser(
                         radius: 100,
                         child: GestureDetector(
                           child: _fotoLocal == null ?
-                          MyLayouts.fotoUser(userPro.dados) :
+                          Layouts.fotoUser(userPro.dados) :
                           Image.file(_fotoLocal),
                           onTap: () {
                             _openCropImage();
@@ -266,7 +264,7 @@ class MyWidgetState extends State<PerfilPage> {
                 child: Text('Outros dados', style: TextStyle(/*color: MyTheme.textSubtitleColor*/)),
               ),
               //Descrição
-              _customTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO),
+              _customTextField(_descricao, TextInputType.multiline, MyStrings.DESCRICAO_USER),
               //Sou Um
               _customTextField(_souUm, TextInputType.name, MyTexts.SOU_UM, readOnly: true),
               //Preco Padrao

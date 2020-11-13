@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/config.dart';
 import 'package:protips/pages/config_page.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 import 'package:protips/sub_pages/fragment_g_denuncias.dart';
@@ -48,13 +48,13 @@ class MyWidgetState extends State<GerenciaPage> with SingleTickerProviderStateMi
         title: Text(_currentTitle),
         actions: [
           if (RunTime.semInternet)
-            MyLayouts.icAlertInternet,
-          MyLayouts.appBarActionsPadding,
+            Layouts.icAlertInternet,
+          Layouts.appBarActionsPadding,
         ],
       ),
       body: _tabBarView,
       bottomNavigationBar: Material(
-        color: MyTheme.primary,
+        color: MyTheme.darkModeOn ? Colors.grey[900] : MyTheme.primary,
         child: TabBar(
             controller: _tabController,
             indicatorColor: MyTheme.primary,

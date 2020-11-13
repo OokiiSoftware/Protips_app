@@ -5,7 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:protips/auxiliar/preferences.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/res/strings.dart';
 import 'import.dart';
 import 'log.dart';
@@ -26,7 +26,7 @@ class FirebaseChild {
   static const String POSTES = "postes";
   static const String POSTES_PERFIL = "post_perfil";
 
-  static const String SEGUIDORES_PENDENTES = "seguidoresPendentes";
+  static const String FILIADOS_PENDENTES = "filiadosPendentes";
   static const String TELEFONE = "telefone";
 
   static const String TAGS = 'tags';
@@ -37,16 +37,15 @@ class FirebaseChild {
   static const String COMPRAS_IDS = 'comprasIDs';
 
   static const String SOLICITACAO_NOVO_TIPSTER = "solicitacao_novo_tipster";
-  static const String SEGUIDORES = "seguidores";
+  static const String TIPSTERS = "tipsters";
+  static const String FILIADOS = "filiados";
   static const String SEGUINDO = "seguindo";
+  static const String SEGUIDORES = "seguidores";
   static const String BOM = "bom";
   static const String RUIM = "ruim";
   static const String ESPORTES = "esportes";
   static const String LINHAS = "linhas";
-  //Use LINHAS
-//  @deprecated
-//  static final String MERCADOS = "mercados";
-//  static final String BLOQUEADO = "bloqueado";
+
   static const String IS_BLOQUEADO = "isBloqueado";
   static const String ADMINISTRADORES = "administradores";
   static const String VERSAO = "versao";
@@ -112,9 +111,6 @@ class FirebasePro {
 
     const firebaseUser_Null = 'firebaseUser Null';
     try {
-      await OfflineData.createPerfilDirectory();
-      await OfflineData.createPostDirectory();
-      await OfflineData.readDirectorys();
 
       await Firebase.initializeApp(
           name: MyResources.APP_NAME,
@@ -127,13 +123,13 @@ class FirebasePro {
             apiKey: _dataUrl['apiKey'],
           )
       ).catchError((e) {
-        Log.e(TAG, 'init', 'initializeApp', e);
+        Log.e2(TAG, 'init', 'initializeApp', e);
       });
 
       if (user == null || !user.emailVerified)
         throw new Exception(firebaseUser_Null);
 
-      await _checkAdmin();
+      _checkAdmin();
       Log.d(TAG, 'init', 'OK');
       return FirebaseInitResult.ok;
     } catch (e) {
@@ -160,7 +156,7 @@ class FirebasePro {
         _admins[d] = map[d];
       }
       if (_admins.containsKey(user.uid))
-        _isAdmin = map[user.uid] ?? false;
+        _isAdmin = map[user.uid];
       if (isAdmin)
         initAdmin();
     } catch (e) {

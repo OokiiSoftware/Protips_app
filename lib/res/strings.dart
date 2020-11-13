@@ -1,13 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/aplication.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/pages/denuncia_page.dart';
 import 'package:protips/pages/perfil_page.dart';
 
 class MyResources {
   static const String APP_NAME = 'ProTips';
   static const String app_email = 'app.protips@gmail.com';
+  static const String app_instagram = '@protips.oki';
   static const String app_whatsapp = '(83) 99632-5982';
   static const String company_email = 'okisoftware@gmail.com';
   static const String company_name = 'ŌkīSoftware';
@@ -146,7 +148,7 @@ class MyStrings {
   static const String ZERO_HORA = '00:00';
   static const String ESPORTE = 'Esporte';
   static const String LINHA = 'Linha';
-  static const String LINK = 'Link';
+  static const String LINK = 'Link para página';
   static const String CAMPEONATO = 'Campeonato';
   static const String SALVAR = 'Salvar';
   static const String NOME = 'Nome';
@@ -156,7 +158,8 @@ class MyStrings {
   static const String NASCIMENTO = 'Nascimento';
   static const String ESTADO = 'Estado';
   static const String PRIVACIDADE = 'Privacidade';
-  static const String DESCRICAO = 'Descrição';
+  static const String DESCRICAO_TIPS = 'Descreva sua tip...';
+  static const String DESCRICAO_USER = 'Descreva sobre você';
   static const String PESQUISAR = 'Pesquisar';
   static const String DEFAULT = 'default';
 }
@@ -215,7 +218,8 @@ class MyMenus {
   static const String SOBRE = 'Sobre';
   static const String PAGAMENTO = 'Pagamento';
   static const String TUTORIAL = 'Tutorial';
-  static const String GERENCIA = 'Gerencia';
+  static const String GERENCIA = 'Gerência';
+  static const String CONFIG = 'Configurações';
 
   static const ABRIR_LINK = 'Abrir link';
   static const ABRIR_WHATSAPP = 'WhatsApp';
@@ -253,6 +257,7 @@ class MyErros {
   static const ABRIR_LINK = 'Erro ao abrir link';
   static const ABRIR_EMAIL = 'Erro ao abrir o email';
   static const ABRIR_WHATSAPP = 'Erro ao abrir WhatsApp';
+  static const ABRIR_INSTAGRAM = 'Erro ao abrir Instagram';
   static const ERRO_GENERICO = 'Ocorreu um erro';
   static const PERFIL_USER_SALVO = 'Erro ao salvar os dados';
   static const PAGAMENTO = 'Ops. Ocorreu um erro. Se o erro persistir entre em contato com o suporte.';
@@ -310,6 +315,10 @@ class Arrays {
     'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia', 'Roraima',
     'Santa Catarina', 'São Paulo', 'Sergipe',
     'Tocantins',
+  ];
+
+  static List thema = [
+    'Sistema', 'Claro', 'Escuro'
   ];
 
   static List get privacidade => ['Público', 'Privado'];

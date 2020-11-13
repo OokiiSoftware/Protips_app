@@ -1,13 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/error.dart';
+import 'package:protips/res/custom_tooltip.dart';
 import 'package:protips/res/theme.dart';
+import 'aplication.dart';
 import 'firebase.dart';
 
 class Log {
   static final scaffKey = GlobalKey<ScaffoldState>();
+
+  static Map<GlobalKey, CustomTooltip> _tooltips = Map();
 
   static void snackbar(String texto, {bool isError = false}) {
     try {
@@ -31,6 +34,23 @@ class Log {
     } catch (ex) {
       e('Log', 'snackbar', ex);
     }
+  }
+
+  static void tooltip(BuildContext context, GlobalKey key, String text, {int tempo}) async {
+    CustomTooltip tolltip = CustomTooltip(
+      context,
+      text: text,
+      tempo: tempo,
+      backgroundColor: MyTheme.primaryDark,
+    );
+    removeTooltip(key);
+    tolltip.show(widgetKey: key);
+    _tooltips[key] = tolltip;
+  }
+
+  static void removeTooltip(GlobalKey key) {
+    _tooltips[key]?.dismiss();
+    _tooltips.remove(key);
   }
 
   static void d(String tag, String metodo, [dynamic value, dynamic value1, dynamic value2, dynamic value3]) {

@@ -21,8 +21,10 @@ class UserPro {
   UserDados _dados;
 
   Map<dynamic, dynamic> _seguindo;
+  Map<dynamic, dynamic> _filiados;
+  Map<dynamic, dynamic> _tipsters;
   Map<dynamic, dynamic> _seguidores;
-  Map<dynamic, dynamic> _seguidoresPendentes;
+  Map<dynamic, dynamic> _filiadosPendentes;
   Map<dynamic, dynamic> _tags;
 
   Map<String, Post> _postes;
@@ -37,10 +39,11 @@ class UserPro {
     tags = Map();
     postes = Map();
     seguindo = Map();
+    filiados = Map();
+    tipsters = Map();
     denuncias = Map();
-    seguidores = Map();
     postPerfil = Map();
-    seguidoresPendentes = Map();
+    filiadosPendentes = Map();
     dados = UserDados();
   }
 
@@ -59,17 +62,18 @@ class UserPro {
     tags = Map();
     postes = Map();
     seguindo = Map();
+    tipsters = Map();
+    filiados = Map();
     denuncias = Map();
-    seguidores = Map();
     postPerfil = Map();
-    seguidoresPendentes = Map();
+    filiadosPendentes = Map();
 
     tags.addAll(user.tags);
     postes.addAll(user.postes);
     seguindo.addAll(user.seguindo);
-    seguidores.addAll(user.seguidores);
+    filiados.addAll(user.filiados);
     postPerfil.addAll(user.postPerfil);
-    seguidoresPendentes.addAll(user.seguidoresPendentes);
+    filiadosPendentes.addAll(user.filiadosPendentes);
 
     dados.id = _dados.id;
     dados.nome = _dados.nome;
@@ -93,10 +97,10 @@ class UserPro {
       dados = UserDados.fromJson(map['dados']);
 
     try {
-      if (_valueNoNull(map['seguidoresPendentes']))
-        seguidoresPendentes = map['seguidoresPendentes'];
+      if (_valueNoNull(map['filiadosPendentes']))
+        filiadosPendentes = map['filiadosPendentes'];
     } catch (e) {
-      Log.e(TAG, 'fromJson', e, 'seguidoresPendentes');
+      Log.e(TAG, 'fromJson', e, 'filiadosPendentes');
     }
 
     try {
@@ -114,10 +118,17 @@ class UserPro {
     }
 
     try {
-      if (_valueNoNull(map['seguidores']))
-        seguidores = map['seguidores'];
+      if (_valueNoNull(map['filiados']))
+        filiados = map['filiados'];
     } catch (e) {
-      Log.e(TAG, 'fromJson', e, 'seguidores');
+      Log.e(TAG, 'fromJson', e, 'filiados');
+    }
+
+    try {
+      if (_valueNoNull(map['tipsters']))
+        tipsters = map['tipsters'];
+    } catch (e) {
+      Log.e(TAG, 'fromJson', e, 'tipsters');
     }
 
     try {
@@ -125,6 +136,13 @@ class UserPro {
         seguindo = map['seguindo'];
     } catch (e) {
       Log.e(TAG, 'fromJson', e, 'seguindo');
+    }
+
+    try {
+      if (_valueNoNull(map['seguidores']))
+        seguidores = map['seguidores'];
+    } catch (e) {
+      Log.e(TAG, 'fromJson', e, 'seguidores');
     }
 
     try {
@@ -145,9 +163,10 @@ class UserPro {
   Map<String, dynamic> toJson() => {
     "tags": tags,
     "dados": dados.toJson(),
-    "seguidores": seguidores,
+    "filiados": filiados,
     "seguindo": seguindo,
-    "seguidoresPendentes": seguidoresPendentes,
+    "seguidores": seguidores,
+    "filiadosPendentes": filiadosPendentes,
     "postes": postes,
     "denuncias": denuncias,
     "post_perfil": postPerfil,
@@ -156,8 +175,6 @@ class UserPro {
   //endregion
 
   //region Metodos
-
-  static bool _valueNoNull(dynamic value) => value != null;
 
   Future<bool> salvar() async {
     var reference = FirebasePro.database;
@@ -192,9 +209,9 @@ class UserPro {
         postes.clear();
         // tokens.clear();
         seguindo.clear();
-        seguidores.clear();
+        filiados.clear();
         postPerfil.clear();
-        seguidoresPendentes.clear();
+        filiadosPendentes.clear();
 
         dados = item.dados;
         for (var key in item.tags.keys)
@@ -205,12 +222,12 @@ class UserPro {
         //   tokens[key] = item.tokens[key];
         for (var key in item.seguindo.keys)
           seguindo[key] = item.seguindo[key];
-        for (var key in item.seguidores.keys)
-          seguidores[key] = item.seguidores[key];
+        for (var key in item.filiados.keys)
+          filiados[key] = item.filiados[key];
         for (var key in item.postPerfil.keys)
           postPerfil[key] = item.postPerfil[key];
-        for (var key in item.seguidoresPendentes.keys)
-          seguidoresPendentes[key] = item.seguidoresPendentes[key];
+        for (var key in item.filiadosPendentes.keys)
+          filiadosPendentes[key] = item.filiadosPendentes[key];
         Log.d(TAG, 'refresh', 'OK');
         return true;
       }
@@ -412,126 +429,24 @@ class UserPro {
     return tags.containsKey(UserTag.SOLICITACAO_SER_TIPSTER);
   }
 
-  bool get isMyTipster => seguidores.containsKey(FirebasePro.user.uid);
+  bool get isMyTipster => filiados.containsKey(FirebasePro.user.uid);
 
   //endregion
 
   //region Filiado
 
-  Future<bool> addSolicitacao(UserPro user) async {
-    String userId = user.dados.id;
-    var result = await FirebasePro.database
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
-        .child(FirebaseChild.SEGUIDORES_PENDENTES)
-        .child(userId)
-        .set(userId)
-        .then((value) => true)
-        .catchError((e) => false);
-
-    EventListener.onSolicitacaoFiliado(this);
-    if (result)
-      seguidoresPendentes[userId] = userId;
-    Log.d(TAG, 'addSolicitacao', result);
-    return result;
-  }
-
-  Future<bool> removeSolicitacao(String userId) async {
-    var result = await FirebasePro.database
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
-        .child(FirebaseChild.SEGUIDORES_PENDENTES)
-        .child(userId)
-        .remove()
-        .then((value) => true)
-        .catchError((e) => false);
-
-    seguidoresPendentes.remove(userId);
-    Log.d(TAG, 'removeSolicitacao', result);
-    return result;
-  }
-
-  Future<bool> addSeguindo(String userId) async {
-    var result = await FirebasePro.database
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
-        .child(FirebaseChild.SEGUINDO)
-        .child(userId)
-        .set(userId)
-        .then((value) => true)
-        .catchError((e) => false);
-
-    Log.d(TAG, 'addSeguindo', result);
-    return result;
-  }
-
-  Future<bool> removeSeguindo(String userId) async {
-    var result = await FirebasePro.database
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
-        .child(FirebaseChild.SEGUINDO)
-        .child(userId)
-        .remove()
-        .then((value) => true)
-        .catchError((e) => false);
-
-    if (result)
-      seguindo.remove(userId);
-    Log.d(TAG, 'removeSeguindo', result);
-    return result;
-  }
-
-  Future<bool> aceitarSeguidor(UserPro user) async {
-    String userId = user.dados.id;
-    var result = await FirebasePro.database
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
-        .child(FirebaseChild.SEGUIDORES)
-        .child(userId)
-        .set(UserTag.PRECO_PADRAO)
-        .then((value) => true)
-        .catchError((e) => false);
-
-    EventListener.onSolicitacaoFiliadoAceita(this);
-    if (result) {
-      user.addSeguindo(FirebasePro.user.uid);
-      seguidores[userId] = 0;
-      await removeSolicitacao(userId);
-    }
-    Log.d(TAG, 'aceitarSeguidor', result);
-    return result;
-  }
-
-  Future<bool> removeSeguidor(UserPro punter) async {
-    await punter.removeSeguindo(dados.id);
-    String userId = punter.dados.id;
-    var result = await FirebasePro.database
-        .child(FirebaseChild.USUARIO)
-        .child(dados.id)
-        .child(FirebaseChild.SEGUIDORES)
-        .child(userId)
-        .remove()
-        .then((value) => true)
-        .catchError((e) => false);
-
-    if (result)
-      seguidores.remove(userId);
-    Log.d(TAG, 'removeSeguidor', result);
-    return result;
-  }
-
   Future<bool> updateMensalidadeFiliado(String userId, String value) async {
     var result = await FirebasePro.database
         .child(FirebaseChild.USUARIO)
         .child(dados.id)
-        .child(FirebaseChild.SEGUIDORES)
+        .child(FirebaseChild.FILIADOS)
         .child(userId)
         .set(value)
         .then((value) => true)
         .catchError((e) => false);
 
     if (result)
-      seguidores[userId] = value;
+      filiados[userId] = value;
     Log.d(TAG, 'updateMensalidade', result, userId, value);
     return result;
   }
@@ -551,9 +466,188 @@ class UserPro {
     }
   }
 
+
+  Future<bool> addSolicitacao(UserPro user) async {
+    String userId = user.dados.id;
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.FILIADOS_PENDENTES)
+        .child(userId)
+        .set(userId)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    EventListener.onSolicitacaoFiliado(this);
+    if (result)
+      filiadosPendentes[userId] = userId;
+    Log.d(TAG, 'addSolicitacao', result);
+    return result;
+  }
+
+  Future<bool> removeSolicitacao(String uid) async {
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.FILIADOS_PENDENTES)
+        .child(uid)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    filiadosPendentes.remove(uid);
+    Log.d(TAG, 'removeSolicitacao', result);
+    return result;
+  }
+
+
+  Future<bool> aceitarFiliado(UserPro user) async {
+    String userId = user.dados.id;
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.FILIADOS)
+        .child(userId)
+        .set(UserTag.PRECO_PADRAO)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    EventListener.onSolicitacaoFiliadoAceita(this);
+    if (result) {
+      user._addTipster(FirebasePro.user.uid);
+      filiados[userId] = '0';
+      await removeSolicitacao(userId);
+    }
+    Log.d(TAG, 'aceitarFiliado', result);
+    return result;
+  }
+
+  Future<bool> removeFiliado(UserPro user) async {
+    await user._removeSeguindo(dados.id);
+    String uid = user.dados.id;
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.FILIADOS)
+        .child(uid)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      filiados.remove(uid);
+    await user._removeTipster(dados.id);
+    Log.d(TAG, 'removeFiliado', result);
+    return result;
+  }
+
+  Future<bool> _addTipster(String uid) async {
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.TIPSTERS)
+        .child(uid)
+        .set('')
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result) {
+      tipsters[uid] = '';
+    }
+    Log.d(TAG, '_addTipster', result);
+    return result;
+  }
+
+  Future<bool> _removeTipster(String uid) async {
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.TIPSTERS)
+        .child(uid)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      tipsters.remove(uid);
+    Log.d(TAG, '_removeTipster', result);
+    return result;
+  }
+
+
+  Future<bool> addSeguidor(UserPro user) async {
+    var userId = user.dados.id;
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.SEGUIDORES)
+        .child(userId)
+        .set(userId)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    Log.d(TAG, 'addSeguidor', result);
+    if (result) {
+      seguidores[userId] = userId;
+      await user._addSeguindo(dados.id);
+    }
+    return result;
+  }
+
+  Future<bool> removeSeguidor(UserPro user) async {
+    var userId = user.dados.id;
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.SEGUIDORES)
+        .child(userId)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result) {
+      seguidores.remove(userId);
+      await user._removeSeguindo(dados.id);
+    }
+    Log.d(TAG, 'removeSeguidor', result);
+    return result;
+  }
+
+  Future<bool> _addSeguindo(String uid) async {
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.SEGUINDO)
+        .child(uid)
+        .set(uid)
+        .then((value) => true)
+        .catchError((e) => false);
+
+    Log.d(TAG, 'addSeguindo', result);
+    if (result)
+      seguindo[uid] = '0';
+    return result;
+  }
+
+  Future<bool> _removeSeguindo(String uid) async {
+    var result = await FirebasePro.database
+        .child(FirebaseChild.USUARIO)
+        .child(dados.id)
+        .child(FirebaseChild.SEGUINDO)
+        .child(uid)
+        .remove()
+        .then((value) => true)
+        .catchError((e) => false);
+
+    if (result)
+      seguindo.remove(uid);
+    Log.d(TAG, 'removeSeguindo', result);
+    return result;
+  }
+
   //endregion
 
-  //region add & remove
+  //region tags // denuncias
 
   Future<bool> addTag(String tag) async {
     var result = await FirebasePro.database
@@ -586,7 +680,6 @@ class UserPro {
     Log.d(TAG, 'removeTag', result);
     return result;
   }
-
 
   Future<bool> removeDenuncia(String key) async {
     if (!denuncias.containsKey(key))
@@ -646,6 +739,8 @@ class UserPro {
 
   //endregion
 
+  static bool _valueNoNull(dynamic value) => value != null;
+
   static Future<UserPro> baixar(String uid) async {
     try {
       var snapshot = await FirebasePro.database
@@ -692,17 +787,25 @@ class UserPro {
     _postPerfil = value;
   }
 
-  // ignore: unnecessary_getters_setters
-  // Map<String, Token> get tokens {
-  //   if (_tokens == null)
-  //     _tokens = Map();
-  //   return _tokens;
-  // }
-  //
-  // // ignore: unnecessary_getters_setters
-  // set tokens(Map<String, Token> value) {
-  //   _tokens = value;
-  // }
+  Map<dynamic, dynamic> get tipsters {
+    if (_tipsters == null)
+      _tipsters = Map();
+    return _tipsters;
+  }
+
+  set tipsters(Map<dynamic, dynamic> value) {
+    _tipsters = value;
+  }
+
+  Map<dynamic, dynamic> get seguidores {
+    if (_seguidores == null)
+      _seguidores = Map();
+    return _seguidores;
+  }
+
+  set seguidores(Map<dynamic, dynamic> value) {
+    _seguidores = value;
+  }
 
   Map<String, Denuncia> get denuncias {
     if (_denuncias == null)
@@ -724,14 +827,14 @@ class UserPro {
     _postes = value;
   }
 
-  Map<dynamic, dynamic> get seguidoresPendentes {
-    if (_seguidoresPendentes == null)
-      _seguidoresPendentes = Map();
-    return _seguidoresPendentes;
+  Map<dynamic, dynamic> get filiadosPendentes {
+    if (_filiadosPendentes == null)
+      _filiadosPendentes = Map();
+    return _filiadosPendentes;
   }
 
-  set seguidoresPendentes(Map<dynamic, dynamic> value) {
-    _seguidoresPendentes = value;
+  set filiadosPendentes(Map<dynamic, dynamic> value) {
+    _filiadosPendentes = value;
   }
 
   Map<dynamic, dynamic> get seguindo {
@@ -744,14 +847,14 @@ class UserPro {
     _seguindo = value;
   }
 
-  Map<dynamic, dynamic> get seguidores {
-    if (_seguidores == null)
-      _seguidores = Map();
-    return _seguidores;
+  Map<dynamic, dynamic> get filiados {
+    if (_filiados == null)
+      _filiados = Map();
+    return _filiados;
   }
 
-  set seguidores(Map<dynamic, dynamic> value) {
-    _seguidores = value;
+  set filiados(Map<dynamic, dynamic> value) {
+    _filiados = value;
   }
 
   UserDados get dados {
@@ -763,17 +866,6 @@ class UserPro {
   set dados(UserDados value) {
     _dados = value;
   }
-
-
-  // Map<dynamic, dynamic> get comprasIDs {
-  //   if (_comprasIDs == null)
-  //     _comprasIDs = Map();
-  //   return _comprasIDs;
-  // }
-  //
-  // set comprasIDs(Map<dynamic, dynamic> value) {
-  //   _comprasIDs = value;
-  // }
 
   Map<dynamic, dynamic> get tags {
     if (_tags == null)

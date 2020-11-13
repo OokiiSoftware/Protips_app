@@ -1,7 +1,7 @@
 name: protips
 description: Divulgação de prognóstico esportivos.
 
-version: 1.1.44+44
+version: 1.1.51+51
 
 environment:
   sdk: ">=2.2.2 <3.0.0"
@@ -9,6 +9,7 @@ environment:
 dependencies:
   animations: ^1.1.2
   device_info: ^0.4.2+4
+  dynamic_theme: ^1.0.1
   dio: any
   firebase_core: ^0.5.0+1
   firebase_auth: ^0.18.1+2
@@ -28,6 +29,7 @@ dependencies:
   random_string: ^2.1.0
   rxdart: ^0.24.1 # <- Subject
   shared_preferences: ^0.5.8
+  show_more_text_popup: ^0.2.0
   url_launcher: ^5.5.0
 
 #  stripe_payment: ^1.0.8
@@ -36,8 +38,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^0.1.2
 
 dev_dependencies:
@@ -57,15 +57,8 @@ flutter_icons:
 flutter_launcher_name:
   name: 'ProTips'
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter.
 flutter:
 
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
 
   assets:
@@ -75,4 +68,6 @@ flutter:
     - family: Century
       fonts:
         - asset: assets/fonts/century_gothic.ttf
-
+    - family:  MyIcons
+      fonts:
+        - asset: assets/fonts/MyIcons.ttf

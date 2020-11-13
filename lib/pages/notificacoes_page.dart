@@ -5,9 +5,9 @@ import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/notificacao.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/pages/perfil_page_tipster.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:random_string/random_string.dart';
 
@@ -40,8 +40,8 @@ class MyWidgetState extends State<NotificacoesPage> {
         title: Text(Titles.NOTIFICACOES),
         actions: [
           if (RunTime.semInternet)
-            MyLayouts.icAlertInternet,
-          MyLayouts.appBarActionsPadding,
+            Layouts.icAlertInternet,
+          Layouts.appBarActionsPadding,
         ],
       ),
       body: RefreshIndicator(
@@ -69,11 +69,11 @@ class MyWidgetState extends State<NotificacoesPage> {
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
-              leading: item.hasFoto ? MyLayouts.iconFormatUser(
+              leading: item.hasFoto ? Layouts.clipRRectFormatUser(
                   radius: 50,
                   child: fotoLocal ?
-                  MyLayouts.fotoUserFile(File(item.foto)) :
-                  MyLayouts.fotoUserNetwork(item.foto)
+                  Layouts.fotoUserFile(File(item.foto)) :
+                  Layouts.fotoUserNetwork(item.foto)
               ) : Container(),
               title: Text(item.titulo),
               subtitle: Text(item.subtitulo),
@@ -105,8 +105,8 @@ class MyWidgetState extends State<NotificacoesPage> {
   }
 
   _addSeguidoresPendentes() async {
-    if (user.seguidoresPendentes.length > 0)
-      for (String key in user.seguidoresPendentes.values) {
+    if (user.filiadosPendentes.length > 0)
+      for (String key in user.filiadosPendentes.values) {
         UserPro item = await getUsers.get(key);
         if (item== null)
           continue;
@@ -129,7 +129,7 @@ class MyWidgetState extends State<NotificacoesPage> {
           FlatButton(
             child: Text('Aceitar'.toUpperCase()),
             onPressed: () async {
-              if (await user.aceitarSeguidor(item)) {
+              if (await user.aceitarFiliado(item)) {
                 if(!mounted) return;
                 setState(() {
                   _data.removeWhere((x) => x.id == id);

@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/pages/perfil_page_tipster.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 
 class FragmentSolicitacoes extends StatefulWidget {
   @override
@@ -62,9 +62,9 @@ class MyWidgetState extends State<FragmentSolicitacoes> with AutomaticKeepAliveC
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
-              leading: MyLayouts.iconFormatUser(
+              leading: Layouts.clipRRectFormatUser(
                   radius: 50,
-                  child:  MyLayouts.fotoUser(item.dados, iconSize: fotoUserSize)
+                  child:  Layouts.fotoUser(item.dados, iconSize: fotoUserSize)
               ),
               title: Text(item.dados.nome),
               subtitle: Text(item.dados.tipname),

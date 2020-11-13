@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-// import 'package:flutter_google_pay/flutter_google_pay.dart';
 import 'package:protips/auxiliar/firebase.dart';
-import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';
 import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
-// import 'package:stripe_payment/stripe_payment.dart';
 
 class PagamentoTestPage extends StatefulWidget {
   @override
@@ -74,7 +71,7 @@ class MyWidgetState extends State<PagamentoTestPage> {
                   height: 45,
                   width: 188,
                   child: GestureDetector(
-                    child: Image.asset(MyAssets.googlePayButtonDark),
+                    child: Image.asset(Assets.googlePayButtonDark),
                     onTap: _makeStripePayment,
                   ),
                 ),

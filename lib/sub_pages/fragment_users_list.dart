@@ -1,15 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:protips/animations/container_transition.dart';
+import 'package:protips/auxiliar/input_formatter.dart';
+import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/pagamento.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/pages/perfil_page_filiado.dart';
 import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/res/dialog_box.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
@@ -151,7 +154,7 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
         return ExpansionPanel(
             canTapOnHeader: true,
             isExpanded: item.isExpanded,
-            headerBuilder: (BuildContext context, bool isExpanded) => MyLayouts.userTile(item),
+            headerBuilder: (BuildContext context, bool isExpanded) => Layouts.userTile(item),
             body: OpenContainerWrapper(
               statefulWidget: PerfilTipsterPage(item),
               child: ListTile(
@@ -173,7 +176,7 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
         });
       },
       children: data.map<ExpansionPanel>((UserPro item) {
-        String mensalidadeValue = _eu.seguidores[item.dados.id] ?? '';
+        String mensalidadeValue = _eu.filiados[item.dados.id] ?? '';
         if (mensalidadeValue == UserTag.PRECO_PADRAO) {
           mensalidadeValue = '${_eu.dados.precoPadrao} (Padrão)';
         }
@@ -195,15 +198,15 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
         if (_filiadosAtivos[item.dados.id] != null)
           pagamentoOK = _filiadosAtivos[item.dados.id].valor.isNotEmpty;
 
-        if (_filiadosAtivos.length == _eu.seguidores.length)
+        if (_filiadosAtivos.length == _eu.filiados.length)
           _setInProgress(false);
 
         return ExpansionPanel(
           headerBuilder: (BuildContext context, bool isExpanded) {
             return ListTile(
-              leading: MyLayouts.iconFormatUser(
+              leading: Layouts.clipRRectFormatUser(
                   radius: 50,
-                  child: MyLayouts.fotoUser(item.dados)
+                  child: Layouts.fotoUser(item.dados)
               ),
               title: Text(item.dados.nome),
               subtitle: Text(mensalidadeValue),
@@ -255,8 +258,9 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
     setState(() {
       if (isFiliadosList) {
         String meuId = FirebasePro.user.uid;
-        data.addAll(getUsers.data.values.where((e) => e.seguindo.containsKey(meuId)));
+        data.addAll(getUsers.data.values.where((e) => e.tipsters.containsKey(meuId)));
         data.sort((a, b) => a.dados.nome.toLowerCase().compareTo(b.dados.nome.toLowerCase()));
+        Log.d(TAG, '_onRefresh', data.length);
       } else {
         data.addAll(getTipster.data);
         _changeOrdem(_ordemCurrent, _ordemAsc);
@@ -265,16 +269,31 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
   }
 
   _popupAddAtivo(UserPro item) async {
-    var valor = _eu.seguidores[item.dados.id];
+    var valor = _eu.filiados[item.dados.id];
     if (valor == MyStrings.DEFAULT)
       valor = _eu.dados.precoPadrao;
 
     var title = item.dados.nome;
-    var content = Text('Confirmar o pagamento deste Filiado?');
-    var result = await DialogBox.dialogCancelOK(context, title: title, content: [content]);
+    var controller = TextEditingController();
+    controller.text = 'R\$ $valor';
+    var content = [
+      Text('Confirmar o pagamento deste Filiado?'),
+      TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          TextInputFormatterMoney.instance
+        ],
+        decoration: InputDecoration(labelText: 'Valor'),
+      )
+    ];
+    var result = await DialogBox.dialogCancelOK(context, title: title, content: content);
     if (result.isPositive) {
       _setInProgress(true);
-      Pagamento p = criarPagamento(item, valor);
+      var charSpecial = ' ';// criado por esse negócio => [TextInputFormatterMoney]
+      valor = controller.text.trim().replaceAll('R\$', '').replaceAll(charSpecial, '');
+      Pagamento p = criarPagamento(item, valor.toString());
       await p.salvar();
       _setInProgress(false);
       setState(() {
@@ -319,7 +338,7 @@ class MyWidgetState extends State<FragmentUsersList> with AutomaticKeepAliveClie
         .child(_eu.dados.id)
         .child(DataHora.onlyDate)
         .child(FirebaseChild.ATIVOS)
-        .set(_eu.seguidores.length);
+        .set(_eu.filiados.length);
     _setInProgress(false);
   }
 

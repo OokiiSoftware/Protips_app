@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:protips/auxiliar/firebase.dart';
-import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/pagamento.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/resources.dart';
 // import 'package:flutter_google_pay/flutter_google_pay.dart';
 import 'package:protips/res/strings.dart';
@@ -58,7 +58,7 @@ class MyWidgetState extends State<PagamentoPage> {
         appBar: AppBar(title: Text(Titles.PAGAMENTO)),
         body: Column(
           children: [
-            MyLayouts.userTile(_user),
+            Layouts.userTile(_user),
 
             if (_comraResultOK)
               Container(
@@ -85,7 +85,7 @@ class MyWidgetState extends State<PagamentoPage> {
                   height: 45,
                   width: 188,
                   child: GestureDetector(
-                    child: Image.asset(MyAssets.googlePayButtonDark),
+                    child: Image.asset(Assets.googlePayButtonDark),
                     onTap: _makeStripePayment,
                   ),
                 ),
@@ -205,7 +205,7 @@ class MyWidgetState extends State<PagamentoPage> {
   }
 
   String get valor {
-    String valor = _user.seguidores[FirebasePro.user.uid] ?? '';
+    String valor = _user.filiados[FirebasePro.user.uid] ?? '';
     if (valor.isEmpty || valor == MyStrings.DEFAULT) valor = _user.dados.precoPadrao;
     return valor;
   }

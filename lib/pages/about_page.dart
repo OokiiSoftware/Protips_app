@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:protips/auxiliar/aplication.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/my_icons.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
@@ -14,8 +15,12 @@ class MyWidgetState extends State<AboutPage> {
   @override
   Widget build(BuildContext context) {
     var textColorSpecial = MyTheme.textColorSpecial;
+    var textStyleSpecial = TextStyle(color: textColorSpecial);
 
-    var divider = Padding(padding: EdgeInsets.only(top: 30));
+    var iconSize = 21.0;
+
+    var dividerP = Padding(padding: EdgeInsets.only(top: 10, right: 5));
+    var dividerG = Padding(padding: EdgeInsets.only(top: 30));
 
     return Scaffold(
       appBar: AppBar(title: Text(Titles.ABOUT)),
@@ -24,31 +29,59 @@ class MyWidgetState extends State<AboutPage> {
         child: Center(
           child: Column(children: [
             //Icone
-            Image.asset(MyAssets.ic_launcher,
+            Image.asset(MyIcons.ic_launcher,
               width: 130,
               height: 130,
             ),
-            divider,
+            dividerG,
             //Texto
             Text(MyResources.APP_NAME, style: TextStyle(fontSize: 22)),
-            divider,
+            dividerP,
             Text(MyStrings.VERSAO + ': ' + Aplication.packageInfo.version),
-            divider,
+            dividerG,
             Text(MyStrings.CONTATOS),
+            dividerP,
             GestureDetector(
-              child: Text(MyResources.app_whatsapp, style: TextStyle(color: textColorSpecial)),
-              onTap: () {Import.openWhatsApp(MyResources.app_whatsapp, context);},
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(MyIcons.instagram, size: iconSize, color: textColorSpecial),
+                  dividerP,
+                  Text(MyResources.app_instagram, style: textStyleSpecial)
+                ],
+              ),
+              onTap: _onInstagramTap,
             ),
+            dividerP,
             GestureDetector(
-              child: Text(MyResources.app_email, style: TextStyle(color: textColorSpecial)),
-              onTap: () {Import.openEmail(MyResources.app_email, context);},
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(MyIcons.whatsapp, size: iconSize, color: textColorSpecial),
+                  dividerP,
+                  Text(MyResources.app_whatsapp, style: textStyleSpecial)
+                ],
+              ),
+              onTap: _onPhoneTap,
+            ),
+            dividerP,
+            GestureDetector(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.email_outlined, color: textColorSpecial),
+                  dividerP,
+                  Text(MyResources.app_email, style: textStyleSpecial)
+                ],
+              ),
+              onTap: _onEmailTap,
             ),
             Divider(height: 30),
             Text(MyStrings.POR),
-            Padding(padding: EdgeInsets.only(top: 10)),
+            dividerP,
             Tooltip(
               message: MyResources.company_name,
-              child: Image.asset(MyAssets.ic_oki_logo,
+              child: Image.asset(MyIcons.ic_oki_logo,
                 width: 80,
                 height: 80,
               ),
@@ -57,5 +90,17 @@ class MyWidgetState extends State<AboutPage> {
         ),
       ),
     );
+  }
+
+  _onPhoneTap() {
+    Import.openWhatsApp(MyResources.app_whatsapp, context);
+  }
+
+  _onEmailTap() {
+    Import.openEmail(MyResources.app_email, context);
+  }
+
+  _onInstagramTap() {
+    Import.openInstagram(MyResources.app_instagram, context);
   }
 }

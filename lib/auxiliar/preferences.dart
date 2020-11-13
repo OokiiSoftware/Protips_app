@@ -4,10 +4,10 @@ class Preferences {
   static SharedPreferences instance;
   dynamic get(String key) => instance.get(key);
 
-  static bool getBool(String key) => instance.getBool(key) ?? false;
-  static int getInt(String key) => instance.getInt(key) ?? 0;
-  static double getDouble(String key) => instance.getDouble(key) ?? 0.0;
-  static String getString(String key) => instance.getString(key) ?? '';
+  static bool getBool(String key, {bool padrao = false}) => instance.getBool(key) ?? padrao;
+  static int getInt(String key, {int padrao = 0}) => instance.getInt(key) ?? padrao;
+  static double getDouble(String key, {double padrao = 0.0}) => instance.getDouble(key) ?? padrao;
+  static String getString(String key, {String padrao = ''}) => instance.getString(key) ?? padrao;
 
   static Future<bool> setBool(String key, bool value) async => await instance.setBool(key, value);
   static Future<bool> setInt(String key, int value) async => await instance.setInt(key, value);
@@ -26,4 +26,8 @@ class PreferencesKey {
   static const String UPDATE_NOTIFICATION = "UPDATE_NOTIFICATION_1";
   static const String USER_LOGADO = "USER_LOGADO";
   static const String MSG_DE_TESTES = "MSG_DE_TESTES";
+  static const String THEME = "THEME";
+  static const String ABRIR_CONFIG_PAGE = "ABRIR_CONFIG_PAGE";
+
+  static const String POST_AVANCADO = "POST_AVANCADO";
 }

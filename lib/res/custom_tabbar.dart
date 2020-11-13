@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:protips/res/theme.dart';
 
 // ignore: must_be_immutable
 class ColoredTabBar extends Container implements PreferredSizeWidget {

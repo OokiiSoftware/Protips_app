@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:protips/model/denuncia.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/model/post.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/pages/perfil_page_tipster.dart';
 import 'package:protips/pages/post_page.dart';
 import 'package:protips/auxiliar/firebase.dart';

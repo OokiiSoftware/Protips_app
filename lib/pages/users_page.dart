@@ -3,8 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
-import 'package:protips/model/user.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/model/user_pro.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/sub_pages/fragment_users_list.dart';
 
@@ -24,9 +24,9 @@ class MyWidgetState extends State<UsersPage> {
     String meuId = FirebasePro.user.uid;
     _isTipster = FirebasePro.userPro.dados.isTipster;
     if (_isTipster)
-      _data.addAll(getUsers.data.values.where((e) => e.seguindo.containsKey(meuId)));
+      _data.addAll(getUsers.data.values.where((e) => e.tipsters.containsKey(meuId)));
     else
-      _data.addAll(getUsers.data.values.where((e) => e.seguidores.containsKey(meuId)));
+      _data.addAll(getUsers.data.values.where((e) => e.filiados.containsKey(meuId)));
   }
 
   @override
@@ -36,8 +36,8 @@ class MyWidgetState extends State<UsersPage> {
         title: Text(_isTipster ? Titles.MEUS_FILIADOS : Titles.MEUS_TIPSTRES),
         actions: [
           if (RunTime.semInternet)
-            MyLayouts.icAlertInternet,
-          MyLayouts.appBarActionsPadding,
+            Layouts.icAlertInternet,
+          Layouts.appBarActionsPadding,
         ],
       ),
       body: FragmentUsersList(

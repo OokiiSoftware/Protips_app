@@ -3,9 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
 import 'package:protips/auxiliar/log.dart';
-import 'package:protips/model/user.dart';
+import 'package:protips/model/user_pro.dart';
 import 'package:protips/res/dialog_box.dart';
-import 'package:protips/res/resources.dart';
+import 'package:protips/res/layouts.dart';
 import 'package:protips/res/strings.dart';
 import 'package:protips/res/theme.dart';
 
@@ -46,7 +46,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
     _precos = Import.getDropDownMenuItems(GoogleProductsID.precos.values.toList());
 
     _mensalidadePadrao = _eu.dados.precoPadrao;
-    _currentMensalidade = _eu.seguidores[user.dados.id];
+    _currentMensalidade = _eu.filiados[user.dados.id];
     if (_currentMensalidade == UserTag.PRECO_PADRAO) {
       _currentMensalidade = _mensalidadePadrao;
       _isMensalidadePadrao = true;
@@ -64,8 +64,8 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
 
     double headerHeight = 150;
     bool isMyPerfil = user.dados.id == _eu.dados.id;
-    bool isFiliado = _eu.seguidores.containsKey(user.dados.id);
-    bool isFiliadoPendente = _eu.seguidoresPendentes.containsKey(user.dados.id);
+    bool isFiliado = _eu.filiados.containsKey(user.dados.id);
+    bool isFiliadoPendente = _eu.filiadosPendentes.containsKey(user.dados.id);
 
     var headerColor = MyTheme.darkModeOn ? MyTheme.dark2 : MyTheme.primaryLight;
     //endregion
@@ -77,12 +77,12 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
         backgroundColor: headerColor,
         title: Container(
           child: Column(children: [
-            MyLayouts.customAppBar(
+            Layouts.customAppBar(
                 context,
                 title: Titles.PERFIL_FILIADO
             ),
             Padding(padding: EdgeInsets.only(top: 10)),
-            MyLayouts.fotoEDados(user),
+            Layouts.fotoEDados(user),
           ]),
         ),
         actions: [PopupMenuButton<String>(
@@ -130,7 +130,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
                           child: Text('Aceitar'),
                           onPressed: (/*Aceitar Filiado*/) async {
                             _setInProgress(true);
-                            if (await _eu.aceitarSeguidor(user))
+                            if (await _eu.aceitarFiliado(user))
                               setState(() {
                                 isFiliado = true;
                               });
@@ -182,7 +182,7 @@ class MyWidgetState extends State<PerfilFiliadoPage> {
                       child: Text('Remover Filiado'),
                       onPressed: (/*Remover Filiado*/) async {
                         _setInProgress(true);
-                        if (await _eu.removeSeguidor(user))
+                        if (await _eu.removeFiliado(user))
                           setState(() {
                             isFiliado = false;
                           });
