@@ -16,13 +16,13 @@ dependencies:
   firebase_storage: ^4.0.1
   firebase_database: ^4.1.1
   firebase_messaging: ^7.0.3
-#  flutter_google_pay: ^0.1.4
+  #  flutter_google_pay: ^0.1.4
   flutter_local_notifications: ^1.4.4+2
   google_api_availability: ^2.0.4
   google_sign_in: ^4.1.1
   image_crop: ^0.3.2
   image_picker: ^0.6.7+3
-#  in_app_purchase: ^0.3.4+3
+  #  in_app_purchase: ^0.3.4+3
   intl: ^0.16.1
   package_info: ^0.4.0+16
   path_provider: ^1.6.11
@@ -30,13 +30,15 @@ dependencies:
   rxdart: ^0.24.1 # <- Subject
   shared_preferences: ^0.5.8
   show_more_text_popup: ^0.2.0
-  url_launcher: ^5.5.0
+  url_launcher: ^5.7.10
 
-#  stripe_payment: ^1.0.8
+#dependency_overrides:
+#  intl: ^0.16.1
+
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
+#  flutter_localizations:
+#    sdk: flutter
 
   cupertino_icons: ^0.1.2
 

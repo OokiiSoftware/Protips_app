@@ -1,6 +1,6 @@
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+// import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/pages/login_page.dart';
@@ -48,7 +48,7 @@ class MyState extends State<Main> {
         theme: theme,
         title: MyResources.APP_NAME,
         debugShowCheckedModeBanner: false,
-        localizationsDelegates: [GlobalMaterialLocalizations.delegate],
+        // localizationsDelegates: [GlobalMaterialLocalizations.delegate],
         supportedLocales: locales,
         builder: bodyBuilder,
         home: body,

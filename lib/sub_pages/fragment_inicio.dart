@@ -184,7 +184,7 @@ class MyWidgetState extends State<FragmentInicio> with AutomaticKeepAliveClientM
     var lastDate = DateTime.now();
     final DateTime picked = await showDatePicker(
         context: context,
-        locale: Aplication.locale,
+        // locale: Aplication.locale,
         initialDate: _dateTime,
         firstDate: DateTime(1950),
         lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day)

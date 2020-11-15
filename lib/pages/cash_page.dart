@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:protips/auxiliar/aplication.dart';
 import 'package:protips/auxiliar/config.dart';
 import 'package:protips/auxiliar/firebase.dart';
 import 'package:protips/auxiliar/import.dart';
@@ -178,7 +177,7 @@ class MyWidgetState extends State<CashPage> {
   }
 
   String get _dateMesName {
-    final DateFormat formatter = DateFormat('MMMM', 'pt');
+    final DateFormat formatter = DateFormat(/*'MMMM', 'pt'*/);
     return formatter.format(_dateTime);
   }
 
@@ -188,7 +187,7 @@ class MyWidgetState extends State<CashPage> {
         context: context,
         helpText: 'Selecione qualquer dia em um Mês',
         confirmText: 'Este Mês',
-        locale: Aplication.locale,
+        // locale: Aplication.locale,
         initialDate: _dateTime,
         firstDate: DateTime(2020),
         lastDate: DateTime(lastDate.year, lastDate.month, lastDate.day)
