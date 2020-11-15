@@ -261,6 +261,8 @@ class MyErros {
   static const ERRO_GENERICO = 'Ocorreu um erro';
   static const PERFIL_USER_SALVO = 'Erro ao salvar os dados';
   static const PAGAMENTO = 'Ops. Ocorreu um erro. Se o erro persistir entre em contato com o suporte.';
+
+  static const LINK_REMOVIDO = 'Recurso removido temporariamente.';
 }
 
 class Titles {
