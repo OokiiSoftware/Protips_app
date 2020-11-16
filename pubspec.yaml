@@ -1,7 +1,7 @@
 name: protips
 description: Divulgação de prognóstico esportivos.
 
-version: 1.1.51+51
+version: 1.1.52+52
 
 environment:
   sdk: ">=2.2.2 <3.0.0"
@@ -30,7 +30,7 @@ dependencies:
   rxdart: ^0.24.1 # <- Subject
   shared_preferences: ^0.5.8
   show_more_text_popup: ^0.2.0
-#  url_launcher: ^5.7.10
+  url_launcher: ^5.7.10
 
 #dependency_overrides:
 #  intl: ^0.16.1

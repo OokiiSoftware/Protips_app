@@ -11,7 +11,7 @@ import 'package:protips/model/post_perfil.dart';
 import 'package:protips/model/post.dart';
 import 'package:protips/model/user_pro.dart';
 import 'package:protips/res/strings.dart';
-// import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'firebase.dart';
 import 'log.dart';
 import 'notification_manager.dart';
@@ -57,11 +57,11 @@ class Import {
 
   static void openUrl(String url, [BuildContext context]) async {
     try {
-      Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
-      // if (await canLaunch(url))
-      //   await launch(url);
-      // else
-      //   throw Exception(MyErros.ABRIR_LINK);
+      // Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
+      if (await canLaunch(url))
+        await launch(url);
+      else
+        throw Exception(MyErros.ABRIR_LINK);
     } catch(e) {
       if (context != null)
         Log.snackbar(MyErros.ABRIR_LINK, isError: true);
@@ -70,19 +70,19 @@ class Import {
   }
 
   static void openEmail(String email, [BuildContext context]) async {
-    // final Uri _emailLaunchUri = Uri(
-    //     scheme: 'mailto',
-    //     path: '$email',
-    //     queryParameters: {
-    //       'subject': 'Solicitação Tipster'
-    //     }
-    // );
+    final Uri _emailLaunchUri = Uri(
+        scheme: 'mailto',
+        path: '$email',
+        queryParameters: {
+          'subject': 'Solicitação Tipster'
+        }
+    );
     try {
-      Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
-      // if (await canLaunch(_emailLaunchUri.toString()))
-      //   await launch(_emailLaunchUri.toString());
-      // else
-      //   throw Exception(MyErros.ABRIR_EMAIL);
+      // Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
+      if (await canLaunch(_emailLaunchUri.toString()))
+        await launch(_emailLaunchUri.toString());
+      else
+        throw Exception(MyErros.ABRIR_EMAIL);
     } catch(e) {
       if (context != null)
         Log.snackbar(MyErros.ABRIR_EMAIL, isError: true);
@@ -92,13 +92,13 @@ class Import {
 
   static void openWhatsApp(String numero, [BuildContext context]) async {
     try {
-      Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
-      // numero = numero.replaceAll(' ', '').replaceAll('(', '').replaceAll(')', '').replaceAll('-', '');
-      // var link ="whatsapp://send?phone=55$numero";
-      // if (await canLaunch(link))
-      //   await launch(Uri.encodeFull(link));
-      // else
-      //   throw Exception(MyErros.ABRIR_WHATSAPP);
+      // Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
+      numero = numero.replaceAll(' ', '').replaceAll('(', '').replaceAll(')', '').replaceAll('-', '');
+      var link ="whatsapp://send?phone=55$numero";
+      if (await canLaunch(link))
+        await launch(Uri.encodeFull(link));
+      else
+        throw Exception(MyErros.ABRIR_WHATSAPP);
     } catch(e) {
       if (context != null)
         Log.snackbar(MyErros.ABRIR_WHATSAPP, isError: true);
@@ -108,13 +108,13 @@ class Import {
 
   static void openInstagram(String usuario, [BuildContext context]) async {
     try {
-      Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
-      // usuario = usuario.replaceAll('@', '');
-      // var link ="https://www.instagram.com/$usuario/";
-      // if (await canLaunch(link))
-      //   await launch(Uri.encodeFull(link));
-      // else
-      //   throw Exception(MyErros.ABRIR_INSTAGRAM);
+      // Log.snackbar(MyErros.LINK_REMOVIDO, isError: true);
+      usuario = usuario.replaceAll('@', '');
+      var link ="https://www.instagram.com/$usuario/";
+      if (await canLaunch(link))
+        await launch(Uri.encodeFull(link));
+      else
+        throw Exception(MyErros.ABRIR_INSTAGRAM);
     } catch(e) {
       if (context != null)
         Log.snackbar(MyErros.ABRIR_INSTAGRAM, isError: true);
