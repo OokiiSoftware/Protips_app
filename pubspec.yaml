@@ -1,7 +1,7 @@
 name: protips
 description: Divulgação de prognóstico esportivos.
 
-version: 1.1.52+52
+version: 1.1.51+51
 
 environment:
   sdk: ">=2.2.2 <3.0.0"
@@ -11,6 +11,7 @@ dependencies:
   device_info: ^0.4.2+4
   dynamic_theme: ^1.0.1
   dio: any
+  firebase_analytics: ^6.2.0
   firebase_core: ^0.5.0+1
   firebase_auth: ^0.18.1+2
   firebase_storage: ^4.0.1
