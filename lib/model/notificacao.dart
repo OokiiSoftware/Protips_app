@@ -47,7 +47,10 @@ class PushNotification {
   String _timestamp;
   String _itemId;
   String _pagantes;
+  String _channel;
 //  Map<dynamic, dynamic> _destinos;
+
+  PushNotification();
 
   Map toJson() => {
     'title': title,
@@ -59,9 +62,8 @@ class PushNotification {
     'item_id': itemId,
     'timestamp': timestamp,
     'pagantes': pagantes,
+    'channel': channel,
   };
-
-  PushNotification();
 
   PushNotification.fromJson(Map map) {
     title = map['title'];
@@ -72,6 +74,7 @@ class PushNotification {
     itemId = map['item_id'];
     timestamp = map['timestamp'];
     pagantes = map['pagantes'];
+    channel = map['channel'];
   }
 
   Future<bool> enviar() async {
@@ -113,12 +116,24 @@ class PushNotification {
     return result;
   }
 
+
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+
   //region get set
 
   String get action => _action ?? '';
 
   set action(String value) {
     _action = value;
+  }
+
+  String get channel => _channel ?? '';
+
+  set channel(String value) {
+    _channel = value;
   }
 
   String get topic => _topic ?? '';
@@ -184,6 +199,13 @@ class NotificationActions {
   static const String DEPURACAO_TESTE = 'DEPURACAO_TESTE';
   static const String REALIZAR_PAGAMENTO = 'REALIZAR_PAGAMENTO';
   static const String ATUALIZACAO = 'ATUALIZACAO';
+  static const String DENUNCIA = 'DENUNCIA';
+}
+
+class NotificationChannels {
+  static const String SOLICITACAO = 'SOLICITACAO';
+  static const String NOVO_TIP = 'NOVO_TIP';
+  static const String PAGAMENTO = 'PAGAMENTO';
   static const String DENUNCIA = 'DENUNCIA';
 }
 

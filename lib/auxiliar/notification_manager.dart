@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -24,14 +25,17 @@ class NotificationManager {
   static NotificationManager instance;
 
   BuildContext context;
-  NotificationManager(this.context);
+  NotificationManager(this.context) {
+    _init();
+  }
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-  final FirebaseMessaging _fcm = FirebaseMessaging();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
   //endregion
 
-  void init() async {
+  void _init() async {
+    Log.d(TAG, 'init');
     // currentToken = pref.getString(SharedPreferencesKey.ULTIMO_TOKEM);
 
     //region FlutterLocalNotifications
@@ -47,20 +51,29 @@ class NotificationManager {
 
     //region _fcm.configure
 
-    _fcm.requestNotificationPermissions(IosNotificationSettings(sound: true, badge: true, alert: true));
+    if (Platform.isAndroid) {
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_channelTips);
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_channelSolicitacao);
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_channelPagamento);
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(_channelDenuncia);
+    }
+    _fcm.requestPermission();
 
-    _fcm.configure(
-        onMessage: _onReceiveMessage,
-        onResume: (message) async {
-          Log.d(TAG, 'fcm', 'onResume', message);
-        },
-        onLaunch: (message) async {
-          Log.d(TAG, 'fcm', 'onLaunch', message);
-        }
-    );
-    // _fcm.onTokenRefresh.listen((event) {
-    //   _updateToken(_createToken(event));
-    // });
+    // FirebaseMessaging.onBackgroundMessage(_onReceiveMessage);
+    FirebaseMessaging.onMessage.listen(_onReceiveMessage);
+
     //endregion
 
     _atualizarTopics();
@@ -74,6 +87,30 @@ class NotificationManager {
   Future finalize() async {
     await _removerAllTopics();
   }
+
+  AndroidNotificationChannel _channelTips = AndroidNotificationChannel(
+    NotificationChannels.NOVO_TIP, // id
+    'Novas Tips', // title
+    'Canal usado para receber Tips.', // description
+  );
+
+  AndroidNotificationChannel _channelSolicitacao = AndroidNotificationChannel(
+    NotificationChannels.SOLICITACAO, // id
+    'Solicitações', // title
+    'Canal usado para receber solicitações.', // description
+  );
+
+  AndroidNotificationChannel _channelPagamento = AndroidNotificationChannel(
+    NotificationChannels.PAGAMENTO, // id
+    'Pagamentos', // title
+    'Canal usado para receber pagamentos.', // description
+  );
+
+  AndroidNotificationChannel _channelDenuncia = AndroidNotificationChannel(
+    NotificationChannels.DENUNCIA, // id
+    'Denuncias', // title
+    'Canal usado para receber denuncias.',
+  );
 
   //region get set
 
@@ -182,6 +219,7 @@ class NotificationManager {
       notificacao.pagantes = destinos;
       notificacao.topic = NotificationTopics.receberTips(meuID);
       notificacao.action = NotificationActions.NOVO_TIP;
+      notificacao.channel = NotificationChannels.NOVO_TIP;
       await notificacao.enviarTopic();
 
       return true;
@@ -249,6 +287,7 @@ class NotificationManager {
       notificacao.remetente = user.dados.id;
       notificacao.action = NotificationActions.SOLICITACAO_FILIALDO;
       notificacao.topic = NotificationTopics.solicitacaoFiliado(destino.dados.id);
+      notificacao.channel = NotificationChannels.SOLICITACAO;
       await notificacao.enviarTopic();
       return true;
     } catch (e) {
@@ -291,6 +330,7 @@ class NotificationManager {
       notificacao.remetente = user.dados.id;
       notificacao.action = NotificationActions.SOLICITACAO_ACEITA_FILIALDO;
       notificacao.topic = NotificationTopics.solicitacaoAceita(destino.dados.id);
+      notificacao.channel = NotificationChannels.SOLICITACAO;
       await notificacao.enviarTopic();
       return true;
     } catch (e) {
@@ -333,6 +373,7 @@ class NotificationManager {
       notificacao.remetente = user.dados.id;
       notificacao.action = NotificationActions.SOLICITACAO_ACEITA_TIPSTER;
       notificacao.topic = NotificationTopics.solicitacaoTipsterAceita(destino.dados.id);
+      notificacao.channel = NotificationChannels.SOLICITACAO;
       await notificacao.enviarTopic();
       return true;
     } catch (e) {
@@ -375,6 +416,7 @@ class NotificationManager {
       notificacao.remetente = user.dados.id;
       notificacao.action = NotificationActions.SOLICITACAO_TIPSTER;
       notificacao.topic = NotificationTopics.solicitacaoTipsterAdmin;
+      notificacao.channel = NotificationChannels.SOLICITACAO;
       await notificacao.enviarTopic();
       return true;
     } catch (e) {
@@ -419,6 +461,7 @@ class NotificationManager {
       notificacao.timestamp = item.data;
       notificacao.topic = NotificationTopics.denuncia(item.idUser);
       notificacao.action = NotificationActions.DENUNCIA;
+      notificacao.channel = NotificationChannels.DENUNCIA;
       await notificacao.enviarTopic();
       return true;
     } catch(e) {
@@ -461,6 +504,7 @@ class NotificationManager {
       notificacao.remetente = user.dados.id;
       notificacao.action = NotificationActions.PAGAMENTO_REALIZADO;
       notificacao.topic = NotificationTopics.pagamentoRecebido(destino.dados.id);
+      notificacao.channel = NotificationChannels.PAGAMENTO;
       await notificacao.enviarTopic();
       return true;
     } catch (e) {
@@ -481,6 +525,7 @@ class NotificationManager {
       notificacao.remetente = user.dados.id;
       notificacao.action = NotificationActions.DEPURACAO_TESTE;
       notificacao.topic = NotificationTopics.depuracao;
+      notificacao.channel = NotificationChannels.SOLICITACAO;
       await notificacao.enviarTopic();
       return true;
     } catch (e) {
@@ -515,15 +560,16 @@ class NotificationManager {
 
   //endregion
 
-  Future _onReceiveMessage(message) async {
+  Future _onReceiveMessage(RemoteMessage message) async {
     PushNotification notification = PushNotification();
-    String pagantes = message['data']['pagantes'];
-    notification.action = message['data']['action'];
-    notification.remetente = message['data']['remetente'];
-    notification.title = message['notification']['title'];
+    String pagantes = message.data['pagantes'];
+    notification.action = message.data['action'];
+    notification.remetente = message.data['remetente'];
+    notification.title = message.data['title'];
+    notification.channel = message.data['channel'];
 
     if (pagantes == null || pagantes.isEmpty || pagantes.contains(meuID)) {
-      notification.body = message['notification']['body'];
+      notification.body = message.data['body'];
     } else {
       notification.body = MyTexts.REALIZAR_PAGAMENTO;
     }
@@ -555,7 +601,7 @@ class NotificationManager {
     /// O SO do emulador trava ao mostrar a notificação, então só mstro va versão Release
     if (Aplication.isRelease)
       _showNotification(notification);
-    Log.d(TAG, 'fcm', 'onMessage', message);
+    Log.d(TAG, 'onMessage', notification);
   }
 
   Future _onSelectNotification (String payload) async {
@@ -576,7 +622,7 @@ class NotificationManager {
 
   _showNotification(PushNotification notification) async {
     try {
-      var android = AndroidNotificationDetails('ProtipsChannelId', 'ProtipsChannelName', 'ProtipsChannelDescription', icon: 'ic_notification');
+      var android = AndroidNotificationDetails(notification.channel, 'ProtipsChannelName', 'ProtipsChannelDescription', icon: 'ic_notification');
       var iOS = IOSNotificationDetails();
       var platform = NotificationDetails(android, iOS);
       await flutterLocalNotificationsPlugin.show(0, notification.title, notification.body, platform, payload: notification.action);

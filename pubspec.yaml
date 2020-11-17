@@ -16,7 +16,7 @@ dependencies:
   firebase_auth: ^0.18.1+2
   firebase_storage: ^4.0.1
   firebase_database: ^4.1.1
-  firebase_messaging: ^7.0.3
+  firebase_messaging: ^8.0.0-dev.8
   #  flutter_google_pay: ^0.1.4
   flutter_local_notifications: ^1.4.4+2
   google_api_availability: ^2.0.4
