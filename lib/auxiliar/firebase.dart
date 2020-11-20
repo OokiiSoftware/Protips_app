@@ -184,7 +184,7 @@ class FirebasePro {
     'apiKey': 'API KEY AQUI',
     'databaseURL': 'DATABASE',
     'storageBucket': 'STORAGE',
-    'messagingSenderId': ',
+    'messagingSenderId': '',
     'projectId': 'protips-oki',
     'appId-android': '',
     'appId-ios': '',
