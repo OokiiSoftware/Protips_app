@@ -1,6 +1,6 @@
 # protips
 
-A new Flutter application.
+Divulgação e comercialização de prognósticos esportivos.
 
 ## Getting Started
 
