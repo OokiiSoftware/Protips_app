@@ -82,7 +82,7 @@ class FirebasePro {
 
   //region Firebase App
 
-  static StorageReference get storage => _storage.ref();
+  static Reference get storage => _storage.ref();
 
   static FirebaseAuth get auth => _auth;
 

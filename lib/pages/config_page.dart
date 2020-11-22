@@ -87,19 +87,32 @@ class MyWidgetState extends State<ConfigPage> {
               ),
               ElevatedButton(
                 child: Text('Enviar Tip de teste'),
-                onPressed: () {
+                onPressed: () async {
                   if (!FirebasePro.userPro.dados.isTipster) {
                     Log.snackbar('Esta não é uma conta Tipster');
                     return;
                   }
-                  Post.criarTeste(isPublico: false).postar(isTeste: true, salvar: false);
+                  _setInProgress(true);
+                  await Post.criarTeste(isPublico: false).postar(isTeste: true, salvar: false);
+                  _setInProgress(false);
+                },
+              ),
+              ElevatedButton(
+                child: Text('Atualizar Tópicos'),
+                onPressed: () async {
+                  _setInProgress(true);
+                  await NotificationManager.instance.atualizarTopics();
+                  Log.snackbar('Tópicos atualizados.');
+                  _setInProgress(false);
                 },
               ),
               ElevatedButton(
                 child: Text('Enviar Notificação de teste'),
                 onPressed: () async {
+                  _setInProgress(true);
                   await NotificationManager.instance.sendDepuracaoTopic();
                   Log.snackbar('Notificação enviada.');
+                  _setInProgress(false);
                 },
               ),
               ElevatedButton(

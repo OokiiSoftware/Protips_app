@@ -12,9 +12,9 @@
          FlutterApplication and put your custom class here. -->
 
     <!--android:showWhenLocked="true"-->
-
+    <!--android:name="io.flutter.app.FlutterApplication"-->
     <application
-        android:name="io.flutter.app.FlutterApplication"
+        android:name=".Application"
         android:label="ProTips"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true"

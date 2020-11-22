@@ -75,5 +75,6 @@ dependencies {
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10"
     implementation 'com.android.support:multidex:1.0.3'
+    implementation 'com.google.firebase:firebase-messaging:21.0.0'
 }
 apply plugin: 'com.google.gms.google-services'  // Google Play services Gradle plugin

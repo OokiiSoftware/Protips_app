@@ -8,17 +8,17 @@ environment:
 
 dependencies:
   animations: ^1.1.2
-  device_info: ^0.4.2+4
+  device_info: ^1.0.0
   dynamic_theme: ^1.0.1
   dio: any
   firebase_analytics: ^6.2.0
-  firebase_core: ^0.5.0+1
-  firebase_auth: ^0.18.1+2
-  firebase_storage: ^4.0.1
-  firebase_database: ^4.1.1
-  firebase_messaging: ^8.0.0-dev.8
+  firebase_core: ^0.5.2
+  firebase_auth: ^0.18.3
+  firebase_storage: ^5.0.1
+  firebase_database: ^4.3.0
+  firebase_messaging: ^7.0.3
   #  flutter_google_pay: ^0.1.4
-  flutter_local_notifications: ^1.4.4+2
+  flutter_local_notifications: ^3.0.1+5
   google_api_availability: ^2.0.4
   google_sign_in: ^4.1.1
   image_crop: ^0.3.2
@@ -29,12 +29,9 @@ dependencies:
   path_provider: ^1.6.11
   random_string: ^2.1.0
   rxdart: ^0.24.1 # <- Subject
-  shared_preferences: ^0.5.8
+  shared_preferences: ^0.5.12+4
   show_more_text_popup: ^0.2.0
   url_launcher: ^5.7.10
-
-#dependency_overrides:
-#  intl: ^0.16.1
 
   flutter:
     sdk: flutter

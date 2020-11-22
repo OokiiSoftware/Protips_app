@@ -105,13 +105,13 @@ class UserDados {
     Log.d(TAG, 'uploadUserPhoto', 'Iniciando', file.path);
 
     try {
-      final StorageReference ref = FirebasePro.storage
+      final Reference ref = FirebasePro.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.PERFIL)
           .child(id + '.jpg');
 
       var uploadTask = ref.putFile(file);
-      var taskSnapshot = await uploadTask.onComplete;
+      var taskSnapshot = uploadTask.snapshot;//.onComplete;
       var fileUrl = await taskSnapshot.ref.getDownloadURL();
 
 //      _fotoLocal = path.basename(file.path);

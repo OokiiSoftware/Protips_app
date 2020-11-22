@@ -261,14 +261,14 @@ class Post {
     Log.d(TAG, 'uploadPhoto', 'file path: ' + file.path);
 
     try {
-      final StorageReference ref = FirebasePro.storage
+      final Reference ref = FirebasePro.storage
           .child(FirebaseChild.USUARIO)
           .child(FirebaseChild.POSTES)
           .child(idTipster)
           .child(id + '.jpg');
 
       var uploadTask = ref.putFile(file);
-      var taskSnapshot = await uploadTask.onComplete;
+      var taskSnapshot = uploadTask.snapshot;//.onComplete
       var fileUrl = await taskSnapshot.ref.getDownloadURL();
 
       Log.d(TAG, 'uploadPhoto OK', fileUrl);

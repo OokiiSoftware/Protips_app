@@ -1,10 +1,10 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'dart:io';
 import 'package:image_crop/image_crop.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:protips/auxiliar/config.dart';
@@ -32,7 +32,7 @@ class MyWidgetState extends State<PerfilPage> {
   //region Variaveis
   static const String TAG = 'MeuPerfilPage';
   String _fotoWeb = '';
-  StorageUploadTask uploadTask;
+  UploadTask uploadTask;
   bool inProgress = false;
 
   final picker = ImagePicker();

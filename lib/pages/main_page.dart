@@ -373,63 +373,8 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
       Navigate.toReplacement(context, LoginPage());
     }
   }
-  Future<void> _initOld() async {
-    // _tempoDeInicializacao();
-    // var result = await FirebasePro.init();
-    // try {
-    //   if (result == FirebaseInitResult.fUserNull)
-    //     throw Exception(FirebaseInitResult.fUserNull);
-    //
-    //   await readOfflineData();
-    //
-    //   //Obtem os dados do usuário logado
-    //   if (!await FirebasePro.atualizarOfflineUser()) {
-    //     var result2 = await Navigate.to(context, PerfilPage());
-    //     if (result2 == null) throw Exception(FirebaseInitResult.userNull);
-    //      else Navigate.to(context, PerfilPage());
-    //   }
-    //
-    //   _isTipster = FirebasePro.userPro.dados.isTipster;
-    //   _verificarTutorial();
-    //   _verificarArguments();
-    //
-    //   NotificationManager.instance = NotificationManager(context);
-    //
-    //   FirebasePro.observMyFirebaseData();
-    //
-    //   await UserPro.baixarList();
-    //
-    //   if(!mounted) return;
-    //   setState(() {
-    //     _isInicializado = true;
-    //   });
-    //
-    //   await OfflineData.saveOfflineData();
-    //   await getPosts.saveFotosLocal();
-    //
-    //   _onAtualizarTap(false);
-    //   if(!mounted) return;
-    //   setState(() {
-    //     RunTime.semInternet = false;
-    //   });
-    //
-    //   _mostrarMsgDeAviso();
-    // } catch(e) {
-    //   bool sendError = true;
-    //   if (e.toString().contains(FirebaseInitResult.fUserNull.toString()))
-    //     sendError = false;
-    //   if (e.toString().contains(FirebaseInitResult.userNull.toString()))
-    //     sendError = false;
-    //
-    //   if (sendError)
-    //     Log.e(TAG, 'init', e);
-    //   else
-    //     Log.e2(TAG, 'init', e);
-    //   Navigate.toReplacement(context, LoginPage());
-    // }
-  }
 
-  /// TODO Usado somente pra testes
+  /// REMOVE Usado somente pra testes
   sendPostTest() async {
     Post p = Post();
     p.id = randomString(10);
