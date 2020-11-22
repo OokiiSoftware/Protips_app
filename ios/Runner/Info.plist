@@ -8,7 +8,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<key>CFBundleExecutable</key>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>com.ookiisoftware.protips</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
