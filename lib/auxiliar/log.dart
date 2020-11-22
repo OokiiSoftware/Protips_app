@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/data_hora.dart';
 import 'package:protips/model/error.dart';
@@ -9,12 +8,15 @@ import 'firebase.dart';
 
 class Log {
   static final scaffKey = GlobalKey<ScaffoldState>();
+  // static BuildContext context;
 
   static Map<GlobalKey, CustomTooltip> _tooltips = Map();
 
   static void snackbar(String texto, {bool isError = false}) {
     try {
+      // scaffKey.currentState.hideCurrentSnackBar();
       scaffKey.currentState.hideCurrentSnackBar();
+      // ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       var tint = isError ? Colors.white : Colors.black;
       var snack = SnackBar(
@@ -31,6 +33,7 @@ class Log {
         backgroundColor: isError ? MyTheme.tintColorError : MyTheme.accent,
       );
       scaffKey.currentState.showSnackBar(snack);
+      // ScaffoldMessenger.of(context).showSnackBar(snack);
     } catch (ex) {
       e('Log', 'snackbar', ex);
     }

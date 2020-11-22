@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/animations/container_transition.dart';
 import 'package:protips/auxiliar/firebase.dart';

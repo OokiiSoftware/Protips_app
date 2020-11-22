@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/aplication.dart';
 import 'package:protips/auxiliar/import.dart';

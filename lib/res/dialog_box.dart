@@ -1,7 +1,6 @@
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/model/post_perfil.dart';
-import 'package:protips/res/resources.dart';
 import 'package:protips/res/strings.dart';
 
 import 'layouts.dart';

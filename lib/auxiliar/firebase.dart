@@ -113,19 +113,20 @@ class FirebasePro {
     const firebaseUser_Null = 'firebaseUser Null';
     try {
 
-      await Firebase.initializeApp(
-          name: MyResources.APP_NAME,
-          options: FirebaseOptions(
-            appId: Cript.decript(_projectData[Platform.isAndroid ? 'appId-android' : 'appId-ios']),
-            messagingSenderId: Cript.decript(_projectData['messagingSenderId']),
-            storageBucket: Cript.decript(_projectData['storageBucket']),
-            databaseURL: Cript.decript(_projectData['databaseURL']),
-            projectId: Cript.decript(_projectData['projectId']),
-            apiKey: Cript.decript(_projectData['apiKey']),
-          )
-      ).catchError((e) {
-        Log.e2(TAG, 'init', 'initializeApp', e);
-      });
+      if (Firebase.apps.isEmpty)
+        await Firebase.initializeApp(
+            name: MyResources.APP_NAME,
+            options: FirebaseOptions(
+              appId: Cript.decript(_projectData[Platform.isAndroid ? 'appId-android' : 'appId-ios']),
+              messagingSenderId: Cript.decript(_projectData['messagingSenderId']),
+              storageBucket: Cript.decript(_projectData['storageBucket']),
+              databaseURL: Cript.decript(_projectData['databaseURL']),
+              projectId: Cript.decript(_projectData['projectId']),
+              apiKey: Cript.decript(_projectData['apiKey']),
+            )
+        ).catchError((e) {
+          Log.e2(TAG, 'init', 'initializeApp', e);
+        });
 
       if (user == null || !user.emailVerified)
         throw new Exception(firebaseUser_Null);

@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:protips/auxiliar/config.dart';
 import 'package:protips/pages/config_page.dart';

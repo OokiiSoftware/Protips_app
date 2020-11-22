@@ -1,8 +1,6 @@
 import 'dart:core';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class CustomTooltip {
   //region variaveis

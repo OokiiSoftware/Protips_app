@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/material.dart';
 // import 'package:flutter_localizations/flutter_localizations.dart';
@@ -44,15 +45,17 @@ class MyState extends State<Main> {
     return DynamicTheme(
       defaultBrightness: Brightness.light,
       data: setTheme,
-      themedWidgetBuilder: (context, theme) => MaterialApp(
-        theme: theme,
-        title: MyResources.APP_NAME,
-        debugShowCheckedModeBanner: false,
-        // localizationsDelegates: [GlobalMaterialLocalizations.delegate],
-        supportedLocales: locales,
-        builder: bodyBuilder,
-        home: body,
-      )
+      themedWidgetBuilder: (context, theme) {
+        return MaterialApp(
+          theme: theme,
+          title: MyResources.APP_NAME,
+          debugShowCheckedModeBanner: false,
+          // localizationsDelegates: [GlobalMaterialLocalizations.delegate],
+          supportedLocales: locales,
+          builder: bodyBuilder,
+          home: body,
+        );
+      }
     );
   }
 
