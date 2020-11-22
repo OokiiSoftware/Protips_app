@@ -181,13 +181,13 @@ class FirebasePro {
   }
 
   static Map<String, String> get _dataUrl => {
-    'apiKey': 'AIzaSyClZ-JCdZwUKQqVamI3C6LwRVWBmEP3x2A',
-    'databaseURL': 'https://protips-oki.firebaseio.com',
-    'storageBucket': 'gs://protips-oki.appspot.com',
-    'messagingSenderId': '721419790842',
+    'apiKey': 'API KEY AQUI',
+    'databaseURL': 'DATABASE',
+    'storageBucket': 'STORAGE',
+    'messagingSenderId': '',
     'projectId': 'protips-oki',
-    'appId-android': '1:721419790842:android:84815debd1879d3d509c43',
-    'appId-ios': '1:721419790842:ios:ac0829d013db5cad509c43',
+    'appId-android': '',
+    'appId-ios': '',
   };
 
   static bool get isAdmin => _isAdmin ?? false;
