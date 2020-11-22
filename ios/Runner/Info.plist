@@ -2,13 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <string>YES</string>
     <key>io.flutter.embedded_views_preview</key>
     <true/>
-	<key>CFBundleDevelopmentRegion</key>
 	<key>NSPhotoLibraryUsageDescription</key>
+    <string>User can share photos in the app</string>
 	<key>NSCameraUsageDescription</key>
+    <string>The camera is not used in this app</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<key>CFBundleExecutable</key>
+    <string>The microphone is not used in this app</string>
+	<key>CFBundleDevelopmentRegion</key>
+    <string>Portuguese</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.ookiisoftware.protips</string>
 	<key>CFBundleInfoDictionaryVersion</key>
