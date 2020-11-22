@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:protips/auxiliar/criptografia.dart';
 import 'package:protips/auxiliar/preferences.dart';
 import 'package:protips/model/user_pro.dart';
 import 'package:protips/res/strings.dart';
@@ -115,12 +116,12 @@ class FirebasePro {
       await Firebase.initializeApp(
           name: MyResources.APP_NAME,
           options: FirebaseOptions(
-            appId: _dataUrl[Platform.isAndroid ? 'appId-android' : 'appId-ios'],
-            messagingSenderId: _dataUrl['messagingSenderId'],
-            storageBucket: _dataUrl['storageBucket'],
-            databaseURL: _dataUrl['databaseURL'],
-            projectId: _dataUrl['projectId'],
-            apiKey: _dataUrl['apiKey'],
+            appId: Cript.decript(_projectData[Platform.isAndroid ? 'appId-android' : 'appId-ios']),
+            messagingSenderId: Cript.decript(_projectData['messagingSenderId']),
+            storageBucket: Cript.decript(_projectData['storageBucket']),
+            databaseURL: Cript.decript(_projectData['databaseURL']),
+            projectId: Cript.decript(_projectData['projectId']),
+            apiKey: Cript.decript(_projectData['apiKey']),
           )
       ).catchError((e) {
         Log.e2(TAG, 'init', 'initializeApp', e);
@@ -164,11 +165,6 @@ class FirebasePro {
     }
   }
 
-  // static void initNotificationManager(BuildContext context) {
-  //   _fcm = NotificationManager(context);
-  //   _fcm.init();
-  // }
-
   static void finalize() async {
     getPosts.reset();
     getTipster.reset();
@@ -180,19 +176,17 @@ class FirebasePro {
     NotificationManager.instance = null;
   }
 
-  static Map<String, String> get _dataUrl => {
-    'apiKey': 'API KEY AQUI',
-    'databaseURL': 'DATABASE',
-    'storageBucket': 'STORAGE',
-    'messagingSenderId': '',
-    'projectId': 'protips-oki',
-    'appId-android': '',
-    'appId-ios': '',
+  static Map<String, String> get _projectData => {
+    'apiKey': '¦AWª⟩Sℙ,EWTⅉ®DYL☡❘YQOXⅆU´‥SⅈⅲYHⅈ,AMU〝⨉H,,YZFⅈ,QDⅉ´BLPX⟩N÷~HW✕〝AW÷ⅰR▁⟩IⅰⅆP▁~RPEℙ▁GL[ℙ✕LGℙⅉA⟨⟨FLL⟩〝AFⅱ÷OZ▁ⅉLJO÷❘TⅱⅱEUQ⟩ⅱC▁⨉UE´XPⅉーNHⅰⅉEH¦✕MB´〝SQJ‥⟩LRⅈℚC£÷Nª',
+    'databaseURL': '~YⅸⅈRⅉªIMP´‥P~ⅲNF▁´J❘ーO[⟩ーYSUⅰⅱY,ーGRF¦£W☡☡HQZⅆⅲGJ〝XUⅉ,B,ℚAC▁ªG☡®DMHⅆ¿LSⅉ✕JZ[☡¿QQMℙ÷WFN⨉ⅰQI⟨ⅱKJDℚⅸO´ℚI÷⟨BZZ¿£F÷ⅆIQⅆ,W⟩£YFZℚ⟩GMEー´JQ¿ⅸMBⅱ',
+    'storageBucket': '〝NℙℚNW¦〝O´XR¿ℚA✕¦Q§~VEW~ⅆB´§Oⅰ¦YⅰーBRXⅉPU⨉ⅆSOTⅱ✕GJK⨉¦R¦ⅆYRJ⨉¦L〝ⅉLE⟩ⅲS¿´EZO¦,GIℚ▁EWKーⅱKVⅰⅲUHℙ❘TEⅆ❘M⟨ⅲJSU✕▁PGⅈ',
+    'messagingSenderId': '¦AWªXDMI⟨ªEMCⅰ⟩ZQ~÷JⅲⅈCQXℚBSー~MZNⅲ⟩FBZ☡❘HWℙ£W☡‥V⨉⟩L⟨☡BDS´£AY✕ⅲE⟩ⅰPWⅲ〝IY⟨✕QQ£®Cⅈ⟨LⅉⅉVG~ⅉU´´EHⅸ⟩HD▁‥QHHª〝OQℚ~ZQCⅉⅲIN❘ⅸLJ▁ℙE⨉⟨OQE❘☡LTFⅉⅆG✕ℚK£▁SーXYLZー®ZYH£▁Yⅸ⟨YGW〝÷CCⅱ⨉NJVℚ⨉RM⟨ⅉR▁〝Y⟩ªQVHⅉ¿HⅱⅰVTLⅲ´N§ⅱDN‥XA£ⅉP⨉XJ⟨´O‥ℚGQ⨉¦HZFⅰ✕ROH¦XIOUℙ⟨OFUX~C¿®NM£XPN⟨⨉SO®▁O¿÷JⅲⅲH£⟨E£ⅆGVUⅲⅈMPー÷UY⟨¦W£⨉MTX´BLPX,CG§´Q❘ⅲRED®®Oⅈ¦Dⅲ¦G[X▁IO☡,GIℚ£H〝~SEX❘HSⅉ~FYIⅲ~OUD÷¿KU®⨉RRIⅰ‥KVⅸ⨉M,⨉PY´⟨Z▁ªLIHⅉ〝EL¿✕O¦ℚVLI⨉ℙDEーⅲR§£ML¦〝RYEⅆⅱLNL,®Z⨉▁GOℚⅸJPー⟨UKPⅆªL✕´AU‥▁FO✕£KCVⅸⅱHⅰ´F[Pⅱ¦YU÷ℚMRLⅸ❘TWV⨉£GMWⅈ⨉AT⨉☡OKWXーLU▁¦CL£XV⨉ⅱWDLⅆ⟩YCW~⨉SO®XUUGℚ☡DML£,VLT‥´IFGⅉ⟩IQⅉ÷DEー´ATⅉⅰGG¿⟨YDTⅰ~AH✕÷Y§ⅲKURⅲ~F´ⅰC‥▁DTⅆ¿AJ¦▁KYCª§V',
+    'projectId': 'ⅉSOXⅈV⨉ℙAZⅈ¦EⅱℙAHS▁¦Q§❘NEY▁ⅰIV´⟨HKH✕ⅆGXⅉD´',
+    'appId-android': '~OI¿ⅲJⅈⅲZGI´ⅱOCⅰªWS☡¦FY÷÷NMZ¿¿SGZ®´YSCⅱℙGKCℚ£UℚⅸBHN〝´QRⅲ✕OM¿®JQℚⅈJK÷❘IℚーRRJ〝▁ZT÷ℙOP÷ⅰN⨉~HV£▁NW⨉⟨YE÷☡BOⅆℚSLℚ¦YWO÷¿USⅸ☡J®¿NCTⅸ〝CRZ,´Jª~TRI‥☡YRV〝☡Rª〝CーⅲTUⅆⅱIℙⅆPQFX®Z§❘J⨉ⅰUⅲⅲEPIⅰªF▁ーLKC‥',
+    'appId-ios': '~OI¿ⅲJⅈⅲZGI´ⅱOCⅰªWS☡¦FY÷÷NMZ¿¿SGZ®´YSCⅱℙGKCℚ£UℚⅸBHN〝´QRⅲ✕OM¿®JQℚⅆYRJ⨉ªG☡ⅰLª‥M☡ⅱW®ーSX⨉KS⟨ーSℚ⟨DDℚ®P´☡ZT⟩ℙSSO☡ⅸFOー§Bª⟩INZⅆ〝CRZ,¿Q¿®ZB§ℙKCD‥ⅈG▁ⅲUJ§‥W⟨⟨TJZⅱⅈOOW§¦Z¿´IR✕',
   };
 
   static bool get isAdmin => _isAdmin ?? false;
-
-  // static NotificationManager get notificationManager => _fcm;
 
   static Future<List<UserPro>> get admins async {
     List<UserPro> list = [];

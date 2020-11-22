@@ -15,6 +15,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "721419790842-b92r3u92va2ltt25k2ec3354bc46nbi9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ookiisoftware.protips",
+            "certificate_hash": "5fe0da3aade947e930d01656c289359f274613ba"
+          }
+        },
+        {
+          "client_id": "721419790842-7f7uu3nd7i8dv18oa57o9oujmhvuvcbt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ookiisoftware.protips",
+            "certificate_hash": "704c32eae3735edac401ba1a3e061aff9641c7ca"
+          }
+        },
+        {
           "client_id": "721419790842-i4e4c597u6t43k8lolu0i3armr0f83mk.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

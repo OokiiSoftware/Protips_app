@@ -9,8 +9,8 @@ class Cript {
     return _criptografia;
   }
 
-  static String encript([String value = '']) {
-    if (value.isEmpty) return value;
+  static String encript(String value) {
+    if (value == null || value.isEmpty) return value;
 
     var digitos = _getCriptografia;
     String result = "";
@@ -28,8 +28,8 @@ class Cript {
     return result;
   }
 
-  static String decript([String value = '']) {
-    if (value.isEmpty) return value;
+  static String decript(String value) {
+    if (value == null || value.isEmpty) return value;
 
     String result = value;
     var data = _getCriptografia;
