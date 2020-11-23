@@ -290,7 +290,7 @@ class MyWidgetState extends State<MainPage> with SingleTickerProviderStateMixin 
                 child: Container(
                   height: navHeight,
                   child: Tab(
-                      iconMargin: EdgeInsets.all(0),
+                      // iconMargin: EdgeInsets.all(0),
                       icon: Icon(Icons.home, color: navIconColor)//Image.asset(MyIcons.ic_home, /*color: navIconColor,*/ width: 30)
                   ),
                 ),

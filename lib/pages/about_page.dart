@@ -14,6 +14,7 @@ class MyWidgetState extends State<AboutPage> {
 
   @override
   Widget build(BuildContext context) {
+    //region variaveis
     var textColorSpecial = MyTheme.textColorSpecial;
     var textStyleSpecial = TextStyle(color: textColorSpecial);
 
@@ -21,6 +22,7 @@ class MyWidgetState extends State<AboutPage> {
 
     var dividerP = Padding(padding: EdgeInsets.only(top: 10, right: 5));
     var dividerG = Padding(padding: EdgeInsets.only(top: 30));
+    //endregion
 
     return Scaffold(
       appBar: AppBar(title: Text(Titles.ABOUT)),
@@ -92,15 +94,8 @@ class MyWidgetState extends State<AboutPage> {
     );
   }
 
-  _onPhoneTap() {
-    Import.openWhatsApp(MyResources.app_whatsapp, context);
-  }
+  _onEmailTap() => Import.openEmail(MyResources.app_email, context);
+  _onPhoneTap() => Import.openWhatsApp(MyResources.app_whatsapp, context);
+  _onInstagramTap() => Import.openInstagram(MyResources.app_instagram, context);
 
-  _onEmailTap() {
-    Import.openEmail(MyResources.app_email, context);
-  }
-
-  _onInstagramTap() {
-    Import.openInstagram(MyResources.app_instagram, context);
-  }
 }
