@@ -113,20 +113,32 @@ class FirebasePro {
     const firebaseUser_Null = 'firebaseUser Null';
     try {
 
-      if (Firebase.apps.isEmpty)
+      if (Firebase.apps.isEmpty) {
+        String decript(String value) => Cript.decript(_firebaseData[value]);
+        String encript(String value) => Cript.encript(_firebaseData[value]);
+
+        // Log.d(TAG, 'appId', encript('appId'));
+        // Log.d(TAG, 'projectId', encript('projectId'));
+        // Log.d(TAG, 'messagingSenderId', encript('messagingSenderId'));
+        // Log.d(TAG, 'apiKey', encript('apiKey'));
+        // Log.d(TAG, 'storageBucket', encript('storageBucket'));
+        // Log.d(TAG, 'databaseURL', encript('databaseURL'));
+
         await Firebase.initializeApp(
             name: MyResources.APP_NAME,
             options: FirebaseOptions(
-              appId: Cript.decript(_projectData[Platform.isAndroid ? 'appId-android' : 'appId-ios']),
-              messagingSenderId: Cript.decript(_projectData['messagingSenderId']),
-              storageBucket: Cript.decript(_projectData['storageBucket']),
-              databaseURL: Cript.decript(_projectData['databaseURL']),
-              projectId: Cript.decript(_projectData['projectId']),
-              apiKey: Cript.decript(_projectData['apiKey']),
+              appId: decript('appId'),
+              messagingSenderId: decript('messagingSenderId'),
+              storageBucket: decript('storageBucket'),
+              databaseURL: decript('databaseURL'),
+              projectId: decript('projectId'),
+              apiKey: decript('apiKey'),
             )
         ).catchError((e) {
           Log.e2(TAG, 'init', 'initializeApp', e);
         });
+      }
+
 
       if (user == null || !user.emailVerified)
         throw new Exception(firebaseUser_Null);
@@ -177,14 +189,13 @@ class FirebasePro {
     NotificationManager.instance = null;
   }
 
-  static Map<String, String> get _projectData => {
-    'apiKey': '¦AWª⟩Sℙ,EWTⅉ®DYL☡❘YQOXⅆU´‥SⅈⅲYHⅈ,AMU〝⨉H,,YZFⅈ,QDⅉ´BLPX⟩N÷~HW✕〝AW÷ⅰR▁⟩IⅰⅆP▁~RPEℙ▁GL[ℙ✕LGℙⅉA⟨⟨FLL⟩〝AFⅱ÷OZ▁ⅉLJO÷❘TⅱⅱEUQ⟩ⅱC▁⨉UE´XPⅉーNHⅰⅉEH¦✕MB´〝SQJ‥⟩LRⅈℚC£÷Nª',
-    'databaseURL': '~YⅸⅈRⅉªIMP´‥P~ⅲNF▁´J❘ーO[⟩ーYSUⅰⅱY,ーGRF¦£W☡☡HQZⅆⅲGJ〝XUⅉ,B,ℚAC▁ªG☡®DMHⅆ¿LSⅉ✕JZ[☡¿QQMℙ÷WFN⨉ⅰQI⟨ⅱKJDℚⅸO´ℚI÷⟨BZZ¿£F÷ⅆIQⅆ,W⟩£YFZℚ⟩GMEー´JQ¿ⅸMBⅱ',
-    'storageBucket': '〝NℙℚNW¦〝O´XR¿ℚA✕¦Q§~VEW~ⅆB´§Oⅰ¦YⅰーBRXⅉPU⨉ⅆSOTⅱ✕GJK⨉¦R¦ⅆYRJ⨉¦L〝ⅉLE⟩ⅲS¿´EZO¦,GIℚ▁EWKーⅱKVⅰⅲUHℙ❘TEⅆ❘M⟨ⅲJSU✕▁PGⅈ',
-    'messagingSenderId': '¦AWªXDMI⟨ªEMCⅰ⟩ZQ~÷JⅲⅈCQXℚBSー~MZNⅲ⟩FBZ☡❘HWℙ£W☡‥V⨉⟩L⟨☡BDS´£AY✕ⅲE⟩ⅰPWⅲ〝IY⟨✕QQ£®Cⅈ⟨LⅉⅉVG~ⅉU´´EHⅸ⟩HD▁‥QHHª〝OQℚ~ZQCⅉⅲIN❘ⅸLJ▁ℙE⨉⟨OQE❘☡LTFⅉⅆG✕ℚK£▁SーXYLZー®ZYH£▁Yⅸ⟨YGW〝÷CCⅱ⨉NJVℚ⨉RM⟨ⅉR▁〝Y⟩ªQVHⅉ¿HⅱⅰVTLⅲ´N§ⅱDN‥XA£ⅉP⨉XJ⟨´O‥ℚGQ⨉¦HZFⅰ✕ROH¦XIOUℙ⟨OFUX~C¿®NM£XPN⟨⨉SO®▁O¿÷JⅲⅲH£⟨E£ⅆGVUⅲⅈMPー÷UY⟨¦W£⨉MTX´BLPX,CG§´Q❘ⅲRED®®Oⅈ¦Dⅲ¦G[X▁IO☡,GIℚ£H〝~SEX❘HSⅉ~FYIⅲ~OUD÷¿KU®⨉RRIⅰ‥KVⅸ⨉M,⨉PY´⟨Z▁ªLIHⅉ〝EL¿✕O¦ℚVLI⨉ℙDEーⅲR§£ML¦〝RYEⅆⅱLNL,®Z⨉▁GOℚⅸJPー⟨UKPⅆªL✕´AU‥▁FO✕£KCVⅸⅱHⅰ´F[Pⅱ¦YU÷ℚMRLⅸ❘TWV⨉£GMWⅈ⨉AT⨉☡OKWXーLU▁¦CL£XV⨉ⅱWDLⅆ⟩YCW~⨉SO®XUUGℚ☡DML£,VLT‥´IFGⅉ⟩IQⅉ÷DEー´ATⅉⅰGG¿⟨YDTⅰ~AH✕÷Y§ⅲKURⅲ~F´ⅰC‥▁DTⅆ¿AJ¦▁KYCª§V',
-    'projectId': 'ⅉSOXⅈV⨉ℙAZⅈ¦EⅱℙAHS▁¦Q§❘NEY▁ⅰIV´⟨HKH✕ⅆGXⅉD´',
-    'appId-android': '~OI¿ⅲJⅈⅲZGI´ⅱOCⅰªWS☡¦FY÷÷NMZ¿¿SGZ®´YSCⅱℙGKCℚ£UℚⅸBHN〝´QRⅲ✕OM¿®JQℚⅈJK÷❘IℚーRRJ〝▁ZT÷ℙOP÷ⅰN⨉~HV£▁NW⨉⟨YE÷☡BOⅆℚSLℚ¦YWO÷¿USⅸ☡J®¿NCTⅸ〝CRZ,´Jª~TRI‥☡YRV〝☡Rª〝CーⅲTUⅆⅱIℙⅆPQFX®Z§❘J⨉ⅰUⅲⅲEPIⅰªF▁ーLKC‥',
-    'appId-ios': '~OI¿ⅲJⅈⅲZGI´ⅱOCⅰªWS☡¦FY÷÷NMZ¿¿SGZ®´YSCⅱℙGKCℚ£UℚⅸBHN〝´QRⅲ✕OM¿®JQℚⅆYRJ⨉ªG☡ⅰLª‥M☡ⅱW®ーSX⨉KS⟨ーSℚ⟨DDℚ®P´☡ZT⟩ℙSSO☡ⅸFOー§Bª⟩INZⅆ〝CRZ,¿Q¿®ZB§ℙKCD‥ⅈG▁ⅲUJ§‥W⟨⟨TJZⅱⅈOOW§¦Z¿´IR✕',
+  static Map<String, String> get _firebaseData => {
+    'appId': Platform.isAndroid ? 'ASH1IT☡iUWUOEZUMdQC0LFR43RZofRZM3vSRCf3HLLKUYiRFU41WPLNS4AZRXXG4dJMiOM7iHKFQxGWIPMvhWkvJU0xRTHEiVI7HT7iUzBHxxCVSo0M0sZClmZ[dEVmIZCz0K7AVXlCNT|OJxiWVFvLCNk0SZKvQWoiHUx☡TMBlUHX' :'ASH1IT☡iUWUOEZUMdQC0LFR43RZofRZM3vSRCf3HLLKUYiRFU41WPLNS4AZRXlWi4J[z4F☡dJMhYVNJxzWKP4V3OMDv1CxmGKAISJC|1U4|WKAiUNVkdHhsZClBFZWxhCdvUElGRi4MRDQ0RVUkYSPPKNB3RVDIdDWB',
+    'apiKey': 'mHZhESZlBMfzGvmHFWQANxlFG3lGVXBGNf1UWVkYJKXiVUZsvHZWOhH0xZCFfvRPkVTxxZxYMVZE1ZTIQV☡zNRksNUO4JFd☡KCJ4fJKUzXVGkPR[PXKUK7PFD[7BRKh3FUAdDNO☡DBXRSsmFKmiDU☡QZJSivZf',
+    'databaseURL': '|FOlNWzAG3BKGooDDEYGKZo|FZImRmoNSSs7SWDQxFTUOiUMiAMkoG[iiV|iKOlUfXTMVf1ZUmzCCSiPMv☡KhiWZSl3RUhEMv3KMX',
+    'storageBucket': 'AUW4lZifGSiERdhGdYGKZo0ZFW03MHR☡fFTIfV4PTJE☡JDBBKhvM1EMilWioJ[lXTMVfiNK☡1FZh☡VMCfmSkBRNdYFkXJkdHRABTTTfvJVv',
+    'messagingSenderId': 'mHZhIVI☡W4sJUJ4INIsDFAITQoJdYUDVXfFN1dDEQJUTlOG4QGHHflHDMBIWDMvhFC3|RExDVUklHFl1FHSEPJo|GolHNZBEMvkSSCs☡KDH☡lS|mFFfXJKsBDTovWGUmzHLdRCvLUDLmDhoKoPV1☡J1iRxkZDVmESWZAXUDU30TJKsOVkmFN0iCCoxNm☡SRI4G0ERZDh0Z7YTziSNWLzUMo3NS4ATBQHWNIfKXmHJZiLV7zRv|KW77ZxINIOZQoNVMmIDKP0HokVRU|iTkfJovHZWOLZC[ozDO4KC4dCNQfKCVv1ZUmQHRT1☡VMCf☡DWVOlTZ[QOU4hKTO☡KW4EVTCYIMIQGBoUEAUHIiWFivW7PRmPFYiTXIG|3T☡3MZ0☡H[XATWS4IZF41WDUifGSTimUOOJ☡PG☡IDTKv4FRoXKMXOFhlWT3iW[TL3DGk0SDkXMJxiRmYWMZfhJ14JTolVKoXUv|KW7PHTsxCUNOiF7iH3☡D0XMo|CHU3YUMSPhC0fTWkiDSliV|iRGsOMX|UUTlQG[XoCElKBzNRkmZFM|1VD|3ZWELMJvOUGLfZ[|sUD0zDV13W3hSC|',
+    'projectId': '|FOlNWzAG3BKGooDDEYGKZo|FZImRmoNSSs7SWDQxFTUO',
   };
 
   static bool get isAdmin => _isAdmin ?? false;
