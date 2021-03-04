@@ -17,7 +17,7 @@ workflows:
       events:
         - push
       branch_patterns:
-        - pattern: 'master'
+        - pattern: 'develop'
           include: true
           source: true
       cancel_previous_builds: false
