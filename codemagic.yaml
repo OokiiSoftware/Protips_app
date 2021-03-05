@@ -49,7 +49,7 @@ workflows:
     publishing:
       app_story_connect:
         apple_id: ookiisoftware@gmail.com
-        password: Encrypted(Z0FBQUFBQmdRVE9UWGt3LWVDV3FxbTJ6UjZxMnNSWnV6NFdjY3RsbHFKMDRVWjloejRaNEg4NVVQSWVQcmdKODlPZmNCVTVUa1ZEaGZOYlZtR1dBajlzd25KQWllOTNsNDZ1ZmlUN05JaTAzN2o2SVNIb3pGa0k9)
+        password: Encrypted(Z0FBQUFBQmdRVUphZWtiNVpQbUVobjdfUEZxcVphaEV1LW4wN3psOTBrWUdDc0FnN3dDQzVkN2F2MVNFLVBnLVFicC1xNXlHRlAxMjlNNTdrUmdKaDV5QkoyUFJlX2NybzExWnNSUE1oM2xGQWRjTUV6Y1lERDg9)
       email:
         recipients:
           - ookiisoftware@gmail.com

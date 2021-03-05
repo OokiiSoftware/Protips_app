@@ -6,16 +6,12 @@
     <true/>
 	<key>NSPhotoLibraryUsageDescription</key>
     <string>User can share photos in the app</string>
-	<key>NSCameraUsageDescription</key>
-    <string>The camera is not used in this app</string>
-	<key>NSMicrophoneUsageDescription</key>
-    <string>The microphone is not used in this app</string>
 	<key>CFBundleDevelopmentRegion</key>
-    <string>Portuguese</string>
+    <string>>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
-	<string>protips</string>
+	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.ookiisoftware.protips</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
