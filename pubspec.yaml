@@ -50,7 +50,7 @@ flutter_icons:
   adaptive_icon_background: '#044476'
   adaptive_icon_foreground: "assets/icons/ic_launcher_adaptive.png"
   image_path_android: "assets/icons/ic_launcher.png"
-  image_path_ios: "assets/icons/ic_launcher_ios.png"
+  image_path_ios: "assets/icons/ic_launcher_ios.jpg"
   android: true
   ios: true
 
